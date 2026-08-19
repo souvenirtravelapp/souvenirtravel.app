@@ -3,7 +3,7 @@
 body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;padding:48px 24px 80px}
 header.site{display:flex;align-items:center;gap:12px;margin-bottom:40px;width:100%}
-header.site .mark{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--deep));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px}
+header.site .mark{width:44px;height:44px;border-radius:12px;display:block}
 header.site a{color:var(--text);text-decoration:none;font-weight:700;font-size:20px}
 h1{font-size:30px;line-height:1.3;margin-bottom:6px}
 .tagline{color:var(--deep);font-size:17px;margin-bottom:28px}
