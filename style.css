@@ -1,8 +1,8 @@
 :root{--bg:#F6F0E3;--card:#FDFAF3;--text:#3B2F21;--muted:#7A6A55;--accent:#E0A458;--deep:#B4622E}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Naskh Arabic","Helvetica Neue",Arial,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased}
 .wrap{max-width:680px;margin:0 auto;padding:48px 24px 80px}
-header.site{display:flex;align-items:center;gap:12px;margin-bottom:40px}
+header.site{display:flex;align-items:center;gap:12px;margin-bottom:40px;width:100%}
 header.site .mark{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--deep));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px}
 header.site a{color:var(--text);text-decoration:none;font-weight:700;font-size:20px}
 h1{font-size:30px;line-height:1.3;margin-bottom:6px}
@@ -22,5 +22,5 @@ a{color:var(--deep)}
 .btn.ghost{background:rgba(224,164,88,.14);color:var(--deep)}
 footer{margin-top:56px;color:var(--muted);font-size:13px}
 footer a{color:var(--muted)}
-.lang{float:inline-end;font-size:14px}
+.lang{margin-inline-start:auto;font-size:14px}
 strong{color:var(--text)}
