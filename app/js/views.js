@@ -103,7 +103,7 @@ function ideaCard(ctx, city, month){
   const visa = visaLine(ctx, city);
   if (visa) lines.push(visa);
   return el("div.idea", { onclick: () => goto("#/d/" + city.id) },
-    el("div.head", {},
+    el("div.head", { style: coverStyle(city) },
       el("div.n", {}, cityName(city)),
       el("div.c", {}, flag(city.country_code) + " " + countryName(city))),
     el("div.body", {}, lines.map(l => el("div", {}, l))));
@@ -287,6 +287,17 @@ function scrollChips(inner){
   return w;
 }
 
+const TAG_COVER = {
+  sea:      "linear-gradient(135deg,#0E5E86,#3FA8C4)",
+  mountain: "linear-gradient(135deg,#4A6455,#8FB39A)",
+  nature:   "linear-gradient(135deg,#2F6B4F,#7FB069)",
+  history:  "linear-gradient(135deg,#8A5A2E,#C99C5F)",
+};
+function coverStyle(city){
+  const tag = (city.tags || []).find(t => TAG_COVER[t]);
+  return "background:" + (TAG_COVER[tag] || "linear-gradient(135deg,var(--band1),var(--band2))");
+}
+
 function destRow(ctx, city, redraw){
   const { store, filter, shortlist } = ctx;
   const month = filter.month;
@@ -296,12 +307,22 @@ function destRow(ctx, city, redraw){
     onclick: e => { e.stopPropagation(); shortlist.toggle(city.id, month); redraw(); } },
     shortlist.contains(city.id) ? "♥" : "♡",
     kept ? el("span.kept", {}, MONTHS_AR[kept - 1]) : null);
+  const badges = [];
+  const visa = visaLine(ctx, city);
+  if (visa) badges.push(el("span.badge" + (visa === "لا تتطلب تأشيرة" ? ".good" : ""), {}, visa));
+  const from = ctx.prefs.departures(filter.origin).find(i => store.route(i, city.id));
+  if (from){
+    const r = store.route(from, city.id);
+    badges.push(el("span.badge", {}, r.seasonal ? "مباشر موسميًا" : "طيران مباشر"));
+  }
+  if (t) badges.push(el("span.badge.w-" + store.warmthBand(t.t_max_avg_c), {},
+                        warmthWord(store, t.t_max_avg_c)));
   return el("div.dest-row", { onclick: () => goto("#/d/" + city.id) },
-    el("span.flag", {}, flag(city.country_code)),
+    el("div.cover", { style: coverStyle(city) }, flag(city.country_code)),
     el("div.names", {},
       el("div.n", {}, cityName(city)),
       el("div.c", {}, countryName(city)),
-      el("div.v", {}, visaLine(ctx, city) || "")),
+      el("div.badges", {}, badges)),
     t ? el("div.temp", {},
       el("div.hi", {}, Math.round(t.t_max_avg_c) + "°"),
       el("div.lo", {}, Math.round(t.t_min_avg_c) + "°"),

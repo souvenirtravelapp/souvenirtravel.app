@@ -136,3 +136,29 @@ select.menu:disabled{background:var(--card);color:var(--muted)}
 .lens{display:flex;gap:6px}
 .findmap{height:56vh;border-radius:16px;border:1px solid var(--line);overflow:hidden}
 .leaflet-container{font:inherit}
+
+/* ── The Booking-grade pass: depth, covers, badges — in our colours ──── */
+.dest-row{padding:0;overflow:hidden;box-shadow:0 2px 10px rgba(59,47,33,.06);
+  transition:box-shadow .15s, transform .15s}
+.dest-row:hover{box-shadow:0 6px 22px rgba(59,47,33,.14);transform:translateY(-1px)}
+.dest-row .cover{align-self:stretch;flex:0 0 84px;display:flex;align-items:center;
+  justify-content:center;font-size:34px;border-start-end-radius:0;border-end-end-radius:0;
+  text-shadow:0 2px 8px rgba(0,0,0,.25)}
+.dest-row .names{padding:10px 0 10px 4px}
+.dest-row .names .n{font-size:16.5px}
+.dest-row .temp{padding-inline-end:4px}
+.dest-row .heart{padding-inline-end:12px}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.badge{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;
+  background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.badge.good{background:#E8F2E9;border-color:#BFDCC4;color:#2F6B4F}
+.badge.w-mild{color:var(--mild)}.badge.w-warm{color:var(--warm)}
+.badge.w-hot{color:var(--hot)}.badge.w-cold{color:var(--cold)}
+.idea{box-shadow:0 2px 10px rgba(59,47,33,.06)}
+.idea .head{min-height:64px;display:flex;flex-direction:column;justify-content:flex-end;
+  text-shadow:0 1px 4px rgba(0,0,0,.25)}
+.section>h2{font-size:19px}
+.search{box-shadow:0 0 0 3px rgba(224,164,88,.28);border-color:var(--accent)}
+.card{box-shadow:0 2px 10px rgba(59,47,33,.05)}
+a.book{box-shadow:0 4px 14px rgba(224,164,88,.4);font-size:16px}
+.top h1{font-size:26px}
