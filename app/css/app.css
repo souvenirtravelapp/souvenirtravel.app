@@ -130,3 +130,9 @@ select.menu{background:var(--accent);color:#fff;font-weight:700;border:0;
   -webkit-appearance:none;appearance:none}
 select.menu:disabled{background:var(--card);color:var(--muted)}
 .fcontrols .chips{margin:0}
+
+/* ── The map lens ───────────────────────────────────────────────────── */
+.countbar{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+.lens{display:flex;gap:6px}
+.findmap{height:56vh;border-radius:16px;border:1px solid var(--line);overflow:hidden}
+.leaflet-container{font:inherit}

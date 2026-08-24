@@ -202,20 +202,62 @@ export function finder(ctx){
 
   root.append(rows);
 
-  const count = el("div.sub", { style: "margin:8px 0" });
+  const count = el("div.sub");
+  const lens = el("div.lens", {},
+    lensBtn("خريطة", filter.presentation === "map",
+      () => { filter.presentation = "map"; render(); }),
+    lensBtn("قائمة", filter.presentation === "list",
+      () => { filter.presentation = "list"; render(); }));
+  root.append(el("div.countbar", {}, count, lens));
+
   const results = el("div");
-  root.append(count, results);
+  root.append(results);
 
   function redrawResults(){
     const list = filter.matches(store);
     count.textContent = list.length + (list.length >= 3 && list.length <= 10 ? " وجهات" : " وجهة");
     results.replaceChildren();
+    if (filter.presentation === "map"){
+      const holder = el("div.findmap");
+      results.append(holder);
+      drawMap(holder, list, city => goto("#/d/" + city.id));
+      return;
+    }
     for (const city of list.slice(0, 80)) results.append(destRow(ctx, city, redrawResults));
     if (list.length > 80)
       results.append(el("div.empty", {}, `و${list.length - 80} أخرى — ضيّق البحث`));
   }
   redrawResults();
   return root;
+}
+
+function lensBtn(label, on, onclick){
+  return el("button.chip" + (on ? ".on" : ""), { onclick }, label);
+}
+
+// The finder's opening lens, like the app's: every result a pin. Leaflet
+// over OpenStreetMap tiles, vendored — the page owes nothing to a CDN.
+function drawMap(holder, list, open){
+  queueMicrotask(() => {
+    const L = window.L;
+    if (!L){ holder.textContent = "الخريطة تُحمّل…"; setTimeout(() => drawMap(holder, list, open), 300); return; }
+    const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
+    const points = [];
+    for (const c of list){
+      if (c.lat == null) continue;
+      points.push([c.lat, c.lon]);
+      L.circleMarker([c.lat, c.lon], {
+        radius: 6, weight: 2, color: "#B4622E",
+        fillColor: "#E0A458", fillOpacity: .92 })
+        .addTo(map)
+        .bindTooltip(c.name_ar, { direction: "top" })
+        .on("click", () => open(c));
+    }
+    if (points.length) map.fitBounds(points, { padding: [24, 24], maxZoom: 6 });
+    else map.setView([24, 45], 3);
+  });
 }
 
 function frow(label, ...controls){
