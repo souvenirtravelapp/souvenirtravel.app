@@ -215,3 +215,5 @@ details.adv summary{cursor:pointer;font-weight:700;color:var(--deep);font-size:1
   .strip .f:last-of-type{border-bottom:0}
   .strip .go{width:100%;margin:0}
 }
+
+.attrib{max-width:1060px;margin:0 auto;padding:10px 16px 110px;font-size:12px;color:var(--muted);text-align:center}
