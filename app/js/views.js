@@ -43,70 +43,149 @@ function visaLine(ctx, city){
   return REQUIREMENT_AR[v.requirement] || REQUIREMENT_AR.unclear;
 }
 
-/* ── الرئيسية ──────────────────────────────────────────────────────── */
+/* ── الرئيسية: الصفحة المتكاملة — بطل، شريط بحث موحد، أقسام أفقية ──── */
 export function home(ctx){
   const { store, filter, prefs, shortlist, papers } = ctx;
+  const root = el("div.wide");
+
+  const guest = "إلى أين وجهتك القادمة؟";
+  root.append(el("div.hero2", {},
+    el("h1", {}, guest),
+    el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
+    searchStrip(ctx)));
+
   const ideas = plan({ store, filter, prefs, shortlist, papers });
-  const root = el("div");
 
-  root.append(el("div.top", {},
-    el("div", {},
-      el("div.sub", {}, "أهلًا بعودتك"),
-      el("h1", {}, "ذكرياتك القادمة تبدأ من هنا")),
-    el("a.circle", { href: "#/prefs", title: "تفضيلات السفر" }, "⚙︎")));
-
-  root.append(el("a.hero", { href: "#/find" },
-    el("div.t", {}, "ابحث عن رحلتك القادمة"),
-    el("div.s", {}, "بالشهر والأجواء والتأشيرة والطيران المباشر")));
-
-  const upcoming = Trips.upcoming();
-  if (upcoming.length){
-    const sec = el("div.section", {}, el("h2", {}, "رحلاتك القادمة"));
-    for (const t of upcoming.slice(0, 4)){
-      sec.append(el("div.card", { style: "margin-bottom:8px" },
-        el("b", {}, t.title), " — ", t.start || "", t.end ? (" إلى " + t.end) : ""));
+  // أكمل بحثك — آخر أسئلته، كما تفعل مواقع الحجز.
+  const recent = JSON.parse(localStorage.getItem("sv.recent") ?? "[]");
+  if (recent.length){
+    const row = el("div.hcards");
+    for (const r of recent.slice(0, 6)){
+      const city = r.cityId ? store.cities.find(c => c.id === r.cityId) : null;
+      row.append(el("div.hcard", { onclick: () => {
+          if (r.month) filter.month = r.month;
+          goto(city ? "#/d/" + city.id : "#/find");
+        } },
+        el("div.cover", { style: city ? coverStyle(city) : "background:linear-gradient(135deg,var(--band1),var(--band2))" },
+          city ? flag(city.country_code) : "⌕"),
+        el("div.body", {},
+          el("div.n", {}, city ? cityName(city) : (r.q || "بحث")),
+          el("div.c", {}, r.month ? MONTHS_AR[r.month - 1] : ""))));
     }
-    root.append(sec);
+    root.append(section("أكمل بحثك", row));
   }
 
-  const sec = el("div.section", {}, el("h2", {}, "وجهات مقترحة"));
-  if (prefs.isEmpty){
-    sec.append(el("a", { href: "#/prefs", style: "font-size:13px" },
-      "أضف تفضيلاتك لتحسين الاقتراحات ›"));
-  }
+  // الاقتراحات الشهرية — القواعد الست نفسها.
   for (const month of Object.keys(ideas)){
     const list = ideas[month];
     if (!list.length) continue;
-    sec.append(el("div.month-title", {}, MONTHS_AR[month - 1]));
-    const row = el("div.ideas");
-    for (const { city } of list) row.append(ideaCard(ctx, city, +month));
-    sec.append(row);
+    const row = el("div.hcards");
+    for (const { city } of list) row.append(bigCard(ctx, city, +month));
+    root.append(section("وجهات مقترحة — " + MONTHS_AR[month - 1], row));
   }
-  root.append(sec);
+
+  // بلا تأشيرة لجوازك هذا الشهر — القسم الذي يبيع.
+  if (filter.passport){
+    const free = store.cities.filter(c => {
+      const v = store.visa(c, filter.passport);
+      const t = store.temps(c, filter.month);
+      return v && FREE_REQUIREMENTS.includes(v.requirement)
+          && t && store.warmthBand(t.t_max_avg_c) === "mild";
+    }).slice(0, 10);
+    if (free.length){
+      const row = el("div.hcards");
+      for (const c of free) row.append(bigCard(ctx, c, filter.month));
+      root.append(section("بلا تأشيرة لجوازك — معتدلة في " + MONTHS_AR[filter.month - 1], row));
+    }
+  }
+
+  if (prefs.isEmpty){
+    root.append(el("div.nudge", {},
+      el("a", { href: "#/prefs" }, "أضف تفضيلاتك لتحسين الاقتراحات ›")));
+  }
+
+  const upcoming = Trips.upcoming();
+  if (upcoming.length){
+    const row = el("div.hcards");
+    for (const t of upcoming.slice(0, 6)){
+      row.append(el("div.hcard", {},
+        el("div.cover", { style: "background:linear-gradient(135deg,var(--deep),#8A4520)" }, "✈︎"),
+        el("div.body", {}, el("div.n", {}, t.title),
+          el("div.c", {}, (t.start || "") + (t.end ? " → " + t.end : "")))));
+    }
+    root.append(section("رحلاتك القادمة", row));
+  }
+
   return root;
 }
 
-function ideaCard(ctx, city, month){
-  const { store, filter, prefs } = ctx;
+function section(title, inner){
+  return el("div.section", {}, el("h2", {}, title), inner);
+}
+
+// The unified strip: destination · month · passport · origin · search — one
+// bordered band, the page's single most important object.
+export function searchStrip(ctx, compact = false){
+  const { store, filter } = ctx;
+  const q = el("input", { placeholder: "إلى أين؟ اكتب وجهة أو دولة…",
+    value: filter.query || "" });
+  const month = el("select", {},
+    MONTHS_AR.map((m, i) => {
+      const o = el("option", { value: i + 1 }, m);
+      if (filter.month === i + 1) o.selected = true;
+      return o;
+    }));
+  const pass = el("select", {},
+    el("option", { value: "" }, "جوازك؟"),
+    store.passports().map(cc => {
+      const o = el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc));
+      if (filter.passport === cc) o.selected = true;
+      return o;
+    }));
+  const origin = el("select", {},
+    el("option", { value: "" }, "من أين تطير؟"),
+    store.originCountries().flatMap(cc => store.originsIn(cc).map(o2 => {
+      const o = el("option", { value: o2.iata }, o2.city_ar + " — " + o2.iata);
+      if (filter.origin === o2.iata) o.selected = true;
+      return o;
+    })));
+  const go = el("button.go", { onclick: () => {
+    filter.query = q.value;
+    filter.month = +month.value;
+    filter.passport = pass.value || null;
+    filter.origin = origin.value;
+    if (origin.value){
+      const oc = store.origin(origin.value);
+      if (oc) filter.originCountry = oc.country_code;
+    }
+    const recent = JSON.parse(localStorage.getItem("sv.recent") ?? "[]");
+    const hit = filter.matches(store)[0];
+    recent.unshift({ q: q.value, month: filter.month,
+                     cityId: q.value && hit ? hit.id : null });
+    localStorage.setItem("sv.recent", JSON.stringify(recent.slice(0, 6)));
+    goto("#/find");
+    render();
+  } }, "ابحث");
+  return el("div.strip" + (compact ? ".compact" : ""), {},
+    el("div.f.grow", {}, "🔎", q),
+    el("div.f", {}, "🗓", month),
+    el("div.f", {}, "🪪", pass),
+    el("div.f", {}, "🛫", origin),
+    go);
+}
+
+// A Booking-style vertical card: cover on top, facts under it.
+function bigCard(ctx, city, month){
+  const { store } = ctx;
   const t = store.temps(city, month);
-  const lines = [];
-  if (t){
-    lines.push(`${warmthWord(store, t.t_max_avg_c)} من ${Math.round(t.t_min_avg_c)}° إلى ${Math.round(t.t_max_avg_c)}°`);
-    lines.push(`${rainWordOf(store, t.p_mm_avg)} · ${Math.round(t.p_mm_avg)} مم`);
-  }
-  const from = prefs.departures(filter.origin).find(i => store.route(i, city.id));
-  if (from){
-    const r = store.route(from, city.id);
-    const o = store.origin(from);
-    lines.push((r.seasonal ? "طيران مباشر موسميًا من " : "طيران مباشر من ") + (o ? o.city_ar : from));
-  }
   const visa = visaLine(ctx, city);
-  if (visa) lines.push(visa);
-  return el("div.idea", { onclick: () => goto("#/d/" + city.id) },
-    el("div.head", { style: coverStyle(city) },
+  return el("div.hcard", { onclick: () => goto("#/d/" + city.id) },
+    el("div.cover", { style: coverStyle(city) }, flag(city.country_code)),
+    el("div.body", {},
       el("div.n", {}, cityName(city)),
-      el("div.c", {}, flag(city.country_code) + " " + countryName(city))),
-    el("div.body", {}, lines.map(l => el("div", {}, l))));
+      el("div.c", {}, countryName(city)),
+      t ? el("div.t", {}, `${MONTHS_AR[month - 1]} · ${Math.round(t.t_max_avg_c)}° ${warmthWord(store, t.t_max_avg_c)}`) : null,
+      visa ? el("div.v", {}, visa) : null));
 }
 
 /* ── فلتر الوجهات ──────────────────────────────────────────────────── */
@@ -120,16 +199,12 @@ export function finder(ctx){
     el("h1", {}, "فلتر الوجهات"),
     el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪")));
 
-  const box = el("input", { placeholder: "ابحث عن وجهة بالاسم…", value: filter.query || "",
-    oninput: e => { filter.query = e.target.value; redrawResults(); } });
-  root.append(el("div.search", {}, "⌕", box));
+  root.append(searchStrip(ctx, true));
 
+  const adv = el("details.adv", { ...(filter.isFiltering ? { open: true } : {}) },
+    el("summary", {}, "فلاتر متقدمة"));
   const rows = el("div.frows");
-
-  // الشهر — قائمة، كما في التطبيق.
-  const monthSel = menu(MONTHS_AR.map((m, i) => [i + 1, m]), filter.month,
-    v => { filter.month = +v; render(); });
-  rows.append(frow("الشهر", monthSel));
+  adv.append(rows);
 
   // المطار — دولة ثم مطار، قائمتان متتاليتان.
   // The passports' name table lacks one's own country (it is nobody's
@@ -200,7 +275,7 @@ export function finder(ctx){
     rows.append(frow("الأوراق", scrollChips(el("div.chips", {}, paperChips))));
   }
 
-  root.append(rows);
+  root.append(adv);
 
   const count = el("div.sub");
   const lens = el("div.lens", {},

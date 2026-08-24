@@ -30,6 +30,16 @@ function drawTabs(){
     TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "" },
       el("img", { src: t.icon, alt: "" }),
       t.label))));
+  // The desktop wears a brand bar instead of a thumb pill.
+  const bar = document.getElementById("topbar");
+  if (bar) bar.replaceChildren(
+    el("a.brand", { href: "#/home" }, "سوفينير"),
+    el("div.links", {},
+      el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, "التخطيط"),
+      el("a", { href: "#/find",  class: on === "find"  ? "on" : "" }, "الوجهات"),
+      el("a", { href: "#/trips", class: on === "trips" ? "on" : "" }, "رحلاتك"),
+      el("a", { href: "#/papers" }, "أوراقي"),
+      el("a", { href: "#/prefs" }, "تفضيلاتي")));
 }
 
 export function render(){
