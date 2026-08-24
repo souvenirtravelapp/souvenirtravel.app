@@ -1,0 +1,120 @@
+/* Souvenir's web face — the iOS app's design language, translated to CSS.
+   The tokens are the app's Theme; if a value here disagrees with the app,
+   the app is right and this file is wrong. */
+:root{
+  --bg:#F6F0E3; --card:#FDFAF3; --text:#3B2F21; --muted:#7A6A55;
+  --accent:#E0A458; --deep:#B4622E; --line:rgba(59,47,33,.12);
+  --band1:#0B4A79; --band2:#298B73;
+  --cold:#5B84A8; --mild:#4B8A67; --warm:#C98A3B; --hot:#B4552E;
+  --visited:#4B8A67; --drop:#4A90D9; --sun:#E8B93E;
+}
+*{box-sizing:border-box;margin:0}
+html{height:100%}
+body{min-height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,sans-serif;
+  font-size:16px;line-height:1.7;-webkit-text-size-adjust:100%}
+a{color:var(--deep)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:var(--text)}
+#view{max-width:680px;margin:0 auto;padding:18px 16px 96px}
+
+/* ── The standing bar: title right, quiet controls left ─────────────── */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 14px}
+.top h1{font-size:24px;font-weight:800}
+.top .sub{font-size:13px;color:var(--muted)}
+.circle{width:38px;height:38px;border-radius:50%;background:var(--card);
+  border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.section{margin:18px 0}
+.section>h2{font-size:17px;font-weight:700;margin-bottom:8px}
+.hero{display:block;width:100%;text-align:right;background:linear-gradient(135deg,#B4622E,#8A4520);
+  color:#fff;border-radius:18px;padding:16px 18px;text-decoration:none}
+.hero .t{font-size:18px;font-weight:800}
+.hero .s{font-size:13px;opacity:.9}
+
+/* ── Chips (the finder's vocabulary) ────────────────────────────────── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;
+  padding:6px 14px;font-size:14px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip small{font-weight:400;opacity:.8}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin:10px 0}
+.search input{flex:1;border:0;outline:0;background:none;font-size:16px}
+
+/* ── Destination rows in the finder ─────────────────────────────────── */
+.dest-row{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.dest-row .flag{font-size:26px}
+.dest-row .names{flex:1;min-width:0}
+.dest-row .names .n{font-weight:700}
+.dest-row .names .c{font-size:13px;color:var(--muted)}
+.dest-row .names .v{font-size:12.5px;color:var(--deep)}
+.dest-row .temp{text-align:center;line-height:1.25}
+.dest-row .temp .hi{font-size:20px;font-weight:800}
+.dest-row .temp .lo{font-size:12px;color:var(--muted)}
+.dest-row .temp .mo{font-size:11px;color:var(--muted)}
+.heart{font-size:20px;color:var(--muted);opacity:.65}
+.heart.on{color:var(--accent);opacity:1}
+.heart .kept{display:block;font-size:10px;color:var(--accent);text-align:center}
+
+/* ── Suggestion cards (Home) ────────────────────────────────────────── */
+.ideas{display:grid;grid-auto-flow:column;grid-auto-columns:196px;gap:12px;
+  overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}
+.idea{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;scroll-snap-align:start;cursor:pointer}
+.idea .head{background:linear-gradient(120deg,var(--band1),var(--band2));
+  color:#fff;padding:10px 12px}
+.idea .head .n{font-weight:800}
+.idea .head .c{font-size:12px;opacity:.9}
+.idea .body{padding:8px 12px 10px;font-size:12.5px;color:var(--muted)}
+.idea .body div{display:flex;gap:6px;align-items:baseline}
+.month-title{font-size:15px;font-weight:700;color:var(--deep);margin:12px 0 6px}
+
+/* ── Destination page ───────────────────────────────────────────────── */
+.band{background:linear-gradient(120deg,var(--band1),var(--band2));color:#fff;
+  border-radius:18px;padding:18px 20px;margin-bottom:16px;position:relative}
+.band h1{font-size:26px}
+.band .c{opacity:.9;font-size:15px}
+.band .heart{position:absolute;top:14px;left:14px;font-size:24px;color:#fff;opacity:.85}
+.band .heart.on{color:#FFD98A;opacity:1}
+.months{display:flex;gap:6px;overflow-x:auto;padding:4px 0}
+.m{min-width:74px;text-align:center;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:8px 6px;flex:0 0 auto}
+.m.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.m.sel .mu{color:rgba(255,255,255,.85)}
+.m .mo{font-size:12px}.m .hi{font-size:17px;font-weight:800}
+.m .mu{font-size:11px;color:var(--muted)}
+.m .rain{font-size:10px}
+.rows .row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid var(--line)}
+.rows .row:last-child{border-bottom:0}
+.row .who{font-weight:600}.row .meta{font-size:13px;color:var(--muted)}
+.tail{display:inline-block;width:20px;height:20px;border-radius:4px 10px 2px 2px;
+  background:var(--deep);color:#fff;font-size:11px;font-weight:800;text-align:center;
+  line-height:20px;margin-inline-start:4px}
+a.book{display:block;text-align:center;background:var(--accent);color:#fff;font-weight:800;
+  text-decoration:none;border-radius:14px;padding:13px;margin-top:10px}
+.disclose{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+.back{font-size:14px;margin-bottom:10px;display:inline-block}
+
+/* ── Forms (papers, trips, prefs) ───────────────────────────────────── */
+.frow{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
+.frow input,.frow select{background:var(--card);border:1px solid var(--line);
+  border-radius:10px;padding:8px 10px;flex:1;min-width:120px}
+.btn{display:inline-block;background:var(--accent);color:#fff;font-weight:700;
+  border-radius:12px;padding:10px 18px;text-align:center;text-decoration:none}
+.btn.ghost{background:var(--card);color:var(--deep);border:1px solid var(--line)}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:18px 0}
+
+/* ── Tab bar: the app's floating pill ───────────────────────────────── */
+nav.tabs{position:fixed;bottom:14px;inset-inline:0;display:flex;justify-content:center;z-index:9}
+nav.tabs .pill{display:flex;gap:6px;background:rgba(253,250,243,.92);border:1px solid var(--line);
+  border-radius:999px;padding:6px 10px;backdrop-filter:blur(12px);box-shadow:0 6px 24px rgba(59,47,33,.14)}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 16px;border-radius:999px;text-decoration:none;color:var(--muted);font-size:11.5px;font-weight:700}
+nav.tabs a.on{color:var(--deep)}
+nav.tabs img{width:26px;height:26px;opacity:.55}
+nav.tabs a.on img{opacity:1}
