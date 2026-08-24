@@ -110,8 +110,11 @@ function ideaCard(ctx, city, month){
 }
 
 /* ── فلتر الوجهات ──────────────────────────────────────────────────── */
+// The app's arrangement, not a chip wall: labelled rows, and a MENU wherever
+// the app opens a menu — the month, the origin country then its airport, the
+// passport. Chips only where the app uses chips: weather, visa ease, papers.
 export function finder(ctx){
-  const { store, filter, shortlist } = ctx;
+  const { store, filter, shortlist, papers: docs } = ctx;
   const root = el("div");
   root.append(el("div.top", {},
     el("h1", {}, "فلتر الوجهات"),
@@ -121,71 +124,85 @@ export function finder(ctx){
     oninput: e => { filter.query = e.target.value; redrawResults(); } });
   root.append(el("div.search", {}, "⌕", box));
 
-  // Month row. The app always has a month chosen; so do we.
-  const months = el("div.chips");
-  MONTHS_AR.forEach((m, i) => months.append(
-    chip(m, filter.month === i + 1, () => { filter.month = i + 1; render(); })));
-  root.append(scrollChips(months));
+  const rows = el("div.frows");
 
-  // Origin airports (data order, SA first) + nonstop-only.
-  const orow = el("div.chips");
-  orow.append(chip("من أي مطار", !filter.origin, () => { filter.origin = ""; render(); }));
-  for (const cc of store.originCountries()){
-    for (const o of store.originsIn(cc)){
-      orow.append(chip(o.city_ar, filter.origin === o.iata,
-        () => { filter.origin = o.iata; render(); }));
-    }
-  }
-  root.append(scrollChips(orow));
-  root.append(el("div.chips", {},
-    chip("طيران مباشر فقط", filter.nonstopOnly,
-      () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin)));
+  // الشهر — قائمة، كما في التطبيق.
+  const monthSel = menu(MONTHS_AR.map((m, i) => [i + 1, m]), filter.month,
+    v => { filter.month = +v; render(); });
+  rows.append(frow("الشهر", monthSel));
 
-  // Weather bands + the rain ladder (one chip that climbs, as the app's does).
-  const wrow = el("div.chips");
+  // المطار — دولة ثم مطار، قائمتان متتاليتان.
+  // The passports' name table lacks one's own country (it is nobody's
+  // destination), so country names come from the cities the reader sees.
+  const countryAr = cc =>
+    store.cities.find(c => c.country_code === cc)?.country_name_ar
+      || store.passportCountryName(cc) || cc;
+  const countrySel = menu(
+    [["", "اختر الدولة"]].concat(store.originCountries().map(cc =>
+      [cc, countryAr(cc)])),
+    filter.originCountry || "",
+    v => { filter.originCountry = v || null;
+           filter.origin = "";           // an airport dies with its country
+           render(); });
+  const airports = filter.originCountry ? store.originsIn(filter.originCountry) : [];
+  const airportSel = menu(
+    [["", "من أين تطير؟"]].concat(airports.map(o => [o.iata, o.city_ar + " — " + o.iata])),
+    filter.origin || "",
+    v => { filter.origin = v; render(); }, !filter.originCountry);
+  const nonstop = chip("مباشر فقط", filter.nonstopOnly,
+    () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
+  rows.append(frow("المطار", countrySel, airportSel, nonstop));
+
+  // الأجواء — رقائق كما في التطبيق، والمطر سلّم يصعد بالضغط.
+  const weather = [chip(RAIN_WANTED_AR[filter.rain] || RAIN_WANTED_AR.any,
+    filter.rain !== "any", () => { filter.rain = nextRainWanted(filter.rain); render(); })];
   for (const [k, ar] of Object.entries(WARMTH_AR)){
-    wrow.append(chip(ar, filter.bands.has(k), () => {
+    weather.push(chip(ar, filter.bands.has(k), () => {
       const next = new Set(filter.bands);
       next.has(k) ? next.delete(k) : next.add(k);
       filter.bands = next; render();
     }));
   }
-  wrow.append(chip(RAIN_WANTED_AR[filter.rain] || RAIN_WANTED_AR.any, filter.rain !== "any",
-    () => { filter.rain = nextRainWanted(filter.rain); render(); }));
-  root.append(scrollChips(wrow));
+  rows.append(frow("الأجواء", scrollChips(el("div.chips", {}, weather))));
 
-  // Tags — the four words the catalogue actually speaks.
-  const trow = el("div.chips");
-  for (const k of DESTINATION_TAGS){
-    trow.append(chip(TAG_AR[k] || k, filter.tags.has(k), () => {
-      const next = new Set(filter.tags);
-      next.has(k) ? next.delete(k) : next.add(k);
-      filter.tags = next; render();
-    }));
-  }
-  root.append(scrollChips(trow));
+  // ما الذي يعجبك — الوسوم الأربعة.
+  const tags = DESTINATION_TAGS.map(k => chip(TAG_AR[k] || k, filter.tags.has(k), () => {
+    const next = new Set(filter.tags);
+    next.has(k) ? next.delete(k) : next.add(k);
+    filter.tags = next; render();
+  }));
+  rows.append(frow("النوع", scrollChips(el("div.chips", {}, tags))));
 
-  // Passport, then the visa vocabulary — inert without a passport, like the app.
-  const prow = el("div.chips");
-  prow.append(chip("بلا جواز", !filter.passport, () => { filter.passport = null; render(); }));
-  for (const cc of store.passports()){
-    prow.append(chip("جواز " + (PASSPORT_AR[cc] || cc), filter.passport === cc,
-      () => { filter.passport = cc; render(); }));
-  }
-  root.append(scrollChips(prow));
-  const vrow = el("div.chips");
-  for (const g of VISA_GROUPS){
-    vrow.append(chip(GROUP_AR[g], filter.visaGroups.has(g), () => {
-      const next = new Set(filter.visaGroups);
-      next.has(g) ? next.delete(g) : next.add(g);
-      filter.visaGroups = next; render();
-    }, !filter.passport));
-  }
-  vrow.append(chip("تأشيرة شنغن", filter.schengen,
+  // التأشيرة — الجواز قائمة، والمفردات رقائق خاملة بلا جواز.
+  const passSel = menu(
+    [["", "جوازك؟"]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
+    filter.passport || "",
+    v => { filter.passport = v || null; render(); });
+  const visaChips = VISA_GROUPS.map(g => chip(GROUP_AR[g], filter.visaGroups.has(g), () => {
+    const next = new Set(filter.visaGroups);
+    next.has(g) ? next.delete(g) : next.add(g);
+    filter.visaGroups = next; render();
+  }, !filter.passport));
+  visaChips.push(chip("تأشيرة شنغن", filter.schengen,
     () => { filter.schengen = !filter.schengen; render(); }, !filter.passport));
-  root.append(scrollChips(vrow));
+  rows.append(frow("التأشيرة", passSel, scrollChips(el("div.chips", {}, visaChips))));
 
-  const count = el("div.sub", { style: "margin:6px 0" });
+  // الأوراق — رقاقة لكل ورقة يحملها، كما يعرض التطبيق جواز أمريكا وشنغن.
+  if (docs.documents.length){
+    const paperChips = docs.documents.map(d => {
+      const key = d.bloc ? "bloc:" + d.bloc : d.countryCode;
+      return chip(paperLabel(store, d), filter.byDocument.has(key), () => {
+        filter.byDocument.has(key) ? filter.byDocument.delete(key)
+                                   : filter.byDocument.add(key);
+        render();
+      }, !filter.passport);
+    });
+    rows.append(frow("الأوراق", scrollChips(el("div.chips", {}, paperChips))));
+  }
+
+  root.append(rows);
+
+  const count = el("div.sub", { style: "margin:8px 0" });
   const results = el("div");
   root.append(count, results);
 
@@ -199,6 +216,23 @@ export function finder(ctx){
   }
   redrawResults();
   return root;
+}
+
+function frow(label, ...controls){
+  return el("div.filter-row", {},
+    el("span.flabel", {}, label),
+    el("div.fcontrols", {}, controls));
+}
+
+function menu(pairs, selected, onchange, disabled){
+  const sel = el("select.menu", { onchange: e => onchange(e.target.value) },
+    pairs.map(([v, label]) => {
+      const o = el("option", { value: v }, label);
+      if (String(v) === String(selected)) o.selected = true;
+      return o;
+    }));
+  if (disabled){ sel.disabled = true; sel.style.opacity = ".45"; }
+  return sel;
 }
 
 function chip(label, on, onclick, disabled){
