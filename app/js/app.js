@@ -89,7 +89,8 @@ export function render(){
 }
 
 async function boot(){
-  const bundle = await (await fetch("data/bundle.json")).json();
+  const v = new URL(import.meta.url).searchParams.get("v");
+  const bundle = await (await fetch("data/bundle.json" + (v ? "?v=" + v : ""))).json();
   const store = new TravelDataStore(bundle);
   const shortlist = new Shortlist();
   ctx = {
