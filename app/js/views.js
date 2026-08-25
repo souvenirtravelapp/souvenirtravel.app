@@ -131,34 +131,15 @@ export function searchStrip(ctx, compact = false){
   const { store, filter } = ctx;
   const q = el("input", { placeholder: "إلى أين؟ اكتب وجهة أو دولة…",
     value: filter.query || "" });
-  const month = el("select", {},
-    MONTHS_AR.map((m, i) => {
-      const o = el("option", { value: i + 1 }, m);
-      if (filter.month === i + 1) o.selected = true;
-      return o;
-    }));
   // الجواز يُسأل عنه مرة واحدة: بعد أول اختيار يُحفظ ويختفي الحقل،
   // ويبقى تغييره من لوحة الإعدادات.
   const pass = filter.passport ? null : el("select", {},
     el("option", { value: "" }, "جوازك؟"),
     store.passports().map(cc =>
       el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc))));
-  const origin = el("select", {},
-    el("option", { value: "" }, "من أين تطير؟"),
-    store.originCountries().flatMap(cc => store.originsIn(cc).map(o2 => {
-      const o = el("option", { value: o2.iata }, o2.city_ar + " — " + o2.iata);
-      if (filter.origin === o2.iata) o.selected = true;
-      return o;
-    })));
   const go = el("button.go", { onclick: () => {
     filter.query = q.value;
-    filter.month = +month.value;
     if (pass && pass.value) filter.passport = pass.value;
-    filter.origin = origin.value;
-    if (origin.value){
-      const oc = store.origin(origin.value);
-      if (oc) filter.originCountry = oc.country_code;
-    }
     const recent = JSON.parse(localStorage.getItem("sv.recent") ?? "[]");
     const hit = filter.matches(store)[0];
     recent.unshift({ q: q.value, month: filter.month,
@@ -168,9 +149,7 @@ export function searchStrip(ctx, compact = false){
   } }, "ابحث");
   return el("div.strip" + (compact ? ".compact" : ""), {},
     el("div.f.grow", {}, "🔎", q),
-    el("div.f", {}, "🗓", month),
     pass ? el("div.f", {}, "🪪", pass) : null,
-    el("div.f", {}, "🛫", origin),
     go);
 }
 
@@ -218,6 +197,9 @@ export function filterSection(ctx, opts = {}){
     v => { filter.origin = v; render(); }, !filter.originCountry);
   const nonstop = chip("مباشر فقط", filter.nonstopOnly,
     () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
+  const monthSel = menu(MONTHS_AR.map((m, i) => [i + 1, m]), filter.month,
+    v => { filter.month = +v; render(); });
+  rows.append(frow("الشهر", monthSel));
   rows.append(frow("المطار", countrySel, airportSel, nonstop));
 
   // الأجواء دفئًا في صف، والأمطار في صف خاص بها — طلب طارق.
@@ -233,13 +215,9 @@ export function filterSection(ctx, opts = {}){
     () => { filter.rain = k; render(); }));
   rows.append(frow("الأمطار", scrollChips(el("div.chips", {}, rains))));
 
-  // ما الذي يعجبك — الوسوم الأربعة.
-  const tags = DESTINATION_TAGS.map(k => chip(TAG_AR[k] || k, filter.tags.has(k), () => {
-    const next = new Set(filter.tags);
-    next.has(k) ? next.delete(k) : next.add(k);
-    filter.tags = next; render();
-  }));
-  rows.append(frow("التفضيل", scrollChips(el("div.chips", {}, tags))));
+  // التفضيل خرج من الفلتر (قرار طارق) — الوسوم بقيت في التفضيلات توجّه
+  // الاقتراحات؛ وأي وسوم مخزنة من قبل تُمسح كي لا تصفّي النتائج خفيةً.
+  if (filter.tags.size) filter.tags = new Set();
 
   // التأشيرة — الجواز قائمة، والمفردات رقائق خاملة بلا جواز.
   const passSel = filter.passport ? null : menu(
@@ -253,9 +231,11 @@ export function filterSection(ctx, opts = {}){
   }, !filter.passport));
   visaChips.push(chip("تأشيرة شنغن", filter.schengen,
     () => { filter.schengen = !filter.schengen; render(); }, !filter.passport));
-  rows.append(frow("التأشيرة",
+  const visaBox = frow("التأشيرة",
     ...(passSel ? [passSel] : []),
-    scrollChips(el("div.chips", {}, visaChips))));
+    scrollChips(el("div.chips", {}, visaChips)));
+  visaBox.classList.add("span");
+  rows.append(visaBox);
 
   // الأوراق — رقاقة لكل ورقة يحملها، كما يعرض التطبيق جواز أمريكا وشنغن.
   if (docs.documents.length){
@@ -267,7 +247,9 @@ export function filterSection(ctx, opts = {}){
         render();
       }, !filter.passport);
     });
-    rows.append(frow("الأوراق", scrollChips(el("div.chips", {}, paperChips))));
+    const paperBox = frow("الأوراق", scrollChips(el("div.chips", {}, paperChips)));
+    paperBox.classList.add("span");
+    rows.append(paperBox);
   }
 
   const resWrap = el("div.fresults");
@@ -329,8 +311,8 @@ function drawMap(holder, list, open){
 }
 
 function frow(label, ...controls){
-  return el("div.filter-row", {},
-    el("span.flabel", {}, label),
+  return el("div.fbox", {},
+    el("div.ftitle", {}, label),
     el("div.fcontrols", {}, controls));
 }
 

@@ -128,10 +128,13 @@ nav.tabs a.on img{opacity:1}
 
 /* ── The filter, arranged like the app: labelled rows, menus where the app
       opens menus ─────────────────────────────────────────────────────── */
-.frows{display:flex;flex-direction:column;gap:6px;margin:8px 0}
-.filter-row{display:flex;align-items:center;gap:10px;min-height:40px}
-.flabel{flex:0 0 58px;font-size:13.5px;color:var(--muted);font-weight:600}
-.fcontrols{display:flex;align-items:center;gap:8px;flex:1;min-width:0;overflow-x:auto}
+.frows{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.fbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  background:var(--card);min-width:0}
+.fbox.span{grid-column:1/-1}
+.ftitle{font-size:13px;font-weight:800;color:var(--muted);margin-bottom:9px}
+.fcontrols{display:flex;align-items:center;gap:8px;min-width:0;overflow-x:auto}
+@media (max-width:600px){ .frows{grid-template-columns:1fr} }
 select.menu{background:var(--accent);color:#fff;font-weight:700;border:0;
   border-radius:999px;padding:7px 14px;font-size:14px;max-width:46vw;
   -webkit-appearance:none;appearance:none}
