@@ -13,7 +13,7 @@ import { render } from "./app.js";
 const goto = h => { location.hash = h; };
 
 const TAG_AR = { nature: "الطبيعة", history: "التاريخ", sea: "البحر", mountain: "الجبال" };
-const RAIN_WANTED_AR = { any: "أي أمطار", some: "مطر خفيف+", moderate: "مطر متوسط+", heavy: "مطر غزير" };
+const RAIN_WANTED_AR = { any: "لا يهم", some: "مطر خفيف+", moderate: "مطر متوسط+", heavy: "مطر غزير" };
 const GROUP_AR = { no_visa: "بلا تأشيرة", permit: "تصريح/عند الوصول", embassy: "تأشيرة سفارة" };
 
 function warmthWord(store, t){ return WARMTH_AR[store.warmthBand(t)]; }
@@ -196,11 +196,8 @@ export function finder(ctx){
 export function filterSection(ctx, opts = {}){
   const { store, filter, shortlist, papers: docs } = ctx;
   const root = el("div.fsection");
-  const adv = el("details.adv", { ...(filter.isFiltering || opts.open ? { open: true } : {}) },
-    el("summary", {}, "فلاتر متقدمة"));
-  root.append(adv);
   const rows = el("div.frows");
-  adv.append(rows);
+  root.append(el("div.adv", {}, rows));
 
   // المطار — دولة ثم مطار، قائمتان متتاليتان.
   // The passports' name table lacks one's own country (it is nobody's
@@ -224,17 +221,18 @@ export function filterSection(ctx, opts = {}){
     () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
   rows.append(frow("المطار", countrySel, airportSel, nonstop));
 
-  // الأجواء — رقائق كما في التطبيق، والمطر سلّم يصعد بالضغط.
-  const weather = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
-    () => { filter.rain = k; render(); }));
-  for (const [k, ar] of Object.entries(WARMTH_AR)){
-    weather.push(chip(ar, filter.bands.has(k), () => {
+  // الأجواء دفئًا في صف، والأمطار في صف خاص بها — طلب طارق.
+  const warmth = Object.entries(WARMTH_AR).map(([k, ar]) =>
+    chip(ar, filter.bands.has(k), () => {
       const next = new Set(filter.bands);
       next.has(k) ? next.delete(k) : next.add(k);
       filter.bands = next; render();
     }));
-  }
-  rows.append(frow("الأجواء", scrollChips(el("div.chips", {}, weather))));
+  rows.append(frow("الأجواء", scrollChips(el("div.chips", {}, warmth))));
+
+  const rains = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
+    () => { filter.rain = k; render(); }));
+  rows.append(frow("الأمطار", scrollChips(el("div.chips", {}, rains))));
 
   // ما الذي يعجبك — الوسوم الأربعة.
   const tags = DESTINATION_TAGS.map(k => chip(TAG_AR[k] || k, filter.tags.has(k), () => {

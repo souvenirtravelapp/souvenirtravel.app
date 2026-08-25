@@ -229,8 +229,7 @@ html{overflow-x:clip}
 .hcard .t{font-size:12.5px;margin-top:3px}
 .hcard .v{font-size:12px;color:#2F6B4F;font-weight:700}
 .nudge{padding:0 clamp(16px,5vw,48px);font-size:14px}
-details.adv{margin:10px 0}
-details.adv summary{cursor:pointer;font-weight:700;color:var(--deep);font-size:14.5px}
+.adv{margin:10px 0}
 @media (min-width:760px){ nav.tabs{display:none} }
 @media (max-width:759px){ .topbar .links{display:none} }
 @media (max-width:759px){
