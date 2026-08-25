@@ -188,7 +188,8 @@ export function filterSection(ctx, opts = {}){
   rows.append(frow("الأجواء", scrollChips(el("div.chips", {}, warmth))));
 
   const rains = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
-    () => { filter.rain = k; render(); }));
+    () => { filter.rain = filter.rain === k ? "any" : k; render(); },
+    undefined, k !== "any"));
   rows.append(frow("الأمطار", scrollChips(el("div.chips", {}, rains))));
 
   // التفضيل خرج من الفلتر (قرار طارق) — الوسوم بقيت في التفضيلات توجّه
@@ -303,9 +304,10 @@ function menu(pairs, selected, onchange, disabled){
   return sel;
 }
 
-function chip(label, on, onclick, disabled){
+function chip(label, on, onclick, disabled, removable = true){
   return el("button.chip" + (on ? ".on" : ""), {
-    onclick, ...(disabled ? { style: "opacity:.4;pointer-events:none" } : {}) }, label);
+    onclick, ...(disabled ? { style: "opacity:.4;pointer-events:none" } : {}) },
+    label, on && removable ? el("span.x", {}, "✕") : null);
 }
 function scrollChips(inner){
   const w = el("div", { style: "overflow-x:auto" }, inner);
@@ -325,8 +327,9 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
   const kept = shortlist.keptMonth(city.id);
   const heart = el("button.heart" + (shortlist.contains(city.id) ? ".on" : ""), {
     onclick: e => { e.stopPropagation(); shortlist.toggle(city.id, month); redraw(); } },
-    shortlist.contains(city.id) ? "♥" : "♡",
-    kept ? el("span.kept", {}, MONTHS_AR[kept - 1]) : null);
+    shortlist.contains(city.id) ? "♥" : "♡");
+  const keptPill = shortlist.contains(city.id) && kept
+    ? el("span.keptpill", {}, MONTHS_AR[kept - 1]) : null;
   const badges = [];
   const visa = visaLine(ctx, city);
   if (visa) badges.push(el("span.badge" + (visa === "لا تتطلب تأشيرة" ? ".good" : ""), {}, visa));
@@ -339,7 +342,7 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
                         warmthWord(store, t.t_max_avg_c)));
   // بطاقة أفقية بعرض الصفحة كما في بوكينج: صورة، تفاصيل، ثم الحرارة والزر.
   return el("div.dest-row", { onclick: () => goto("#/d/" + city.id) },
-    el("div.cover", { style: coverStyle(city) }, flag(city.country_code), heart),
+    el("div.cover", { style: coverStyle(city) }, flag(city.country_code), heart, keptPill),
     el("div.names", {},
       el("div.n", {}, cityName(city)),
       el("div.c", {}, countryName(city)),

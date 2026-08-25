@@ -135,7 +135,10 @@ nav.tabs a.on img{opacity:1}
 .fbox.span{width:100%}
 .ftitle{font-size:13px;font-weight:800;color:var(--brand);flex:0 0 auto}
 .fcontrols{display:flex;align-items:center;gap:8px;min-width:0;overflow-x:auto}
-select.menu{background:var(--accent);color:#fff;font-weight:700;border:0;
+select.menu{appearance:none;-webkit-appearance:none;
+  padding-inline-end:26px;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="%2310231F" stroke-width="1.8" stroke-linecap="round"/></svg>');
+  background-repeat:no-repeat;background-position:left 9px center;background-size:10px 6px;background-color:var(--accent);color:#fff;font-weight:700;border:0;
   border-radius:999px;padding:7px 14px;font-size:14px;max-width:46vw;
   -webkit-appearance:none;appearance:none}
 select.menu:disabled{background:var(--card);color:var(--muted)}
@@ -288,3 +291,7 @@ select.menu{color:var(--accent-ink)}
 .sheetlinks{display:flex;gap:8px;margin:12px 0}
 .sheetlinks a{flex:1;text-align:center;padding:10px;border-radius:12px;background:var(--card);
   border:1px solid var(--line);text-decoration:none;color:var(--deep);font-weight:800}
+
+.chip .x{font-size:10px;margin-inline-start:5px;opacity:.8}
+.dest-row .keptpill{position:absolute;top:12px;inset-inline-end:48px;background:rgba(255,255,255,.92);
+  color:var(--accent-ink);font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 9px}
