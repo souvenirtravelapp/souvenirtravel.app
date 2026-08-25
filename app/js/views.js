@@ -53,9 +53,8 @@ export function home(ctx){
   root.append(el("div.hero2", {},
     el("h1", {}, guest),
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
-    searchStrip(ctx),
-    fs.controls));
-  root.append(el("div.section", {}, fs.results));
+    searchStrip(ctx)));
+  root.append(el("div.section", {}, fs.controls, fs.results));
 
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 

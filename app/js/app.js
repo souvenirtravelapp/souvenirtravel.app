@@ -31,17 +31,17 @@ function drawTabs(){
       el("img", { src: t.icon, alt: "" }),
       t.label))));
   // The desktop wears a brand bar instead of a thumb pill.
-  // طارق: «في أقصى اليمين صورة البروفايل» — فالصورة أول أبناء الصف في RTL.
+  // الصورة في أقصى اليسار — بعيدًا عن الشعار الذي يفتتح الصف.
   const bar = document.getElementById("topbar");
   if (bar) bar.replaceChildren(
-    el("button.avatar", { onclick: openSettings, title: "الإعدادات",
-      "aria-label": "الإعدادات" }),
     el("a.brand", { href: "#/home" },
       el("img", { src: "/icon.png", alt: "" }), "سوفينير"),
     el("div.links", {},
       el("a", { href: "#/home", class: on === "home" ? "on" : "" }, "ابحث"),
       el("a", { href: "#/map",  class: on === "map"  ? "on" : "" }, "خريطة"),
-      el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "" }, "المفضلة")));
+      el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "" }, "المفضلة")),
+    el("button.avatar", { onclick: openSettings, title: "الإعدادات",
+      "aria-label": "الإعدادات" }));
 }
 
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات

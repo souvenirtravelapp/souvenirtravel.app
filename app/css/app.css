@@ -252,7 +252,8 @@ select.menu{color:var(--accent-ink)}
 
 /* ── الترويسة الجديدة: البروفايل في أقصى اليمين، والإعدادات لوحة ── */
 .topbar .avatar{width:34px;height:34px;border-radius:50%;background:var(--aurora);
-  border:0;cursor:pointer;position:relative;flex:0 0 auto;padding:0}
+  border:0;cursor:pointer;position:relative;flex:0 0 auto;padding:0;
+  margin-inline-start:auto}
 .topbar .avatar::before{content:"";position:absolute;top:6px;left:50%;
   transform:translateX(-50%);width:11px;height:11px;border-radius:50%;background:#fff}
 .topbar .avatar::after{content:"";position:absolute;bottom:4px;left:50%;
@@ -267,10 +268,3 @@ select.menu{color:var(--accent-ink)}
 .sheetlinks{display:flex;gap:8px;margin:12px 0}
 .sheetlinks a{flex:1;text-align:center;padding:10px;border-radius:12px;background:var(--card);
   border:1px solid var(--line);text-decoration:none;color:var(--deep);font-weight:800}
-
-/* ── الفلتر داخل البطل: نصوصه بيضاء فوق الشفق ── */
-.hero2 details.adv{margin:14px 0 0}
-.hero2 details.adv summary{color:rgba(255,255,255,.92)}
-.hero2 .flabel{color:rgba(255,255,255,.85)}
-.hero2 .chip{color:var(--text)}
-.hero2 .chip.on{color:var(--accent-ink)}
