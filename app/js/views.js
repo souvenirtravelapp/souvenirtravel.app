@@ -77,12 +77,12 @@ export function home(ctx){
     root.append(section("أكمل بحثك", row));
   }
 
-  // الاقتراحات الشهرية — القواعد الست نفسها.
+  // الاقتراحات الشهرية — القواعد الست نفسها، بقالب نتائج بوكينج العريض.
   for (const month of Object.keys(ideas)){
     const list = ideas[month];
     if (!list.length) continue;
-    const row = el("div.hcards");
-    for (const { city } of list) row.append(bigCard(ctx, city, +month));
+    const row = el("div");
+    for (const { city } of list) row.append(destRow(ctx, city, render, +month));
     root.append(section("وجهات مقترحة — " + MONTHS_AR[month - 1], row));
   }
 
@@ -95,8 +95,8 @@ export function home(ctx){
           && t && store.warmthBand(t.t_max_avg_c) === "mild";
     }).slice(0, 10);
     if (free.length){
-      const row = el("div.hcards");
-      for (const c of free) row.append(bigCard(ctx, c, filter.month));
+      const row = el("div");
+      for (const c of free) row.append(destRow(ctx, c, render));
       root.append(section("بلا تأشيرة لجوازك — معتدلة في " + MONTHS_AR[filter.month - 1], row));
     }
   }
@@ -176,19 +176,6 @@ export function searchStrip(ctx, compact = false){
 }
 
 // A Booking-style vertical card: cover on top, facts under it.
-function bigCard(ctx, city, month){
-  const { store } = ctx;
-  const t = store.temps(city, month);
-  const visa = visaLine(ctx, city);
-  return el("div.hcard", { onclick: () => goto("#/d/" + city.id) },
-    el("div.cover", { style: coverStyle(city) }, flag(city.country_code)),
-    el("div.body", {},
-      el("div.n", {}, cityName(city)),
-      el("div.c", {}, countryName(city)),
-      t ? el("div.t", {}, `${MONTHS_AR[month - 1]} · ${Math.round(t.t_max_avg_c)}° ${warmthWord(store, t.t_max_avg_c)}`) : null,
-      visa ? el("div.v", {}, visa) : null));
-}
-
 /* ── فلتر الوجهات ──────────────────────────────────────────────────── */
 // The app's arrangement, not a chip wall: labelled rows, and a MENU wherever
 // the app opens a menu — the month, the origin country then its airport, the
@@ -377,9 +364,8 @@ function coverStyle(){
   return "background:var(--aurora)";
 }
 
-function destRow(ctx, city, redraw){
+function destRow(ctx, city, redraw, month = ctx.filter.month){
   const { store, filter, shortlist } = ctx;
-  const month = filter.month;
   const t = store.temps(city, month);
   const kept = shortlist.keptMonth(city.id);
   const heart = el("button.heart" + (shortlist.contains(city.id) ? ".on" : ""), {
