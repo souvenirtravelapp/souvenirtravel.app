@@ -33,7 +33,8 @@ function drawTabs(){
   // The desktop wears a brand bar instead of a thumb pill.
   const bar = document.getElementById("topbar");
   if (bar) bar.replaceChildren(
-    el("a.brand", { href: "#/home" }, "سوفينير"),
+    el("a.brand", { href: "#/home" },
+      el("img", { src: "/icon.png", alt: "" }), "سوفينير"),
     el("div.links", {},
       el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, "التخطيط"),
       el("a", { href: "#/find",  class: on === "find"  ? "on" : "" }, "الوجهات"),

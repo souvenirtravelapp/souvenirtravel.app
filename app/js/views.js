@@ -54,6 +54,9 @@ export function home(ctx){
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
     searchStrip(ctx)));
 
+  // الفلتر نفسه يسكن الرئيسية — طلب طارق: لا صفحة بينك وبين السؤال.
+  root.append(el("div.section", {}, filterSection(ctx)));
+
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 
   // أكمل بحثك — آخر أسئلته، كما تفعل مواقع الحجز.
@@ -163,7 +166,6 @@ export function searchStrip(ctx, compact = false){
     recent.unshift({ q: q.value, month: filter.month,
                      cityId: q.value && hit ? hit.id : null });
     localStorage.setItem("sv.recent", JSON.stringify(recent.slice(0, 6)));
-    goto("#/find");
     render();
   } }, "ابحث");
   return el("div.strip" + (compact ? ".compact" : ""), {},
@@ -193,15 +195,21 @@ function bigCard(ctx, city, month){
 // the app opens a menu — the month, the origin country then its airport, the
 // passport. Chips only where the app uses chips: weather, visa ease, papers.
 export function finder(ctx){
-  const { store, filter, shortlist, papers: docs } = ctx;
   const root = el("div");
   root.append(el("div.top", {},
     el("h1", {}, "فلتر الوجهات"),
     el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪")));
-
   root.append(searchStrip(ctx, true));
+  root.append(filterSection(ctx));
+  return root;
+}
 
-  const adv = el("details.adv", { ...(filter.isFiltering ? { open: true } : {}) },
+// The whole filter — advanced rows, the lens, the results — as one piece,
+// so Home and the finder tab share a single truth.
+export function filterSection(ctx, opts = {}){
+  const { store, filter, shortlist, papers: docs } = ctx;
+  const root = el("div.fsection");
+  const adv = el("details.adv", { ...(filter.isFiltering || opts.open ? { open: true } : {}) },
     el("summary", {}, "فلاتر متقدمة"));
   const rows = el("div.frows");
   adv.append(rows);
