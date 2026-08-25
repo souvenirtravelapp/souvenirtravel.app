@@ -130,9 +130,10 @@ nav.tabs a.on img{opacity:1}
       opens menus ─────────────────────────────────────────────────────── */
 .frows{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
 .fbox{border:1px solid var(--line);border-radius:14px;padding:12px 14px;
-  background:var(--card);min-width:0}
+  background:var(--card);min-width:0;display:flex;align-items:center;gap:12px}
 .fbox.span{grid-column:1/-1}
-.ftitle{font-size:13px;font-weight:800;color:var(--muted);margin-bottom:9px}
+.ftitle{font-size:13px;font-weight:800;color:var(--muted);flex:0 0 auto}
+.fbox .fcontrols{flex:1}
 .fcontrols{display:flex;align-items:center;gap:8px;min-width:0;overflow-x:auto}
 @media (max-width:600px){ .frows{grid-template-columns:1fr} }
 select.menu{background:var(--accent);color:#fff;font-weight:700;border:0;
@@ -164,7 +165,7 @@ select.menu:disabled{background:var(--card);color:var(--muted)}
   flex-direction:column;line-height:1}
 .dest-row .side{margin-inline-start:auto;display:flex;flex-direction:column;
   justify-content:space-between;align-items:flex-end;padding:14px 16px;gap:10px}
-.dest-row .view{background:var(--accent);color:var(--accent-ink);font-weight:800;
+.dest-row .view{background:var(--deep);color:#fff;font-weight:800;
   font-size:13.5px;border-radius:10px;padding:8px 14px;white-space:nowrap}
 @media (max-width:540px){ .dest-row .view{display:none}
   .dest-row .cover{min-height:116px;font-size:34px} }
