@@ -58,25 +58,6 @@ export function home(ctx){
 
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 
-  // أكمل بحثك — آخر أسئلته، كما تفعل مواقع الحجز.
-  const recent = JSON.parse(localStorage.getItem("sv.recent") ?? "[]");
-  if (recent.length){
-    const row = el("div.hcards");
-    for (const r of recent.slice(0, 6)){
-      const city = r.cityId ? store.cities.find(c => c.id === r.cityId) : null;
-      row.append(el("div.hcard", { onclick: () => {
-          if (r.month) filter.month = r.month;
-          goto(city ? "#/d/" + city.id : "#/find");
-        } },
-        el("div.cover", { style: city ? coverStyle(city) : "background:linear-gradient(135deg,var(--band1),var(--band2))" },
-          city ? flag(city.country_code) : "⌕"),
-        el("div.body", {},
-          el("div.n", {}, city ? cityName(city) : (r.q || "بحث")),
-          el("div.c", {}, r.month ? MONTHS_AR[r.month - 1] : ""))));
-    }
-    root.append(section("أكمل بحثك", row));
-  }
-
   // الاقتراحات الشهرية — القواعد الست نفسها، بقالب نتائج بوكينج العريض.
   for (const month of Object.keys(ideas)){
     const list = ideas[month];
@@ -140,11 +121,6 @@ export function searchStrip(ctx, compact = false){
   const go = el("button.go", { onclick: () => {
     filter.query = q.value;
     if (pass && pass.value) filter.passport = pass.value;
-    const recent = JSON.parse(localStorage.getItem("sv.recent") ?? "[]");
-    const hit = filter.matches(store)[0];
-    recent.unshift({ q: q.value, month: filter.month,
-                     cityId: q.value && hit ? hit.id : null });
-    localStorage.setItem("sv.recent", JSON.stringify(recent.slice(0, 6)));
     render();
   } }, "ابحث");
   return el("div.strip" + (compact ? ".compact" : ""), {},
