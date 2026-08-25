@@ -1,17 +1,22 @@
 /* Souvenir's web face — the iOS app's design language, translated to CSS.
    The tokens are the app's Theme; if a value here disagrees with the app,
    the app is right and this file is wrong. */
+/* Direction D — the aurora, chosen by Tariq 2026-08-24. The amber CTA is
+   the sunset's ember inside the night: the bridge to the app's logo, which
+   stays as it is by his word. */
 :root{
-  --bg:#F6F0E3; --card:#FDFAF3; --text:#3B2F21; --muted:#7A6A55;
-  --accent:#E0A458; --deep:#B4622E; --line:rgba(59,47,33,.12);
-  --band1:#0B4A79; --band2:#298B73;
-  --cold:#5B84A8; --mild:#4B8A67; --warm:#C98A3B; --hot:#B4552E;
-  --visited:#4B8A67; --drop:#4A90D9; --sun:#E8B93E;
+  --bg:#F7FBFA; --card:#FFFFFF; --text:#0F2B33; --muted:#4E6A70;
+  --accent:#F0A93C; --accent-ink:#10231F; --deep:#1F8F7C; --line:rgba(15,43,51,.12);
+  --band1:#0E2B44; --band2:#35C493;
+  --aurora:linear-gradient(135deg,#0E2B44 0%,#14556A 45%,#1F8F7C 78%,#35C493 100%);
+  --night:linear-gradient(165deg,#0A1626 0%,#0E2B44 38%,#14556A 62%,#1F8F7C 82%,#35C493 100%);
+  --cold:#5B84A8; --mild:#2E8B6A; --warm:#C98A3B; --hot:#C25B36;
+  --visited:#2E8B6A; --drop:#4A90D9; --sun:#F0A93C;
 }
 *{box-sizing:border-box;margin:0}
 html{height:100%}
 body{min-height:100%;background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Arabic","Segoe UI",Tahoma,sans-serif;
+  font-family:"Almarai",-apple-system,"SF Arabic",Tahoma,sans-serif;
   font-size:16px;line-height:1.7;-webkit-text-size-adjust:100%}
 a{color:var(--deep)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -186,7 +191,7 @@ a.book{box-shadow:0 4px 14px rgba(224,164,88,.4);font-size:16px}
 .strip .f.grow{flex:2 1 220px}
 .strip .f input,.strip .f select{border:0;outline:0;background:none;font:inherit;
   width:100%;color:var(--text)}
-.strip .go{flex:0 0 auto;background:var(--deep);color:#fff;font-weight:900;
+.strip .go{flex:0 0 auto;background:var(--accent);color:var(--accent-ink);font-weight:900;
   font-size:17px;border-radius:10px;padding:12px 30px;margin-inline-start:4px}
 .strip.compact{margin:12px 16px 0;box-shadow:0 4px 14px rgba(59,47,33,.12)}
 .hero2 .strip{position:relative}
@@ -211,9 +216,35 @@ details.adv summary{cursor:pointer;font-weight:700;color:var(--deep);font-size:1
 @media (max-width:759px){ .topbar .links{display:none} }
 @media (max-width:759px){
   .strip{flex-direction:column}
-  .strip .f{border-inline-end:0;border-bottom:4px solid var(--accent);border-radius:10px;min-width:0}
+  .strip .f{border-inline-end:0;border-bottom:4px solid var(--accent);border-radius:10px;min-width:0;flex:0 0 auto}
   .strip .f:last-of-type{border-bottom:0}
   .strip .go{width:100%;margin:0}
 }
 
 .attrib{max-width:1060px;margin:0 auto;padding:10px 16px 110px;font-size:12px;color:var(--muted);text-align:center}
+
+
+/* ── Aurora dressing ───────────────────────────────────────────────── */
+h1,h2,h3,.top h1,.topbar .brand,.strip .go,a.book,.btn,nav.tabs a,.month-title{
+  font-family:"Tajawal","Almarai",Tahoma,sans-serif}
+.hero2{background:var(--night);position:relative;overflow:hidden}
+.hero2::before{content:"";position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(1px 1px at 12% 22%,rgba(255,255,255,.9) 50%,transparent 51%),
+  radial-gradient(1px 1px at 28% 12%,rgba(255,255,255,.7) 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 44% 26%,rgba(255,255,255,.8) 50%,transparent 51%),
+  radial-gradient(1px 1px at 62% 10%,rgba(255,255,255,.65) 50%,transparent 51%),
+  radial-gradient(1px 1px at 78% 20%,rgba(255,255,255,.8) 50%,transparent 51%),
+  radial-gradient(1.5px 1.5px at 90% 14%,rgba(255,255,255,.6) 50%,transparent 51%)}
+.hero2::after{content:"";position:absolute;left:-6%;top:-18%;width:58%;height:130%;
+  pointer-events:none;filter:blur(16px);transform:rotate(-12deg);background:
+  linear-gradient(200deg,rgba(53,196,147,0) 20%,rgba(53,196,147,.32) 55%,rgba(31,143,124,0) 85%)}
+.hero2 h1,.hero2 p{position:relative;z-index:1}
+.hero2 .strip{position:relative;z-index:1}
+.strip .go{color:var(--accent-ink)}
+a.book{color:var(--accent-ink);box-shadow:0 4px 14px rgba(240,169,60,.4)}
+.chip.on{color:var(--accent-ink)}
+.m.sel{color:var(--accent-ink)}
+.m.sel .mu{color:rgba(16,35,31,.6)}
+select.menu{color:var(--accent-ink)}
+.idea .head,.dest .head,.band,.hcard .cover{background:var(--aurora)}
+.hero{background:var(--night)}

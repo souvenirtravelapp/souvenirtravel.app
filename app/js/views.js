@@ -362,15 +362,10 @@ function scrollChips(inner){
   return w;
 }
 
-const TAG_COVER = {
-  sea:      "linear-gradient(135deg,#0E5E86,#3FA8C4)",
-  mountain: "linear-gradient(135deg,#4A6455,#8FB39A)",
-  nature:   "linear-gradient(135deg,#2F6B4F,#7FB069)",
-  history:  "linear-gradient(135deg,#8A5A2E,#C99C5F)",
-};
-function coverStyle(city){
-  const tag = (city.tags || []).find(t => TAG_COVER[t]);
-  return "background:" + (TAG_COVER[tag] || "linear-gradient(135deg,var(--band1),var(--band2))");
+// Direction D: every cover is a piece of the aurora sky — one identity,
+// the tag chips still say what kind of place it is.
+function coverStyle(){
+  return "background:var(--aurora)";
 }
 
 function destRow(ctx, city, redraw){
