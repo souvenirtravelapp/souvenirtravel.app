@@ -240,7 +240,7 @@ export function filterSection(ctx, opts = {}){
     next.has(k) ? next.delete(k) : next.add(k);
     filter.tags = next; render();
   }));
-  rows.append(frow("النوع", scrollChips(el("div.chips", {}, tags))));
+  rows.append(frow("التفضيل", scrollChips(el("div.chips", {}, tags))));
 
   // التأشيرة — الجواز قائمة، والمفردات رقائق خاملة بلا جواز.
   const passSel = menu(
@@ -271,20 +271,18 @@ export function filterSection(ctx, opts = {}){
 
   const resWrap = el("div.fresults");
 
-  const count = el("div.sub");
   const lens = el("div.lens", {},
     lensBtn("خريطة", filter.presentation === "map",
       () => { filter.presentation = "map"; render(); }),
     lensBtn("قائمة", filter.presentation === "list",
       () => { filter.presentation = "list"; render(); }));
-  resWrap.append(el("div.countbar", {}, count, lens));
+  resWrap.append(el("div.countbar", {}, lens));
 
   const results = el("div");
   resWrap.append(results);
 
   function redrawResults(){
     const list = filter.matches(store);
-    count.textContent = list.length + (list.length >= 3 && list.length <= 10 ? " وجهات" : " وجهة");
     results.replaceChildren();
     if (filter.presentation === "map"){
       const holder = el("div.findmap");
