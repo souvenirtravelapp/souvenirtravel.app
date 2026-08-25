@@ -396,17 +396,21 @@ function destRow(ctx, city, redraw){
   }
   if (t) badges.push(el("span.badge.w-" + store.warmthBand(t.t_max_avg_c), {},
                         warmthWord(store, t.t_max_avg_c)));
+  // بطاقة أفقية بعرض الصفحة كما في بوكينج: صورة، تفاصيل، ثم الحرارة والزر.
   return el("div.dest-row", { onclick: () => goto("#/d/" + city.id) },
-    el("div.cover", { style: coverStyle(city) }, flag(city.country_code)),
+    el("div.cover", { style: coverStyle(city) }, flag(city.country_code), heart),
     el("div.names", {},
       el("div.n", {}, cityName(city)),
       el("div.c", {}, countryName(city)),
-      el("div.badges", {}, badges)),
-    t ? el("div.temp", {},
-      el("div.hi", {}, Math.round(t.t_max_avg_c) + "°"),
-      el("div.lo", {}, Math.round(t.t_min_avg_c) + "°"),
-      el("div.mo", {}, MONTHS_AR[month - 1])) : null,
-    heart);
+      el("div.badges", {}, badges),
+      t && t.p_mm_avg != null
+        ? el("div.det", {}, rainWordOf(store, t.p_mm_avg) + " · " + MONTHS_AR[month - 1])
+        : null),
+    el("div.side", {},
+      t ? el("div.temp", {},
+        el("div.hi", {}, Math.round(t.t_max_avg_c) + "°"),
+        el("div.lo", {}, "الصغرى " + Math.round(t.t_min_avg_c) + "°")) : el("div"),
+      el("span.view", {}, "عرض الوجهة")));
 }
 
 /* ── صفحة الوجهة ───────────────────────────────────────────────────── */
