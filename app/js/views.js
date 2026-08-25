@@ -49,13 +49,13 @@ export function home(ctx){
   const root = el("div.wide");
 
   const guest = "إلى أين وجهتك القادمة؟";
+  const fs = filterSection(ctx);
   root.append(el("div.hero2", {},
     el("h1", {}, guest),
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
-    searchStrip(ctx)));
-
-  // الفلتر نفسه يسكن الرئيسية — طلب طارق: لا صفحة بينك وبين السؤال.
-  root.append(el("div.section", {}, filterSection(ctx)));
+    searchStrip(ctx),
+    fs.controls));
+  root.append(el("div.section", {}, fs.results));
 
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 
@@ -200,7 +200,8 @@ export function finder(ctx){
     el("h1", {}, "فلتر الوجهات"),
     el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪")));
   root.append(searchStrip(ctx, true));
-  root.append(filterSection(ctx));
+  const fs = filterSection(ctx);
+  root.append(fs.controls, fs.results);
   return root;
 }
 
@@ -211,6 +212,7 @@ export function filterSection(ctx, opts = {}){
   const root = el("div.fsection");
   const adv = el("details.adv", { ...(filter.isFiltering || opts.open ? { open: true } : {}) },
     el("summary", {}, "فلاتر متقدمة"));
+  root.append(adv);
   const rows = el("div.frows");
   adv.append(rows);
 
@@ -237,8 +239,8 @@ export function filterSection(ctx, opts = {}){
   rows.append(frow("المطار", countrySel, airportSel, nonstop));
 
   // الأجواء — رقائق كما في التطبيق، والمطر سلّم يصعد بالضغط.
-  const weather = [chip(RAIN_WANTED_AR[filter.rain] || RAIN_WANTED_AR.any,
-    filter.rain !== "any", () => { filter.rain = nextRainWanted(filter.rain); render(); })];
+  const weather = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
+    () => { filter.rain = k; render(); }));
   for (const [k, ar] of Object.entries(WARMTH_AR)){
     weather.push(chip(ar, filter.bands.has(k), () => {
       const next = new Set(filter.bands);
@@ -283,7 +285,7 @@ export function filterSection(ctx, opts = {}){
     rows.append(frow("الأوراق", scrollChips(el("div.chips", {}, paperChips))));
   }
 
-  root.append(adv);
+  const resWrap = el("div.fresults");
 
   const count = el("div.sub");
   const lens = el("div.lens", {},
@@ -291,10 +293,10 @@ export function filterSection(ctx, opts = {}){
       () => { filter.presentation = "map"; render(); }),
     lensBtn("قائمة", filter.presentation === "list",
       () => { filter.presentation = "list"; render(); }));
-  root.append(el("div.countbar", {}, count, lens));
+  resWrap.append(el("div.countbar", {}, count, lens));
 
   const results = el("div");
-  root.append(results);
+  resWrap.append(results);
 
   function redrawResults(){
     const list = filter.matches(store);
@@ -311,7 +313,7 @@ export function filterSection(ctx, opts = {}){
       results.append(el("div.empty", {}, `و${list.length - 80} أخرى — ضيّق البحث`));
   }
   redrawResults();
-  return root;
+  return { controls: root, results: resWrap };
 }
 
 function lensBtn(label, on, onclick){
@@ -521,7 +523,7 @@ export function destination(ctx, cityId){
 }
 
 /* ── تفضيلات السفر ─────────────────────────────────────────────────── */
-export function prefs(ctx){
+export function prefs(ctx, redraw = render){
   const { store, prefs } = ctx;
   const root = el("div");
   root.append(el("div.top", {}, el("h1", {}, "تفضيلات السفر"),
@@ -532,26 +534,26 @@ export function prefs(ctx){
   const secTags = el("div.chips");
   for (const k of DESTINATION_TAGS){
     secTags.append(chip(TAG_AR[k] || k, prefs.tags.has(k),
-      () => { prefs.toggleTag(k); render(); }));
+      () => { prefs.toggleTag(k); redraw(); }));
   }
   const secBands = el("div.chips");
   for (const [k, ar] of Object.entries(WARMTH_AR)){
     if (k === "hot") continue;              // the app never courts hot
     secBands.append(chip(ar, prefs.bands.has(k),
-      () => { prefs.toggleBand(k); render(); }));
+      () => { prefs.toggleBand(k); redraw(); }));
   }
   const secRain = el("div.chips");
   const RAIN_KEYS = { none: RAIN_AR.r0, light: RAIN_AR.r1, moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 };
   for (const [k, ar] of Object.entries(RAIN_KEYS)){
     secRain.append(chip(ar, prefs.rain.has(k),
-      () => { prefs.toggleRain(k); render(); }));
+      () => { prefs.toggleRain(k); redraw(); }));
   }
   const secAir = el("div.chips");
   for (const cc of store.originCountries()){
     for (const o of store.originsIn(cc)){
       const on = prefs.airports.has(o.iata);
       secAir.append(chip(o.city_ar + " " + o.iata, on,
-        () => { on ? prefs.removeAirport(o.iata) : prefs.addAirport(o.iata); render(); }));
+        () => { on ? prefs.removeAirport(o.iata) : prefs.addAirport(o.iata); redraw(); }));
     }
   }
   root.append(
@@ -559,6 +561,23 @@ export function prefs(ctx){
     el("div.section", {}, el("h2", {}, "الأجواء"), secBands),
     el("div.section", {}, el("h2", {}, "الأمطار"), secRain),
     el("div.section", {}, el("h2", {}, "مطارات انطلاقك"), scrollChips(secAir)));
+  return root;
+}
+
+export function favorites(ctx){
+  const { store, shortlist } = ctx;
+  const root = el("div");
+  root.append(el("div.top", {}, el("h1", {}, "المفضلة")));
+  const kept = [...shortlist.cityIDs]
+    .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
+  if (!kept.length){
+    root.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
+    return root;
+  }
+  const list = el("div");
+  const redraw = () => render();
+  for (const city of kept) list.append(destRow(ctx, city, redraw));
+  root.append(list);
   return root;
 }
 

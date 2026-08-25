@@ -9,9 +9,9 @@ import { el } from "./ui.js";
 import * as views from "./views.js";
 
 const TABS = [
-  { hash: "#/home",  label: "الرئيسية",      icon: "icons/TabHome.svg"  },
-  { hash: "#/find",  label: "فلتر الوجهات", icon: "icons/TabFind.svg"  },
-  { hash: "#/trips", label: "رحلاتك",        icon: "icons/TabTrips.svg" },
+  { hash: "#/home", label: "ابحث",     icon: "icons/TabHome.svg" },
+  { hash: "#/map",  label: "خريطة",   icon: "icons/TabFind.svg" },
+  { hash: "#/fav",  label: "المفضلة", icon: "icons/TabFav.svg"  },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -24,23 +24,49 @@ function currentRoute(){
 
 function drawTabs(){
   const { path } = currentRoute();
-  const on = { d: "find", prefs: "home", papers: "find" }[path] || path;
+  const on = { d: "home", find: "home", prefs: "home", papers: "home", trips: "home" }[path] || path;
   const nav = document.getElementById("tabs");
   nav.replaceChildren(el("div.pill", {},
     TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "" },
       el("img", { src: t.icon, alt: "" }),
       t.label))));
   // The desktop wears a brand bar instead of a thumb pill.
+  // طارق: «في أقصى اليمين صورة البروفايل» — فالصورة أول أبناء الصف في RTL.
   const bar = document.getElementById("topbar");
   if (bar) bar.replaceChildren(
+    el("button.avatar", { onclick: openSettings, title: "الإعدادات",
+      "aria-label": "الإعدادات" }),
     el("a.brand", { href: "#/home" },
       el("img", { src: "/icon.png", alt: "" }), "سوفينير"),
     el("div.links", {},
-      el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, "التخطيط"),
-      el("a", { href: "#/find",  class: on === "find"  ? "on" : "" }, "الوجهات"),
-      el("a", { href: "#/trips", class: on === "trips" ? "on" : "" }, "رحلاتك"),
-      el("a", { href: "#/papers" }, "أوراقي"),
-      el("a", { href: "#/prefs" }, "تفضيلاتي")));
+      el("a", { href: "#/home", class: on === "home" ? "on" : "" }, "ابحث"),
+      el("a", { href: "#/map",  class: on === "map"  ? "on" : "" }, "خريطة"),
+      el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "" }, "المفضلة")));
+}
+
+// الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
+// ومداخل رحلاتك وأوراقي، وتغلق بلمسة الخلفية.
+function openSettings(){
+  if (document.querySelector(".sheetback")) return;
+  const back = el("div.sheetback", { onclick: close });
+  const sheet = el("aside.sheet", { onclick: e => e.stopPropagation() });
+  function close(){ back.remove(); sheet.remove(); render(); }
+  function content(){
+    return [
+      el("div.sheethead", {},
+        el("h2", {}, "الإعدادات"),
+        el("button.x", { onclick: close, "aria-label": "إغلاق" }, "✕")),
+      el("div.sheetlinks", {},
+        el("a", { href: "#/trips",  onclick: close }, "رحلاتك"),
+        el("a", { href: "#/papers", onclick: close }, "أوراقي")),
+      strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
+  }
+  function strip(prefsEl){
+    prefsEl.querySelector(".top")?.remove();   // the sheet already has its head
+    return prefsEl;
+  }
+  sheet.replaceChildren(...content());
+  document.body.append(back, sheet);
 }
 
 export function render(){
@@ -54,6 +80,8 @@ export function render(){
     prefs:  () => views.prefs(ctx),
     papers: () => views.papers(ctx),
     trips:  () => views.trips(ctx),
+    map:    () => { ctx.filter.presentation = "map"; return views.finder(ctx); },
+    fav:    () => views.favorites(ctx),
   }[path] || (() => views.home(ctx));
   view.append(draw());
   drawTabs();
