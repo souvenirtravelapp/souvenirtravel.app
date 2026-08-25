@@ -7,6 +7,7 @@
 :root{
   --bg:#F7FBFA; --card:#FFFFFF; --text:#0F2B33; --muted:#4E6A70;
   --accent:#F0A93C; --accent-ink:#10231F; --deep:#1F8F7C; --line:rgba(15,43,51,.12);
+  --brand:#B4622E;   /* تراكوتا كتاب العلامة — لون «سوفينير» في تطبيق أبل */
   --band1:#0E2B44; --band2:#35C493;
   --aurora:linear-gradient(135deg,#0E2B44 0%,#14556A 45%,#1F8F7C 78%,#35C493 100%);
   --night:linear-gradient(165deg,#0A1626 0%,#0E2B44 38%,#14556A 62%,#1F8F7C 82%,#35C493 100%);
@@ -132,7 +133,7 @@ nav.tabs a.on img{opacity:1}
 .fbox{border:1px solid var(--line);border-radius:14px;padding:7px 10px;
   background:var(--card);min-width:0;max-width:100%;display:flex;align-items:center;gap:10px}
 .fbox.span{width:100%}
-.ftitle{font-size:13px;font-weight:800;color:var(--muted);flex:0 0 auto}
+.ftitle{font-size:13px;font-weight:800;color:var(--brand);flex:0 0 auto}
 .fcontrols{display:flex;align-items:center;gap:8px;min-width:0;overflow-x:auto}
 select.menu{background:var(--accent);color:#fff;font-weight:700;border:0;
   border-radius:999px;padding:7px 14px;font-size:14px;max-width:46vw;
@@ -187,7 +188,7 @@ a.book{box-shadow:0 4px 14px rgba(224,164,88,.4);font-size:16px}
   background:var(--card);border-bottom:1px solid var(--line);
   /* محتوى الهيدر على عمود الصفحة نفسه الذي تحت البطل */
   padding:12px max(clamp(16px,5vw,48px),calc(50vw - 530px + clamp(16px,5vw,48px)))}
-.topbar .brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:900;color:var(--deep);text-decoration:none}
+.topbar .brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:900;color:var(--brand);text-decoration:none}
 .topbar .brand img{width:30px;height:30px;border-radius:8px}
 .topbar .links{display:flex;gap:4px}
 .topbar .links a{padding:7px 14px;border-radius:999px;text-decoration:none;
