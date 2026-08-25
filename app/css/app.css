@@ -181,7 +181,12 @@ a.book{box-shadow:0 4px 14px rgba(224,164,88,.4);font-size:16px}
 #view{max-width:1060px;padding-top:0}
 .wide{margin:0 -16px}
 .hero2{background:linear-gradient(120deg,var(--band1),var(--band2));color:#fff;
-  padding:clamp(28px,6vw,64px) clamp(16px,5vw,48px) 72px;position:relative}
+  position:relative;
+  /* من الطرف إلى الطرف كما في بوكينج: الشريط يملأ الشاشة والمحتوى يبقى في العمود */
+  margin-inline:calc(50% - 50vw);
+  padding-block:clamp(28px,6vw,64px) 72px;
+  padding-inline:max(clamp(16px,5vw,48px),calc(50vw - 530px + clamp(16px,5vw,48px)))}
+html{overflow-x:clip}
 .hero2 h1{font-size:clamp(26px,4.5vw,44px);font-weight:900;line-height:1.25}
 .hero2 p{opacity:.92;margin-top:6px;font-size:clamp(14px,1.8vw,18px)}
 .strip{display:flex;gap:0;background:var(--accent);border-radius:14px;padding:4px;
