@@ -137,13 +137,12 @@ export function searchStrip(ctx, compact = false){
       if (filter.month === i + 1) o.selected = true;
       return o;
     }));
-  const pass = el("select", {},
+  // الجواز يُسأل عنه مرة واحدة: بعد أول اختيار يُحفظ ويختفي الحقل،
+  // ويبقى تغييره من لوحة الإعدادات.
+  const pass = filter.passport ? null : el("select", {},
     el("option", { value: "" }, "جوازك؟"),
-    store.passports().map(cc => {
-      const o = el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc));
-      if (filter.passport === cc) o.selected = true;
-      return o;
-    }));
+    store.passports().map(cc =>
+      el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc))));
   const origin = el("select", {},
     el("option", { value: "" }, "من أين تطير؟"),
     store.originCountries().flatMap(cc => store.originsIn(cc).map(o2 => {
@@ -154,7 +153,7 @@ export function searchStrip(ctx, compact = false){
   const go = el("button.go", { onclick: () => {
     filter.query = q.value;
     filter.month = +month.value;
-    filter.passport = pass.value || null;
+    if (pass && pass.value) filter.passport = pass.value;
     filter.origin = origin.value;
     if (origin.value){
       const oc = store.origin(origin.value);
@@ -170,7 +169,7 @@ export function searchStrip(ctx, compact = false){
   return el("div.strip" + (compact ? ".compact" : ""), {},
     el("div.f.grow", {}, "🔎", q),
     el("div.f", {}, "🗓", month),
-    el("div.f", {}, "🪪", pass),
+    pass ? el("div.f", {}, "🪪", pass) : null,
     el("div.f", {}, "🛫", origin),
     go);
 }
@@ -243,10 +242,10 @@ export function filterSection(ctx, opts = {}){
   rows.append(frow("التفضيل", scrollChips(el("div.chips", {}, tags))));
 
   // التأشيرة — الجواز قائمة، والمفردات رقائق خاملة بلا جواز.
-  const passSel = menu(
+  const passSel = filter.passport ? null : menu(
     [["", "جوازك؟"]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
-    filter.passport || "",
-    v => { filter.passport = v || null; render(); });
+    "",
+    v => { if (v) filter.passport = v; render(); });
   const visaChips = VISA_GROUPS.map(g => chip(GROUP_AR[g], filter.visaGroups.has(g), () => {
     const next = new Set(filter.visaGroups);
     next.has(g) ? next.delete(g) : next.add(g);
@@ -254,7 +253,9 @@ export function filterSection(ctx, opts = {}){
   }, !filter.passport));
   visaChips.push(chip("تأشيرة شنغن", filter.schengen,
     () => { filter.schengen = !filter.schengen; render(); }, !filter.passport));
-  rows.append(frow("التأشيرة", passSel, scrollChips(el("div.chips", {}, visaChips))));
+  rows.append(frow("التأشيرة",
+    ...(passSel ? [passSel] : []),
+    scrollChips(el("div.chips", {}, visaChips))));
 
   // الأوراق — رقاقة لكل ورقة يحملها، كما يعرض التطبيق جواز أمريكا وشنغن.
   if (docs.documents.length){
@@ -509,12 +510,19 @@ export function destination(ctx, cityId){
 
 /* ── تفضيلات السفر ─────────────────────────────────────────────────── */
 export function prefs(ctx, redraw = render){
-  const { store, prefs } = ctx;
+  const { store, prefs, filter } = ctx;
   const root = el("div");
   root.append(el("div.top", {}, el("h1", {}, "تفضيلات السفر"),
     el("a.circle", { href: "#/home" }, "‹")));
   root.append(el("div.sub", {},
     "تُحفظ على جهازك وتوجّه الاقتراحات — المعلن يسبق المستنتج."));
+
+  // الجواز يُسأل عنه مرة واحدة في البحث — وتغييره من هنا.
+  const passMenu = menu(
+    [["", "جوازك؟"]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
+    filter.passport || "",
+    v => { filter.passport = v || null; redraw(); });
+  root.append(el("div.section", {}, el("h2", {}, "جواز السفر"), passMenu));
 
   const secTags = el("div.chips");
   for (const k of DESTINATION_TAGS){
