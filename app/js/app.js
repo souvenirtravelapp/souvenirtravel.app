@@ -8,6 +8,7 @@ import { NextTripFilter } from "./filter.js";
 import { el } from "./ui.js";
 import * as views from "./views.js";
 import * as cloud from "./cloud.js";
+import { Trips } from "./trips-store.js";
 
 const TABS = [
   { hash: "#/home", label: "ابحث",     icon: "icons/TabHome.svg" },
@@ -63,8 +64,20 @@ function openSettings(){
       el("div.sheetlinks", {},
         el("a", { href: "#/trips",  onclick: close }, "رحلاتك"),
         el("a", { href: "#/papers", onclick: close }, "أوراقي")),
+      sheetTrips(),
       strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
   }
+  // رحلاته القادمة، بين يدي حسابه.
+  function sheetTrips(){
+    const coming = Trips.upcoming();
+    if (!coming.length) return el("div");
+    return el("div.sheettrips", {},
+      el("h3", {}, "رحلاتك القادمة"),
+      coming.map(t => el("a.trow", { href: "#/trips", onclick: close },
+        "✈︎ ", t.title,
+        el("span.d", {}, (t.start || "") + (t.end ? " ← " + t.end : "")))));
+  }
+
   // حسابه: دخول جوجل للضيف، وبطاقته مع «خروج» لمن دخل.
   function account(){
     if (!cloud.user){

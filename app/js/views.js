@@ -466,6 +466,28 @@ export function destination(ctx, cityId){
         "ابحث عن طيران " + MONTHS_AR[month - 1]),
       el("div.disclose", {}, "رابط شريك — الأسعار والحجز لدى الموقع الشريك.")));
   }
+
+  // احفظها رحلة — من هنا، لا من صفحة أخرى.
+  const mine = Trips.all().filter(t => t.cityId === city.id);
+  const planBox = el("div.card");
+  if (mine.length){
+    for (const t of mine){
+      planBox.append(el("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:6px" },
+        el("span", { style: "flex:1" },
+          "✈︎ " + (t.start || "؟") + (t.end ? " ← " + t.end : "")),
+        el("button.out", { onclick: () => { Trips.remove(t.id); render(); } }, "حذف")));
+    }
+  }
+  const ts = el("input", { type: "date" });
+  const te = el("input", { type: "date" });
+  planBox.append(el("div.planrow", {},
+    ts, te,
+    el("button.btn", { onclick: () => {
+      Trips.add({ title: cityName(city), cityId: city.id,
+                  start: ts.value || null, end: te.value || null });
+      render();
+    } }, "احفظ الرحلة")));
+  root.append(el("div.section", {}, el("h2", {}, "خطط رحلة إلى هنا:"), planBox));
   return root;
 }
 
@@ -524,14 +546,18 @@ export function favorites(ctx){
   root.append(el("div.top", {}, el("h1", {}, "المفضلة")));
   const kept = [...shortlist.cityIDs]
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
-  if (!kept.length){
+  const coming = Trips.upcoming();
+  if (!kept.length && !coming.length){
     root.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
     return root;
   }
-  const list = el("div");
   const redraw = () => render();
-  for (const city of kept) list.append(destRow(ctx, city, redraw));
-  root.append(list);
+  for (const city of kept) root.append(destRow(ctx, city, redraw));
+  if (coming.length){
+    const list = el("div");
+    for (const t of coming) list.append(tripCard(ctx, t));
+    root.append(el("div.section", {}, el("h2", {}, "رحلاتك القادمة"), list));
+  }
   return root;
 }
 
@@ -585,6 +611,23 @@ export function papers(ctx){
 }
 
 /* ── رحلاتك (القادمة فقط — الماضي يعيش في التطبيق) ─────────────────── */
+export function tripCard(ctx, t){
+  const city = t.cityId ? ctx.store.cities.find(c => c.id === t.cityId) : null;
+  return el("div.dest-row", { ...(city ? { onclick: () => goto("#/d/" + city.id) } : {}) },
+    el("div.cover", { style: city ? coverStyle(city)
+      : "background:linear-gradient(135deg,var(--band1),var(--band2))" },
+      city ? flag(city.country_code) : "✈︎"),
+    el("div.names", {},
+      el("div.n", {}, t.title),
+      city ? el("div.c", {}, countryName(city)) : null,
+      el("div.det", {}, (t.start || "؟") + (t.end ? " ← " + t.end : ""))),
+    el("div.side", {},
+      el("div"),
+      el("button.out", { onclick: e => {
+        e.stopPropagation(); Trips.remove(t.id); render();
+      } }, "حذف")));
+}
+
 export function trips(ctx){
   const root = el("div");
   root.append(el("div.top", {}, el("h1", {}, "رحلاتك القادمة")));
@@ -592,12 +635,7 @@ export function trips(ctx){
     "رحلاتك الماضية وصورها تعيش في تطبيق iOS — هنا تخطط القادم."));
 
   const list = el("div.section");
-  for (const t of Trips.all()){
-    list.append(el("div.card", { style: "margin-bottom:8px" },
-      el("b", {}, t.title), " — ", t.start || "؟", t.end ? " إلى " + t.end : "",
-      el("button", { style: "float:left;color:var(--deep)",
-        onclick: () => { Trips.remove(t.id); render(); } }, "حذف")));
-  }
+  for (const t of Trips.all()) list.append(tripCard(ctx, t));
   if (!Trips.all().length)
     list.append(el("div.empty", {}, "لا رحلات قادمة بعد — ابدأ من الفلتر"));
   root.append(list);
