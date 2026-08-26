@@ -16,6 +16,51 @@ import { firebaseConfig } from "./firebase-config.js";
 
 const KEYS = ["sv.prefs", "sv.shortlist", "sv.papers", "sv.trips"];
 const STAMP = "sv.cloud.stamp";     // آخر لحظة تصالح فيها الجهاز مع السحابة
+const STATEIDS = "sv.cloud.stateids";    // آخر هويات معلومة وقت آخر مزامنة
+const STATETOMBS = "sv.cloud.statetombs"; // شواهد حذف القلوب والأوراق
+
+const paperKey = d => d.bloc ? "bloc:" + d.bloc : (d.countryCode + ":" + (d.kind ?? ""));
+
+/* هويات ما يقبل الحذف في وثيقة التخطيط: قلب = h:معرف المدينة، ورقة = p:هويتها.
+   الهوية هنا ثابتة (بخلاف رحلات الذاكرة ذات UUID)، فمن أعاد قلبًا محذوفًا
+   أعاده بنفس الهوية — لذا الحضور المحلي لحظة الدفع يُسقط الشاهد: عودة مقصودة. */
+function stateIdents(){
+  const parse = s => { try { return JSON.parse(s); } catch { return null; } };
+  const ids = new Set();
+  for (const id of parse(localStorage.getItem("sv.shortlist"))?.ids ?? []) ids.add("h:" + id);
+  for (const d of parse(localStorage.getItem("sv.papers")) ?? []) ids.add("p:" + paperKey(d));
+  return ids;
+}
+
+function stateTombs(){
+  try { return JSON.parse(localStorage.getItem(STATETOMBS)) ?? {}; } catch { return {}; }
+}
+
+/* ما كان معلومًا آخر مزامنة وغاب الآن حُذف محليًا — يوسم قبل أي دفع. */
+function harvestState(){
+  let known; try { known = JSON.parse(localStorage.getItem(STATEIDS)) ?? []; } catch { known = []; }
+  if (!known.length) return;
+  const current = stateIdents(), tombs = stateTombs(), now = Date.now();
+  let changed = false;
+  for (const id of known) if (!current.has(id)){ tombs[id] = now; changed = true; }
+  if (changed) localStorage.setItem(STATETOMBS, JSON.stringify(tombs));
+}
+
+/* يدفن محليًا كل قلب أو ورقة موسومة — الشواهد تنفذ مهما قالت الطوابع. */
+function buryState(tombs){
+  if (!Object.keys(tombs).length) return;
+  const parse = s => { try { return JSON.parse(s); } catch { return null; } };
+  const sl = parse(localStorage.getItem("sv.shortlist"));
+  if (sl){
+    sl.ids = (sl.ids ?? []).filter(id => !tombs["h:" + id]);
+    sl.months = Object.fromEntries(
+      Object.entries(sl.months ?? {}).filter(([id]) => !tombs["h:" + id]));
+    localStorage.setItem("sv.shortlist", JSON.stringify(sl));
+  }
+  const papers = parse(localStorage.getItem("sv.papers"));
+  if (papers) localStorage.setItem("sv.papers",
+    JSON.stringify(papers.filter(d => !tombs["p:" + paperKey(d)])));
+}
 
 let auth = null, db = null;
 export let user = null;
@@ -65,7 +110,6 @@ function union(cloudData, localData){
   }
 
   // الأوراق والرحلات: قوائم — الاتحاد بهوية العنصر.
-  const paperKey = d => d.bloc ? "bloc:" + d.bloc : (d.countryCode + ":" + (d.kind ?? ""));
   const sd = parse(cloudData["sv.papers"]), ld = parse(localData["sv.papers"]);
   if (sd || ld){
     const seen = new Map();
@@ -86,34 +130,52 @@ function union(cloudData, localData){
 
 async function push(){
   if (!user) return;
+  harvestState();
   // الدفع الآمن: من كتب بعدنا تُضم كتابته أولًا — لا محو بالتقادم.
   const snap = await getDoc(stateDoc(user.uid));
   const cloud = snap.exists() ? snap.data() : null;
+  const tombs = { ...(cloud?.deleted ?? {}), ...stateTombs() };
+  buryState(tombs);
   const localStamp = +(localStorage.getItem(STAMP) ?? 0);
   if (cloud && cloud.updatedAt > localStamp){
     writeLocal(union(cloud.data ?? {}, readLocal()));
+    buryState(tombs);   // الاتحاد قد يعيد ما دُفن من نسخة السحابة
   }
+  // الحاضر الآن رغم شاهده عاد بيد المستخدم — الشاهد يسقط ويعيش القلب.
+  const present = stateIdents();
+  for (const id of Object.keys(tombs)) if (present.has(id)) delete tombs[id];
   const data = readLocal();
   const now = Date.now();
-  await setDoc(stateDoc(user.uid), { data, updatedAt: now }, { merge: false });
+  await setDoc(stateDoc(user.uid), { data, deleted: tombs, updatedAt: now }, { merge: false });
   localStorage.setItem(STAMP, String(now));
+  localStorage.setItem(STATEIDS, JSON.stringify([...stateIdents()]));
+  localStorage.setItem(STATETOMBS, JSON.stringify(tombs));
 }
 
 /* التصالح عند فتح الصفحة أو أول دخول. يعيد true إن تغيّر المحلي. */
 async function reconcile(firstLogin){
+  harvestState();
   const snap = await getDoc(stateDoc(user.uid));
   const cloud = snap.exists() ? snap.data() : null;
+  const cloudDeleted = cloud?.deleted ?? {};
+  const unpushed = Object.keys(stateTombs()).some(k => !cloudDeleted[k]);
+  const tombs = { ...cloudDeleted, ...stateTombs() };
+  localStorage.setItem(STATETOMBS, JSON.stringify(tombs));
   const localStamp = +(localStorage.getItem(STAMP) ?? 0);
 
   if (firstLogin || !cloud){
     const merged = union(cloud?.data ?? {}, readLocal());
     writeLocal(merged);
+    buryState(tombs);
     await push();
     return true;
   }
   if (cloud.updatedAt > localStamp){
     writeLocal(cloud.data ?? {});
+    buryState(tombs);   // شواهدنا التي لم تركب السحابة بعد تبقى نافذة
     localStorage.setItem(STAMP, String(cloud.updatedAt));
+    localStorage.setItem(STATEIDS, JSON.stringify([...stateIdents()]));
+    if (unpushed) await push();   // ليصل حذفنا بقية الأجهزة
     return true;
   }
   await push();          // المحلي أحدث — ارفعه
@@ -258,6 +320,8 @@ export async function eraseMyData(){
   await deleteDoc(memoryDoc(user.uid));
   for (const k of KEYS) localStorage.removeItem(k);
   localStorage.removeItem(STAMP);
+  localStorage.removeItem(STATEIDS);
+  localStorage.removeItem(STATETOMBS);
   localStorage.removeItem(MEMKEY);
   localStorage.removeItem(MEMSTAMP);
   const f = JSON.parse(localStorage.getItem("sv.filter") ?? "{}");
@@ -274,6 +338,8 @@ export async function signOutNow(){
   user = null;
   localStorage.removeItem(STAMP);   // نسخة الجهاز تبقى له؛ توقف المزامنة فقط
   localStorage.removeItem(MEMSTAMP);
+  localStorage.removeItem(STATEIDS);
+  localStorage.removeItem(STATETOMBS);
   location.reload();
 }
 
