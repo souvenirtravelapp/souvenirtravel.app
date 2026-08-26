@@ -50,6 +50,27 @@ function drawTabs(){
 
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
 // ومداخل رحلاتك وأوراقي، وتغلق بلمسة الخلفية.
+// بوابة الحساب: تُستدعى عند فعلٍ قرّر طارق أنه يحتاج حسابًا (القلب، الأوراق)
+// أو اقتراحًا (الرحلة). الفعل المُعلق يُحفظ ويكتمل وحده بعد الدخول.
+export function askSignIn(message, pending = null){
+  if (document.querySelector(".sheetback")) return;
+  const back = el("div.sheetback", { onclick: close });
+  const card = el("div.gate", {},
+    el("h3", {}, "بحساب واحد — على كل أجهزتك"),
+    el("p", {}, message),
+    el("button.gsign", { onclick: async () => {
+      if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
+      try { await cloud.signIn(); }
+      catch (e){
+        localStorage.removeItem("sv.pending");
+        if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة.");
+      }
+    } }, el("span.g", {}, "G"), "الدخول بحساب جوجل"),
+    el("button.later", { onclick: close }, "ليس الآن"));
+  function close(){ back.remove(); card.remove(); }
+  document.body.append(back, card);
+}
+
 function openSettings(){
   if (document.querySelector(".sheetback")) return;
   const back = el("div.sheetback", { onclick: close });
@@ -137,6 +158,16 @@ async function boot(){
     papers: new TravelDocuments(),
     filter: new NextTripFilter(store, { shortlist }),
   };
+  // فعلٌ عُلّق قبل الدخول يكتمل الآن — القلب الذي بدأ الرحلة كلها.
+  const pending = JSON.parse(localStorage.getItem("sv.pending") ?? "null");
+  if (pending && cloud.user){
+    if (pending.type === "heart" && !ctx.shortlist.contains(pending.cityId))
+      ctx.shortlist.toggle(pending.cityId, pending.month);
+    if (pending.type === "trip")
+      Trips.add({ title: pending.title, cityId: pending.cityId,
+                  start: pending.start, end: pending.end });
+    localStorage.removeItem("sv.pending");
+  }
   window.addEventListener("hashchange", render);
   render();
 }

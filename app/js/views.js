@@ -8,7 +8,8 @@ import { RAIN_WANTED, nextRainWanted, DESTINATION_TAGS } from "./filter.js";
 import { plan } from "./ideas.js";
 import { hasExpired } from "./papers.js";
 import { Trips } from "./trips-store.js";
-import { render } from "./app.js";
+import { render, askSignIn } from "./app.js";
+import * as cloud from "./cloud.js";
 
 const goto = h => { location.hash = h; };
 
@@ -326,7 +327,15 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
   const t = store.temps(city, month);
   const kept = shortlist.keptMonth(city.id);
   const heart = el("button.heart" + (shortlist.contains(city.id) ? ".on" : ""), {
-    onclick: e => { e.stopPropagation(); shortlist.toggle(city.id, month); redraw(); } },
+    onclick: e => {
+      e.stopPropagation();
+      if (!cloud.user){
+        askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك — ادخل وسيُحفظ هذا القلب فورًا.",
+          { type: "heart", cityId: city.id, month });
+        return;
+      }
+      shortlist.toggle(city.id, month); redraw();
+    } },
     shortlist.contains(city.id) ? "♥" : "♡");
   const keptPill = shortlist.contains(city.id) && kept
     ? el("span.keptpill", {}, MONTHS_AR[kept - 1]) : null;
@@ -368,7 +377,14 @@ export function destination(ctx, cityId){
   root.append(el("a.back", { href: "#/find" }, "‹ كل الوجهات"));
 
   const heart = el("button.heart" + (shortlist.contains(city.id) ? ".on" : ""), {
-    onclick: () => { shortlist.toggle(city.id, month); render(); } },
+    onclick: () => {
+      if (!cloud.user){
+        askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك — ادخل وسيُحفظ هذا القلب فورًا.",
+          { type: "heart", cityId: city.id, month });
+        return;
+      }
+      shortlist.toggle(city.id, month); render();
+    } },
     shortlist.contains(city.id) ? "♥" : "♡");
   root.append(el("div.band", {},
     heart,
@@ -483,6 +499,12 @@ export function destination(ctx, cityId){
   planBox.append(el("div.planrow", {},
     ts, te,
     el("button.btn", { onclick: () => {
+      if (!cloud.user){
+        askSignIn("الرحلات تُحفظ في حسابك لتجدها على كل أجهزتك — ادخل وستُحفظ رحلتك هذه فورًا.",
+          { type: "trip", cityId: city.id, title: cityName(city),
+            start: ts.value || null, end: te.value || null });
+        return;
+      }
       Trips.add({ title: cityName(city), cityId: city.id,
                   start: ts.value || null, end: te.value || null });
       render();
@@ -544,6 +566,14 @@ export function favorites(ctx){
   const { store, shortlist } = ctx;
   const root = el("div");
   root.append(el("div.top", {}, el("h1", {}, "المفضلة")));
+  if (!cloud.user){
+    root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("div", { style: "font-size:34px" }, "♡"),
+      el("p", {}, "المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر."),
+      el("button.btn", { onclick: () =>
+        askSignIn("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.") }, "الدخول بحساب جوجل")));
+    return root;
+  }
   const kept = [...shortlist.cityIDs]
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
   const coming = Trips.upcoming();
@@ -568,7 +598,7 @@ export function papers(ctx){
   root.append(el("div.top", {}, el("h1", {}, "أوراقي"),
     el("a.circle", { href: "#/find" }, "‹")));
   root.append(el("div.sub", {},
-    "تأشيراتك وإقاماتك، تدخلها بنفسك وتبقى على جهازك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS."));
+    "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS."));
 
   const list = el("div.section");
   for (const d of papers.documents){
@@ -593,6 +623,13 @@ export function papers(ctx){
     if (seen.has(c.country_code)) continue;
     seen.add(c.country_code);
     countryOptions.push(el("option", { value: c.country_code }, c.country_name_ar));
+  }
+  if (!cloud.user){
+    root.append(el("div.card", { style: "text-align:center;padding:22px 18px" },
+      el("p", {}, "أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك."),
+      el("button.btn", { onclick: () =>
+        askSignIn("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت.") }, "الدخول بحساب جوجل")));
+    return root;
   }
   const country = el("select", {}, countryOptions);
   const expiry = el("input", { type: "date" });
@@ -633,6 +670,14 @@ export function trips(ctx){
   root.append(el("div.top", {}, el("h1", {}, "رحلاتك القادمة")));
   root.append(el("div.sub", {},
     "رحلاتك الماضية وصورها تعيش في تطبيق iOS — هنا تخطط القادم."));
+  if (!cloud.user){
+    root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("div", { style: "font-size:34px" }, "✈︎"),
+      el("p", {}, "الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر."),
+      el("button.btn", { onclick: () =>
+        askSignIn("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.") }, "الدخول بحساب جوجل")));
+    return root;
+  }
 
   const list = el("div.section");
   for (const t of Trips.all()) list.append(tripCard(ctx, t));
