@@ -135,14 +135,27 @@ function openSettings(){
         el("button.gsign.apple", { onclick: attempt(cloud.signInApple) },
           el("span.g", {}, "\uF8FF"), "الدخول بحساب أبل"));
     }
-    return el("div.account", {},
-      cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
-        referrerpolicy: "no-referrer" })
-        : el("span.letter", {}, (cloud.user.displayName || cloud.user.email || "•").trim()[0]),
-      el("div.who", {},
-        el("div.n", {}, cloud.user.displayName || ""),
-        el("div.e", {}, cloud.user.email || "")),
-      el("button.out", { onclick: () => cloud.signOutNow() }, "خروج"));
+    const provs = cloud.providers();
+    const linkBtn = (name, label) => el("button.linkacct", { onclick: async () => {
+      try { await cloud.linkProvider(name); }
+      catch (e){
+        if (e?.code === "auth/credential-already-in-use")
+          alert("هذا الحساب مستعمل عندنا كهوية مستقلة — احذف بياناته من صفحة «بياناتي» وهو داخل، ثم اربطه من هنا.");
+        else if (e?.code !== "auth/popup-closed-by-user")
+          alert("تعذر الربط — أعد المحاولة.");
+      } }, "اربط حساب " + label);
+    return el("div", {},
+      el("div.account", {},
+        cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
+          referrerpolicy: "no-referrer" })
+          : el("span.letter", {}, (cloud.user.displayName || cloud.user.email || "•").trim()[0]),
+        el("div.who", {},
+          el("div.n", {}, cloud.user.displayName || ""),
+          el("div.e", {}, cloud.user.email || "")),
+        el("button.out", { onclick: () => cloud.signOutNow() }, "خروج")),
+      // باب ناقص؟ اربطه فيصير الحساب واحدًا بمدخلين.
+      !provs.includes("apple.com") ? linkBtn("apple", "أبل ") : null,
+      !provs.includes("google.com") ? linkBtn("google", "جوجل") : null);
   }
   function strip(prefsEl){
     prefsEl.querySelector(".top")?.remove();   // the sheet already has its head

@@ -10,7 +10,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
-         onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+         onAuthStateChanged, deleteUser, linkWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -143,6 +143,18 @@ export function signInApple(){
   const p = new OAuthProvider("apple.com");
   p.addScope("name"); p.addScope("email");
   return signInWith(p);
+}
+
+/* أبواب الحساب: مزوّد واحد أو أكثر لنفس الهوية — جوجل وأبل معًا. */
+export function providers(){
+  return (user?.providerData ?? []).map(d => d.providerId);
+}
+
+export async function linkProvider(name){
+  const p = name === "apple" ? new OAuthProvider("apple.com") : new GoogleAuthProvider();
+  if (name === "apple"){ p.addScope("name"); p.addScope("email"); }
+  await linkWithPopup(auth.currentUser, p);
+  location.reload();
 }
 
 /* المحو الذاتي: وثيقته من السحابة، وآثارها من الجهاز، وحسابه إن أمكن. */

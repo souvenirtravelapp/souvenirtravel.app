@@ -351,3 +351,7 @@ select.menu{color:var(--accent-ink)}
 .topbar .avatar.letter::before,.topbar .avatar.letter::after{display:none}
 .account .letter{width:40px;height:40px;border-radius:50%;background:var(--aurora);color:#fff;
   font-weight:900;font-size:17px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+
+.linkacct{display:block;width:100%;margin:0 0 12px;padding:9px 14px;background:var(--card);
+  border:1px dashed var(--line);border-radius:12px;cursor:pointer;font:inherit;
+  font-weight:700;color:var(--deep);text-align:center}
