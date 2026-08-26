@@ -124,7 +124,10 @@ export function restore(){
     const stop = onAuthStateChanged(auth, async u => {
       stop();
       user = u;
-      if (u){ try { await reconcile(false); } catch (e) { console.warn("sync:", e); } }
+      if (u){
+        try { await reconcile(false); await reconcileMemory(false); }
+        catch (e) { console.warn("sync:", e); }
+      }
       resolve();
     }, () => resolve());
   });
@@ -134,6 +137,7 @@ async function signInWith(provider){
   const cred = await signInWithPopup(auth, provider);
   user = cred.user;
   await reconcile(true);
+  await reconcileMemory(true);
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
 }
 
@@ -143,6 +147,69 @@ export function signInApple(){
   const p = new OAuthProvider("apple.com");
   p.addScope("name"); p.addScope("email");
   return signInWith(p);
+}
+
+/* ── وثيقة الذاكرة (docs/SyncContract.md §4): رحلات سابقة ورفقاء ── */
+
+const MEMKEY = "sv.memory";
+const MEMSTAMP = "sv.cloud.memstamp";
+
+function memoryDoc(uid){ return doc(db, "users", uid, "sync", "memory"); }
+
+function readMem(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(MEMKEY));
+    return { trips: raw?.trips ?? [], companions: raw?.companions ?? [] };
+  } catch { return { trips: [], companions: [] }; }
+}
+
+function writeMem(data){
+  localStorage.setItem(MEMKEY, JSON.stringify(
+    { trips: data?.trips ?? [], companions: data?.companions ?? [] }));
+}
+
+function unionMem(cloudData, local){
+  const merge = key => {
+    const seen = new Map();
+    for (const item of [...(cloudData?.[key] ?? []), ...(local[key] ?? [])])
+      if (item?.id && !seen.has(item.id)) seen.set(item.id, item);
+    return [...seen.values()];
+  };
+  return { trips: merge("trips"), companions: merge("companions") };
+}
+
+async function pushMemory(){
+  if (!user) return;
+  const now = Date.now();
+  await setDoc(memoryDoc(user.uid), { ...readMem(), updatedAt: now }, { merge: false });
+  localStorage.setItem(MEMSTAMP, String(now));
+}
+
+async function reconcileMemory(firstLogin){
+  const snap = await getDoc(memoryDoc(user.uid));
+  const cloudData = snap.exists() ? snap.data() : null;
+  const localStamp = +(localStorage.getItem(MEMSTAMP) ?? 0);
+  if (firstLogin || !cloudData){
+    writeMem(unionMem(cloudData, readMem()));
+    await pushMemory();
+  } else if (cloudData.updatedAt > localStamp){
+    writeMem(cloudData);
+    localStorage.setItem(MEMSTAMP, String(cloudData.updatedAt));
+  } else {
+    await pushMemory();
+  }
+}
+
+let memTimer = null, lastMemPushed = "";
+export function scheduleMemoryPush(){
+  if (!user) return;
+  clearTimeout(memTimer);
+  memTimer = setTimeout(() => {
+    const now = JSON.stringify(readMem());
+    if (now === lastMemPushed) return;
+    lastMemPushed = now;
+    pushMemory().catch(e => console.warn("memory sync:", e));
+  }, 2000);
 }
 
 /* أبواب الحساب: مزوّد واحد أو أكثر لنفس الهوية — جوجل وأبل معًا. */
@@ -161,8 +228,11 @@ export async function linkProvider(name){
 export async function eraseMyData(){
   if (!user) return;
   await deleteDoc(stateDoc(user.uid));
+  await deleteDoc(memoryDoc(user.uid));
   for (const k of KEYS) localStorage.removeItem(k);
   localStorage.removeItem(STAMP);
+  localStorage.removeItem(MEMKEY);
+  localStorage.removeItem(MEMSTAMP);
   const f = JSON.parse(localStorage.getItem("sv.filter") ?? "{}");
   delete f.passport;
   localStorage.setItem("sv.filter", JSON.stringify(f));
@@ -176,6 +246,7 @@ export async function signOutNow(){
   await signOut(auth);
   user = null;
   localStorage.removeItem(STAMP);   // نسخة الجهاز تبقى له؛ توقف المزامنة فقط
+  localStorage.removeItem(MEMSTAMP);
   location.reload();
 }
 

@@ -8,6 +8,7 @@ import { RAIN_WANTED, nextRainWanted, DESTINATION_TAGS } from "./filter.js";
 import { plan } from "./ideas.js";
 import { hasExpired } from "./papers.js";
 import { Trips } from "./trips-store.js";
+import { Memory } from "./memory-store.js";
 import { render, askSignIn } from "./app.js";
 import * as cloud from "./cloud.js";
 
@@ -737,11 +738,15 @@ export function tripCard(ctx, t){
       } }, "حذف")));
 }
 
+let memLens = "timeline";   // عدسة الذاكرة تعيش عبر الرسمات
+let memAdding = false;
+
 export function trips(ctx){
+  const { store } = ctx;
   const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "رحلاتك القادمة")));
+  root.append(el("div.top", {}, el("h1", {}, "رحلاتك")));
   root.append(el("div.sub", {},
-    "رحلاتك الماضية وصورها تعيش في تطبيق iOS — هنا تخطط القادم."));
+    "سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS."));
   if (!cloud.user){
     root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "✈︎"),
@@ -751,22 +756,217 @@ export function trips(ctx){
     return root;
   }
 
-  const list = el("div.section");
-  for (const t of Trips.all()) list.append(tripCard(ctx, t));
-  if (!Trips.all().length)
-    list.append(el("div.empty", {}, "لا رحلات قادمة بعد — ابدأ من الفلتر"));
-  root.append(list);
+  // القادمة أولًا — قصيرة، ثم الذاكرة وهي البيت.
+  const coming = Trips.upcoming();
+  if (coming.length){
+    const list = el("div");
+    for (const t of coming) list.append(tripCard(ctx, t));
+    root.append(el("div.section", {}, el("h2", {}, "القادمة"), list));
+  }
 
-  const title = el("input", { placeholder: "الوجهة أو عنوان الرحلة" });
+  // إحصاءات البيت الثلاث كما في التطبيق.
+  const stats = Memory.stats;
+  root.append(el("div.memstats", {},
+    statBox(stats.trips, "الرحلات"),
+    statBox(stats.places, "الأماكن"),
+    statBox(stats.countries, "الدول")));
+
+  // العدسات + زر الإضافة.
+  const lensRow = el("div.countbar", {},
+    el("div.lens", {},
+      lensBtn("الخط الزمني", memLens === "timeline", () => { memLens = "timeline"; render(); }),
+      lensBtn("الدول", memLens === "countries", () => { memLens = "countries"; render(); }),
+      lensBtn("الخريطة", memLens === "map", () => { memLens = "map"; render(); }),
+      lensBtn("الرفقاء", memLens === "companions", () => { memLens = "companions"; render(); })),
+    el("button.btn", { onclick: () => { memAdding = !memAdding; render(); } },
+      memAdding ? "إغلاق" : "أضف رحلة سابقة"));
+  root.append(lensRow);
+
+  if (memAdding) root.append(addTripForm(ctx));
+
+  const body = { timeline: memTimeline, countries: memCountries,
+                 map: memMap, companions: memCompanions }[memLens];
+  root.append(body(ctx));
+  return root;
+}
+
+function statBox(n, label){
+  return el("div.stat", {}, el("div.n", {}, String(n)), el("div.l", {}, label));
+}
+
+/* الخط الزمني: سنوات تتنازل، وتحت كل سنة رحلاتها بطاقات عريضة. */
+function memTimeline(ctx){
+  const wrap = el("div");
+  const trips = Memory.trips;
+  if (!trips.length){
+    wrap.append(el("div.empty", {},
+      "لا رحلات سابقة بعد — أضفها يدويًا هنا، أو امسح صورك في تطبيق iOS فتصل وحدها."));
+    return wrap;
+  }
+  let year = null;
+  for (const t of trips){
+    const y = (t.start || "؟").slice(0, 4);
+    if (y !== year){ year = y; wrap.append(el("div.year-h", {}, year)); }
+    wrap.append(memTripCard(ctx, t));
+  }
+  return wrap;
+}
+
+function memTripCard(ctx, t){
+  const { store } = ctx;
+  const places = (t.places ?? []).map(p => p.name);
+  const title = places.length ? places.join("، ")
+    : (countryNameAr(store, t.countryIso) || "رحلة");
+  const mates = (t.companionIds ?? [])
+    .map(id => Memory.companion(id)?.name).filter(Boolean);
+  return el("div.dest-row", {},
+    el("div.cover", { style: "background:var(--aurora)" },
+      t.countryIso ? flag(t.countryIso) : "✈︎"),
+    el("div.names", {},
+      el("div.n", {}, title),
+      el("div.c", {}, countryNameAr(store, t.countryIso) || ""),
+      mates.length ? el("div.badges", {},
+        mates.map(name => el("span.badge", {}, "👤 " + name))) : null,
+      t.notes ? el("div.det", {}, t.notes) : null,
+      el("div.det", {}, (t.start || "؟") + (t.end ? " ← " + t.end : "")
+        + (t.source === "photos" ? " · من صورك" : "")),),
+    el("div.side", {},
+      el("div"),
+      t.source === "manual"
+        ? el("button.out", { onclick: () => {
+            if (confirm("حذف هذه الرحلة من حسابك؟")) { Memory.removeTrip(t.id); render(); }
+          } }, "حذف")
+        : el("span.det", { style: "font-size:11px;color:var(--muted)" }, "من التطبيق")));
+}
+
+function countryNameAr(store, iso){
+  if (!iso) return null;
+  return store.cities.find(c => c.country_code === iso)?.country_name_ar
+    || store.passportCountryName?.(iso) || iso;
+}
+
+/* الدول: شبكة أعلام بعدد رحلات كل دولة. */
+function memCountries(ctx){
+  const { store } = ctx;
+  const counts = new Map();
+  for (const t of Memory.trips){
+    const isos = new Set([t.countryIso, ...(t.places ?? []).map(p => p.countryIso)]
+      .filter(Boolean));
+    for (const iso of isos) counts.set(iso, (counts.get(iso) ?? 0) + 1);
+  }
+  const wrap = el("div.cgrid");
+  if (!counts.size) return el("div.empty", {}, "لا دول بعد");
+  for (const [iso, n] of [...counts.entries()].sort((a, b) => b[1] - a[1])){
+    wrap.append(el("div.ccell", {},
+      el("div.f", {}, flag(iso)),
+      el("div.n", {}, countryNameAr(store, iso) || iso),
+      el("div.c", {}, n === 1 ? "رحلة" : n + " رحلات")));
+  }
+  return wrap;
+}
+
+/* الخريطة: كل مكان زرته دبوس. */
+function memMap(ctx){
+  const holder = el("div.findmap");
+  const points = [];
+  for (const t of Memory.trips)
+    for (const p of t.places ?? [])
+      if (p.lat != null) points.push(p);
+  if (!points.length) return el("div.empty", {}, "لا أماكن بإحداثيات بعد");
+  queueMicrotask(() => {
+    const L = window.L;
+    if (!L) return;
+    const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
+    for (const p of points)
+      L.circleMarker([p.lat, p.lon], { radius: 6, weight: 2, color: "#B4622E",
+        fillColor: "#E0A458", fillOpacity: .92 })
+        .addTo(map).bindTooltip(p.name, { direction: "top" });
+    map.fitBounds(points.map(p => [p.lat, p.lon]), { padding: [24, 24], maxZoom: 6 });
+  });
+  return holder;
+}
+
+/* الرفقاء: أحرفهم الأولى دوائر شفق — صورهم ميزة التطبيق. */
+function memCompanions(ctx){
+  const wrap = el("div");
+  const list = el("div");
+  for (const c of Memory.companions){
+    const tripCount = Memory.trips.filter(t =>
+      (t.companionIds ?? []).includes(c.id)).length;
+    list.append(el("div.comp-row", {},
+      el("span.avatarletter", {}, (c.name || "؟").trim()[0]),
+      el("div.who", {},
+        el("div.n", {}, c.name),
+        el("div.e", {}, (c.relation ? c.relation + " · " : "")
+          + (tripCount ? tripCount + " رحلة" : "بلا رحلات بعد"))),
+      el("button.out", { onclick: () => {
+        if (confirm("حذف " + c.name + " من رفقائك؟")) { Memory.removeCompanion(c.id); render(); }
+      } }, "حذف")));
+  }
+  if (!Memory.companions.length)
+    list.append(el("div.empty", {}, "لا رفقاء بعد"));
+  const name = el("input", { placeholder: "اسم الرفيق" });
+  const relation = el("input", { placeholder: "الصلة (اختياري)" });
+  wrap.append(list, el("div.card", { style: "margin-top:10px" },
+    el("div.planrow", {}, name, relation,
+      el("button.btn", { onclick: () => {
+        if (!name.value.trim()) return;
+        Memory.addCompanion(name.value.trim(), relation.value.trim());
+        render();
+      } }, "أضف رفيقًا"))));
+  return wrap;
+}
+
+/* نموذج إضافة رحلة سابقة يدويًا. */
+function addTripForm(ctx){
+  const { store } = ctx;
+  const place = el("input", { placeholder: "المكان — مدينة أو موقع" });
+  const seen = new Set();
+  const countrySel = el("select.menu", {},
+    el("option", { value: "" }, "الدولة"),
+    [...store.cities].sort((a, b) =>
+      a.country_name_ar.localeCompare(b.country_name_ar, "ar"))
+      .filter(c => !seen.has(c.country_code) && seen.add(c.country_code))
+      .map(c => el("option", { value: c.country_code }, c.country_name_ar)));
   const start = el("input", { type: "date" });
   const end = el("input", { type: "date" });
-  root.append(el("div.section", {}, el("h2", {}, "أضف رحلة قادمة"),
-    el("div.frow", {}, title, start, end),
-    el("button.btn", { onclick: () => {
-      if (!title.value.trim()) return;
-      Trips.add({ title: title.value.trim(), start: start.value || null,
-                  end: end.value || null });
-      render();
-    } }, "أضف")));
-  return root;
+  const notes = el("input", { placeholder: "ملاحظات (اختياري)" });
+  const picked = new Set();
+  const mates = el("div.chips", {},
+    Memory.companions.map(c => {
+      const b = chip(c.name, false, () => {
+        picked.has(c.id) ? picked.delete(c.id) : picked.add(c.id);
+        b.classList.toggle("on");
+      });
+      return b;
+    }));
+  return el("div.card", { style: "margin-bottom:12px" },
+    el("div.planrow", {}, place, countrySel),
+    el("div.planrow", { style: "margin-top:8px" }, start, end),
+    el("div.planrow", { style: "margin-top:8px" }, notes),
+    Memory.companions.length
+      ? el("div", { style: "margin-top:8px" },
+          el("div.det", { style: "margin-bottom:6px" }, "الرفقاء:"), mates)
+      : null,
+    el("div.planrow", { style: "margin-top:10px" },
+      el("button.btn", { onclick: () => {
+        const name = place.value.trim();
+        if (!name || !start.value) { alert("المكان وتاريخ البداية على الأقل."); return; }
+        const iso = countrySel.value || null;
+        // إن طابق المكان مدينة معروفة أخذنا إحداثياتها.
+        const known = store.cities.find(c => c.name_ar === name
+          && (!iso || c.country_code === iso));
+        Memory.addTrip({
+          start: start.value, end: end.value || start.value,
+          notes: notes.value.trim(),
+          countryIso: iso ?? known?.country_code ?? "",
+          places: [{ name, countryIso: iso ?? known?.country_code ?? "",
+                     ...(known?.lat != null ? { lat: known.lat, lon: known.lon } : {}) }],
+          companionIds: [...picked],
+        });
+        memAdding = false;
+        render();
+      } }, "احفظ الرحلة")));
 }
