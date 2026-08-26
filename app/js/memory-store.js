@@ -11,13 +11,15 @@ const KEY = "sv.memory";
 function read(){
   try {
     const raw = JSON.parse(localStorage.getItem(KEY));
-    return { trips: raw?.trips ?? [], companions: raw?.companions ?? [] };
-  } catch { return { trips: [], companions: [] }; }
+    return { trips: raw?.trips ?? [], companions: raw?.companions ?? [],
+             deleted: raw?.deleted ?? {} };
+  } catch { return { trips: [], companions: [], deleted: {} }; }
 }
 
 function write(data){
   localStorage.setItem(KEY, JSON.stringify(
-    { trips: data.trips ?? [], companions: data.companions ?? [] }));
+    { trips: data.trips ?? [], companions: data.companions ?? [],
+      deleted: data.deleted ?? {} }));
   cloud.scheduleMemoryPush();
 }
 
@@ -46,6 +48,7 @@ export const Memory = {
   removeTrip(id){
     const data = read();
     data.trips = data.trips.filter(t => t.id !== id);
+    data.deleted[id] = Date.now();   // شاهد حذف — الغياب مقصود لا سهو
     write(data);
   },
 
@@ -59,6 +62,7 @@ export const Memory = {
   removeCompanion(id){
     const data = read();
     data.companions = data.companions.filter(c => c.id !== id);
+    data.deleted[id] = Date.now();
     for (const t of data.trips)
       t.companionIds = (t.companionIds ?? []).filter(c => c !== id);
     write(data);

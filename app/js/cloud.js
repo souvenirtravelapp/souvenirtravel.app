@@ -166,23 +166,28 @@ function memoryDoc(uid){ return doc(db, "users", uid, "sync", "memory"); }
 function readMem(){
   try {
     const raw = JSON.parse(localStorage.getItem(MEMKEY));
-    return { trips: raw?.trips ?? [], companions: raw?.companions ?? [] };
-  } catch { return { trips: [], companions: [] }; }
+    return { trips: raw?.trips ?? [], companions: raw?.companions ?? [],
+             deleted: raw?.deleted ?? {} };
+  } catch { return { trips: [], companions: [], deleted: {} }; }
 }
 
 function writeMem(data){
   localStorage.setItem(MEMKEY, JSON.stringify(
-    { trips: data?.trips ?? [], companions: data?.companions ?? [] }));
+    { trips: data?.trips ?? [], companions: data?.companions ?? [],
+      deleted: data?.deleted ?? {} }));
 }
 
 function unionMem(cloudData, local){
+  // شواهد الحذف أولًا: الغياب الموسوم مقصود، فلا يُبعث من الدمج.
+  const deleted = { ...(cloudData?.deleted ?? {}), ...(local.deleted ?? {}) };
   const merge = key => {
     const seen = new Map();
     for (const item of [...(cloudData?.[key] ?? []), ...(local[key] ?? [])])
-      if (item?.id && !seen.has(item.id)) seen.set(item.id, item);
+      if (item?.id && !deleted[item.id] && !seen.has(item.id))
+        seen.set(item.id, item);
     return [...seen.values()];
   };
-  return { trips: merge("trips"), companions: merge("companions") };
+  return { trips: merge("trips"), companions: merge("companions"), deleted };
 }
 
 async function pushMemory(){
@@ -206,7 +211,8 @@ async function reconcileMemory(firstLogin){
     writeMem(unionMem(cloudData, readMem()));
     await pushMemory();
   } else if (cloudData.updatedAt > localStamp){
-    writeMem(cloudData);
+    // السحابة مصدر المحتوى، وشواهد الحذف المحلية غير المدفوعة تبقى نافذة.
+    writeMem(unionMem(cloudData, { trips: [], companions: [], deleted: readMem().deleted }));
     localStorage.setItem(MEMSTAMP, String(cloudData.updatedAt));
   } else {
     await pushMemory();
