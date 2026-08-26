@@ -86,6 +86,13 @@ function union(cloudData, localData){
 
 async function push(){
   if (!user) return;
+  // الدفع الآمن: من كتب بعدنا تُضم كتابته أولًا — لا محو بالتقادم.
+  const snap = await getDoc(stateDoc(user.uid));
+  const cloud = snap.exists() ? snap.data() : null;
+  const localStamp = +(localStorage.getItem(STAMP) ?? 0);
+  if (cloud && cloud.updatedAt > localStamp){
+    writeLocal(union(cloud.data ?? {}, readLocal()));
+  }
   const data = readLocal();
   const now = Date.now();
   await setDoc(stateDoc(user.uid), { data, updatedAt: now }, { merge: false });
@@ -180,6 +187,12 @@ function unionMem(cloudData, local){
 
 async function pushMemory(){
   if (!user) return;
+  const snap = await getDoc(memoryDoc(user.uid));
+  const cloudData = snap.exists() ? snap.data() : null;
+  const localStamp = +(localStorage.getItem(MEMSTAMP) ?? 0);
+  if (cloudData && cloudData.updatedAt > localStamp){
+    writeMem(unionMem(cloudData, readMem()));
+  }
   const now = Date.now();
   await setDoc(memoryDoc(user.uid), { ...readMem(), updatedAt: now }, { merge: false });
   localStorage.setItem(MEMSTAMP, String(now));
