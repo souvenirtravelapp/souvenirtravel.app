@@ -30,7 +30,9 @@ function drawTabs(){
                trips: "home", mydata: "home" }[path] || path;
   const nav = document.getElementById("tabs");
   nav.replaceChildren(el("div.pill", {},
-    TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "" },
+    TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "",
+      ...(t.hash === "#/fav" ? { onclick: e => guardNav(e, "#/fav",
+        "المفضلة تعيش في حسابك لتجدها على كل أجهزتك.") } : {}) },
       el("img", { src: t.icon, alt: "" }),
       t.label))));
   // The desktop wears a brand bar instead of a thumb pill.
@@ -42,12 +44,24 @@ function drawTabs(){
     el("div.links", {},
       el("a", { href: "#/home", class: on === "home" ? "on" : "" }, "ابحث"),
       el("a", { href: "#/map",  class: on === "map"  ? "on" : "" }, "خريطة"),
-      el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "" }, "المفضلة")),
+      el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "",
+        onclick: e => guardNav(e, "#/fav",
+          "المفضلة تعيش في حسابك لتجدها على كل أجهزتك.") }, "المفضلة")),
     avatarFace());
 }
 
+const SIGNIN_MSG = "بحساب واحد تُحفظ مفضلتك ورحلاتك وأوراقك — وتجدها على كل أجهزتك.";
+
+// حارس الوجهات المحمية: الضيف يرى نافذة الدخول، ومن دخل يمضي —
+// والوجهة المطلوبة تُعلَّق فيهبط عليها فور عودته.
+function guardNav(e, hash, msg){
+  if (cloud.user) return;
+  e.preventDefault();
+  askSignIn(msg || SIGNIN_MSG, { type: "nav", hash });
+}
+
 // وجه الترويسة: صورة من عنده صورة، وحرفه الأول لمن دخل بلا صورة
-// (أبل لا تمنح صورًا)، والوجه المرسوم للضيف.
+// (أبل لا تمنح صورًا)، و«تسجيل الدخول» صريحةً للضيف.
 function avatarFace(){
   const u = cloud.user;
   const base = { onclick: openSettings, title: "الإعدادات", "aria-label": "الإعدادات" };
@@ -58,7 +72,8 @@ function avatarFace(){
     const letter = (u.displayName || u.email || "•").trim()[0];
     return el("button.avatar.letter", base, letter);
   }
-  return el("button.avatar", base);
+  return el("button.signin", { onclick: () => askSignIn(SIGNIN_MSG) },
+    "تسجيل الدخول");
 }
 
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
@@ -104,9 +119,11 @@ function openSettings(){
         el("button.x", { onclick: close, "aria-label": "إغلاق" }, "✕")),
       account(),
       el("div.sheetlinks", {},
-        el("a", { href: "#/trips",  onclick: close }, "رحلاتك"),
-        el("a", { href: "#/papers", onclick: close }, "أوراقي"),
-        el("a", { href: "#/mydata", onclick: close }, "بياناتي")),
+        el("a", { href: "#/trips",  onclick: e => { close(); guardNav(e, "#/trips",
+          "الرحلات تُحفظ في حسابك لتجدها على كل أجهزتك.") } }, "رحلاتك"),
+        el("a", { href: "#/papers", onclick: e => { close(); guardNav(e, "#/papers",
+          "أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها.") } }, "أوراقي"),
+        el("a", { href: "#/mydata", onclick: e => { close(); guardNav(e, "#/mydata") } }, "بياناتي")),
       sheetTrips(),
       strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
   }
@@ -207,6 +224,7 @@ async function boot(){
     if (pending.type === "trip")
       Trips.add({ title: pending.title, cityId: pending.cityId,
                   start: pending.start, end: pending.end });
+    if (pending.type === "nav") location.hash = pending.hash;
     localStorage.removeItem("sv.pending");
   }
   window.addEventListener("hashchange", render);
