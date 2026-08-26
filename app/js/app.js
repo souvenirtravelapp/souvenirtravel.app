@@ -43,10 +43,22 @@ function drawTabs(){
       el("a", { href: "#/home", class: on === "home" ? "on" : "" }, "ابحث"),
       el("a", { href: "#/map",  class: on === "map"  ? "on" : "" }, "خريطة"),
       el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "" }, "المفضلة")),
-    el("button.avatar" + (cloud.user?.photoURL ? ".real" : ""),
-      { onclick: openSettings, title: "الإعدادات", "aria-label": "الإعدادات" },
-      cloud.user?.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
-        referrerpolicy: "no-referrer" }) : null));
+    avatarFace());
+}
+
+// وجه الترويسة: صورة من عنده صورة، وحرفه الأول لمن دخل بلا صورة
+// (أبل لا تمنح صورًا)، والوجه المرسوم للضيف.
+function avatarFace(){
+  const u = cloud.user;
+  const base = { onclick: openSettings, title: "الإعدادات", "aria-label": "الإعدادات" };
+  if (u?.photoURL)
+    return el("button.avatar.real", base,
+      el("img", { src: u.photoURL, alt: "", referrerpolicy: "no-referrer" }));
+  if (u){
+    const letter = (u.displayName || u.email || "•").trim()[0];
+    return el("button.avatar.letter", base, letter);
+  }
+  return el("button.avatar", base);
 }
 
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
@@ -125,7 +137,8 @@ function openSettings(){
     }
     return el("div.account", {},
       cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
-        referrerpolicy: "no-referrer" }) : null,
+        referrerpolicy: "no-referrer" })
+        : el("span.letter", {}, (cloud.user.displayName || cloud.user.email || "•").trim()[0]),
       el("div.who", {},
         el("div.n", {}, cloud.user.displayName || ""),
         el("div.e", {}, cloud.user.email || "")),
