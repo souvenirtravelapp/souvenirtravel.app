@@ -26,7 +26,8 @@ function currentRoute(){
 
 function drawTabs(){
   const { path } = currentRoute();
-  const on = { d: "home", find: "home", prefs: "home", papers: "home", trips: "home" }[path] || path;
+  const on = { d: "home", find: "home", prefs: "home", papers: "home",
+               trips: "home", mydata: "home" }[path] || path;
   const nav = document.getElementById("tabs");
   nav.replaceChildren(el("div.pill", {},
     TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "" },
@@ -66,6 +67,14 @@ export function askSignIn(message, pending = null){
         if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة.");
       }
     } }, el("span.g", {}, "G"), "الدخول بحساب جوجل"),
+    el("button.gsign.apple", { onclick: async () => {
+      if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
+      try { await cloud.signInApple(); }
+      catch (e){
+        localStorage.removeItem("sv.pending");
+        if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة.");
+      }
+    } }, el("span.g", {}, "\uF8FF"), "الدخول بحساب أبل"),
     el("button.later", { onclick: close }, "ليس الآن"));
   function close(){ back.remove(); card.remove(); }
   document.body.append(back, card);
@@ -84,7 +93,8 @@ function openSettings(){
       account(),
       el("div.sheetlinks", {},
         el("a", { href: "#/trips",  onclick: close }, "رحلاتك"),
-        el("a", { href: "#/papers", onclick: close }, "أوراقي")),
+        el("a", { href: "#/papers", onclick: close }, "أوراقي"),
+        el("a", { href: "#/mydata", onclick: close }, "بياناتي")),
       sheetTrips(),
       strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
   }
@@ -102,12 +112,16 @@ function openSettings(){
   // حسابه: دخول جوجل للضيف، وبطاقته مع «خروج» لمن دخل.
   function account(){
     if (!cloud.user){
-      return el("button.gsign", { onclick: async () => {
-        try { await cloud.signIn(); }
+      const attempt = fn => async () => {
+        try { await fn(); }
         catch (e){ if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة."); }
-      } },
-        el("span.g", {}, "G"),
-        "الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك");
+      };
+      return el("div", {},
+        el("button.gsign", { onclick: attempt(cloud.signIn) },
+          el("span.g", {}, "G"),
+          "الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك"),
+        el("button.gsign.apple", { onclick: attempt(cloud.signInApple) },
+          el("span.g", {}, "\uF8FF"), "الدخول بحساب أبل"));
     }
     return el("div.account", {},
       cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
@@ -138,6 +152,7 @@ export function render(){
     trips:  () => views.trips(ctx),
     map:    () => { ctx.filter.presentation = "map"; return views.finder(ctx); },
     fav:    () => views.favorites(ctx),
+    mydata: () => views.mydata(ctx),
   }[path] || (() => views.home(ctx));
   view.append(draw());
   drawTabs();

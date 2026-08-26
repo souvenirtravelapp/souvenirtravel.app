@@ -9,9 +9,9 @@
 // كتابةً يغلب، فيسري حذف القلب من جهاز إلى بقية الأجهزة بدل أن يعود.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut,
-         onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
+         onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const KEYS = ["sv.prefs", "sv.shortlist", "sv.papers", "sv.trips"];
@@ -130,11 +130,34 @@ export function restore(){
   });
 }
 
-export async function signIn(){
-  const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+async function signInWith(provider){
+  const cred = await signInWithPopup(auth, provider);
   user = cred.user;
   await reconcile(true);
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
+}
+
+export function signIn(){ return signInWith(new GoogleAuthProvider()); }
+
+export function signInApple(){
+  const p = new OAuthProvider("apple.com");
+  p.addScope("name"); p.addScope("email");
+  return signInWith(p);
+}
+
+/* المحو الذاتي: وثيقته من السحابة، وآثارها من الجهاز، وحسابه إن أمكن. */
+export async function eraseMyData(){
+  if (!user) return;
+  await deleteDoc(stateDoc(user.uid));
+  for (const k of KEYS) localStorage.removeItem(k);
+  localStorage.removeItem(STAMP);
+  const f = JSON.parse(localStorage.getItem("sv.filter") ?? "{}");
+  delete f.passport;
+  localStorage.setItem("sv.filter", JSON.stringify(f));
+  try { await deleteUser(user); }        // قد يطلب دخولًا حديثًا —
+  catch { await signOut(auth); }         // فيكفي الخروج، والوثيقة قد مُحيت
+  user = null;
+  location.reload();
 }
 
 export async function signOutNow(){

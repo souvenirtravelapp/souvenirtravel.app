@@ -591,6 +591,78 @@ export function favorites(ctx){
   return root;
 }
 
+/* ── بياناتي: الشفافية كاملة — ما في الحساب يراه صاحبه، ويمحوه بزر ── */
+export function mydata(ctx){
+  const { store, shortlist, prefs, papers, filter } = ctx;
+  const root = el("div");
+  root.append(el("div.top", {}, el("h1", {}, "بياناتي"),
+    el("a.circle", { href: "#/home" }, "‹")));
+  if (!cloud.user){
+    root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("p", {}, "ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت."),
+      el("button.btn", { onclick: () =>
+        askSignIn("ادخل بحسابك لترى بياناتك وتتحكم بها.") }, "الدخول")));
+    return root;
+  }
+  root.append(el("div.sub", {},
+    "هذا كل ما يحفظه سوفينير في حسابك — لا شيء غيره. وبيدك محوه كله في الأسفل."));
+
+  const sec = (title, inner) => el("div.section", {}, el("h2", {}, title), inner);
+
+  root.append(sec("حسابك", el("div.card", {},
+    el("div", {}, el("b", {}, cloud.user.displayName || "—")),
+    el("div", { style: "color:var(--muted);font-size:13.5px" }, cloud.user.email || ""),
+    el("div", { style: "color:var(--muted);font-size:12.5px;margin-top:4px" },
+      "الدخول عبر " + (cloud.user.providerData?.[0]?.providerId === "apple.com" ? "أبل" : "جوجل")))));
+
+  const hearts = [...shortlist.cityIDs]
+    .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
+  root.append(sec("المفضلة (" + hearts.length + ")", el("div.card", {},
+    hearts.length ? hearts.map(c => {
+      const m = shortlist.keptMonth(c.id);
+      return el("div", {}, "♥ " + cityName(c) + (m ? " — " + MONTHS_AR[m - 1] : ""));
+    }) : "لا شيء بعد")));
+
+  const trips = Trips.all();
+  root.append(sec("الرحلات (" + trips.length + ")", el("div.card", {},
+    trips.length ? trips.map(t =>
+      el("div", {}, "✈︎ " + t.title + " — " + (t.start || "؟") + (t.end ? " ← " + t.end : "")))
+      : "لا شيء بعد")));
+
+  root.append(sec("الأوراق (" + papers.documents.length + ")", el("div.card", {},
+    papers.documents.length ? papers.documents.map(d =>
+      el("div", {}, "🪪 " + paperLabel(store, d) + (d.expiry ? " — تنتهي " + d.expiry : "")))
+      : "لا شيء بعد")));
+
+  const prefBits = [
+    ...[...prefs.tags].map(k => TAG_AR[k] || k),
+    ...[...prefs.bands].map(k => WARMTH_AR[k] || k),
+    ...[...prefs.rain],
+    ...[...prefs.airports]];
+  root.append(sec("تفضيلاتك", el("div.card", {},
+    prefBits.length ? prefBits.join(" · ") : "لا شيء بعد")));
+
+  root.append(sec("الجواز", el("div.card", {},
+    filter.passport ? "جواز " + (PASSPORT_AR[filter.passport] || filter.passport) : "غير محدد")));
+
+  // المحو الذاتي — سؤال تأكيد في المكان نفسه، ثم لا رجعة.
+  const eraseBox = el("div.card", { style: "border-color:var(--hot)" });
+  const arm = el("button.erase", { onclick: () => {
+    eraseBox.replaceChildren(
+      el("p", { style: "margin:0 0 10px" },
+        "سيمحو هذا مفضلتك ورحلاتك وأوراقك وتفضيلاتك من حسابك ومن هذا الجهاز — بلا رجعة. متأكد؟"),
+      el("div", { style: "display:flex;gap:8px" },
+        el("button.erase", { onclick: async () => {
+          try { await cloud.eraseMyData(); }
+          catch { alert("تعذر المحو — أعد المحاولة."); }
+        } }, "نعم، احذف نهائيًا"),
+        el("button.later", { onclick: () => render() }, "تراجع")));
+  } }, "احذف بياناتي من الحساب");
+  eraseBox.append(arm);
+  root.append(sec("المحو", eraseBox));
+  return root;
+}
+
 /* ── أوراقي ────────────────────────────────────────────────────────── */
 export function papers(ctx){
   const { store, papers } = ctx;
