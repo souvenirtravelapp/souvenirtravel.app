@@ -7,6 +7,7 @@ import { TravelDocuments } from "./papers.js";
 import { NextTripFilter } from "./filter.js";
 import { el } from "./ui.js";
 import * as views from "./views.js";
+import * as cloud from "./cloud.js";
 
 const TABS = [
   { hash: "#/home", label: "ابحث",     icon: "icons/TabHome.svg" },
@@ -40,8 +41,10 @@ function drawTabs(){
       el("a", { href: "#/home", class: on === "home" ? "on" : "" }, "ابحث"),
       el("a", { href: "#/map",  class: on === "map"  ? "on" : "" }, "خريطة"),
       el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "" }, "المفضلة")),
-    el("button.avatar", { onclick: openSettings, title: "الإعدادات",
-      "aria-label": "الإعدادات" }));
+    el("button.avatar" + (cloud.user?.photoURL ? ".real" : ""),
+      { onclick: openSettings, title: "الإعدادات", "aria-label": "الإعدادات" },
+      cloud.user?.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
+        referrerpolicy: "no-referrer" }) : null));
 }
 
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
@@ -56,10 +59,29 @@ function openSettings(){
       el("div.sheethead", {},
         el("h2", {}, "الإعدادات"),
         el("button.x", { onclick: close, "aria-label": "إغلاق" }, "✕")),
+      account(),
       el("div.sheetlinks", {},
         el("a", { href: "#/trips",  onclick: close }, "رحلاتك"),
         el("a", { href: "#/papers", onclick: close }, "أوراقي")),
       strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
+  }
+  // حسابه: دخول جوجل للضيف، وبطاقته مع «خروج» لمن دخل.
+  function account(){
+    if (!cloud.user){
+      return el("button.gsign", { onclick: async () => {
+        try { await cloud.signIn(); }
+        catch (e){ if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة."); }
+      } },
+        el("span.g", {}, "G"),
+        "الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك");
+    }
+    return el("div.account", {},
+      cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
+        referrerpolicy: "no-referrer" }) : null,
+      el("div.who", {},
+        el("div.n", {}, cloud.user.displayName || ""),
+        el("div.e", {}, cloud.user.email || "")),
+      el("button.out", { onclick: () => cloud.signOutNow() }, "خروج"));
   }
   function strip(prefsEl){
     prefsEl.querySelector(".top")?.remove();   // the sheet already has its head
@@ -86,9 +108,11 @@ export function render(){
   view.append(draw());
   drawTabs();
   window.scrollTo(0, 0);
+  cloud.schedulePush();
 }
 
 async function boot(){
+  await cloud.restore();
   const v = new URL(import.meta.url).searchParams.get("v");
   const bundle = await (await fetch("data/bundle.json" + (v ? "?v=" + v : ""))).json();
   const store = new TravelDataStore(bundle);
