@@ -197,6 +197,14 @@ async function pushMemory(){
   const localStamp = +(localStorage.getItem(MEMSTAMP) ?? 0);
   if (cloudData && cloudData.updatedAt > localStamp){
     writeMem(unionMem(cloudData, readMem()));
+  } else if (cloudData?.deleted){
+    // شواهد السحابة تنفذ مهما قالت الطوابع — ساعات الأجهزة تتسابق،
+    // والحذف لا يُهزم بسباق: تُدمج الخريطتان ويُدفن الموسوم قبل الدفع.
+    const local = readMem();
+    const deleted = { ...cloudData.deleted, ...local.deleted };
+    writeMem({ trips: local.trips.filter(t => !deleted[t.id]),
+               companions: local.companions.filter(c => !deleted[c.id]),
+               deleted });
   }
   const now = Date.now();
   await setDoc(memoryDoc(user.uid), { ...readMem(), updatedAt: now }, { merge: false });
