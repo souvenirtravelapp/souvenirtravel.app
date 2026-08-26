@@ -143,7 +143,7 @@ function openSettings(){
           alert("هذا الحساب مستعمل عندنا كهوية مستقلة — احذف بياناته من صفحة «بياناتي» وهو داخل، ثم اربطه من هنا.");
         else if (e?.code !== "auth/popup-closed-by-user")
           alert("تعذر الربط — أعد المحاولة.");
-      } }, "اربط حساب " + label);
+      } } }, "اربط حساب " + label);
     return el("div", {},
       el("div.account", {},
         cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
