@@ -88,7 +88,8 @@ export class TravelDataStore {
   ///  - origins:      array of origin records, in data order
   ///  - airports:     array of airport records
   ///  - cityAirports: array of city ↔ airport links (city_airports table)
-  constructor({ cities, climate, visas, routes, origins, airports, cityAirports } = {}) {
+  constructor({ cities, climate, visas, routes, origins, airports, cityAirports,
+                flightcheck } = {}) {
     this.cities = cities ?? [];
     this.origins = origins ?? [];
 
@@ -111,6 +112,11 @@ export class TravelDataStore {
     }
 
     // Keyed by departure airport, then city id — first record wins.
+    // إثباتات الطيران: origin|city → شهور وُجد لها عرض مباشر حقيقي.
+    this.verifiedFlights = {};
+    for (const r of flightcheck ?? [])
+      this.verifiedFlights[r.origin_iata + "|" + r.city_id] = new Set(r.months);
+
     this.routes = {};
     for (const r of routes ?? []) {
       const table = (this.routes[r.origin_iata] ??= {});
@@ -168,6 +174,11 @@ export class TravelDataStore {
   /// The nonstop link from a departure airport to a city (record or id).
   route(fromIata, city) {
     return this.routes[fromIata]?.[this.#cityId(city)] ?? null;
+  }
+
+  /// هل نملك دليلًا على طيران مباشر في هذا الشهر؟ الغياب غياب دليل لا نفي.
+  flightVerified(fromIata, city, month) {
+    return this.verifiedFlights[fromIata + "|" + this.#cityId(city)]?.has(month) ?? false;
   }
 
   /// Whether any route at all was gathered for this airport. An origin with
