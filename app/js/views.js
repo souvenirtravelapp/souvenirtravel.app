@@ -662,10 +662,10 @@ export function prefs(ctx, redraw = render){
 
 export function favorites(ctx){
   const { store, shortlist } = ctx;
-  // السماء الثالثة: بطل المفضلة كأخويه — العنوان وزر العودة على سطر،
-  // والوعد تحته، والقلوب على أرض الصفحة.
+  // صفحة شخصية — بطلها الهادئ: رمل فاتح لا سماء ليل، فالتمييز الكامل
+  // محفوظ لبابي الرحلة الكبيرين.
   const root = el("div.wide");
-  root.append(el("div.hero2", {},
+  root.append(el("div.hero3", {},
     el("div.herorow", {},
       el("h1", {}, "المفضلة"),
       el("a.circle", { href: "#/next", title: "وجهاتك القادمة" }, "‹")),
@@ -700,22 +700,25 @@ export function favorites(ctx){
 /* ── بياناتي: الشفافية كاملة — ما في الحساب يراه صاحبه، ويمحوه بزر ── */
 export function mydata(ctx){
   const { store, shortlist, prefs, papers, filter } = ctx;
-  const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "بياناتي"),
-    el("a.circle", { href: "#/home" }, "‹")));
+  const root = el("div.wide");
+  root.append(el("div.hero3", {},
+    el("div.herorow", {},
+      el("h1", {}, "بياناتي"),
+      el("a.circle", { href: "#/home" }, "‹")),
+    el("p", {}, "هذا كل ما يحفظه سوفينير في حسابك — لا شيء غيره. وبيدك محوه كله في الأسفل.")));
+  const inner = el("div.section");
+  root.append(inner);
   if (!cloud.user){
-    root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("p", {}, "ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت."),
       el("button.btn", { onclick: () =>
         askSignIn("ادخل بحسابك لترى بياناتك وتتحكم بها.") }, "الدخول")));
     return root;
   }
-  root.append(el("div.sub", {},
-    "هذا كل ما يحفظه سوفينير في حسابك — لا شيء غيره. وبيدك محوه كله في الأسفل."));
 
-  const sec = (title, inner) => el("div.section", {}, el("h2", {}, title), inner);
+  const sec = (title, body) => el("div.section", {}, el("h2", {}, title), body);
 
-  root.append(sec("حسابك", el("div.card", {},
+  inner.append(sec("حسابك", el("div.card", {},
     el("div", {}, el("b", {}, cloud.user.displayName || "—")),
     el("div", { style: "color:var(--muted);font-size:13.5px" }, cloud.user.email || ""),
     el("div", { style: "color:var(--muted);font-size:12.5px;margin-top:4px" },
@@ -723,19 +726,19 @@ export function mydata(ctx){
 
   const hearts = [...shortlist.cityIDs]
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
-  root.append(sec("المفضلة (" + hearts.length + ")", el("div.card", {},
+  inner.append(sec("المفضلة (" + hearts.length + ")", el("div.card", {},
     hearts.length ? hearts.map(c => {
       const m = shortlist.keptMonth(c.id);
       return el("div", {}, "♥ " + cityName(c) + (m ? " — " + MONTHS_AR[m - 1] : ""));
     }) : "لا شيء بعد")));
 
   const trips = Trips.all();
-  root.append(sec("الرحلات (" + trips.length + ")", el("div.card", {},
+  inner.append(sec("الرحلات (" + trips.length + ")", el("div.card", {},
     trips.length ? trips.map(t =>
       el("div", {}, "✈︎ " + t.title + " — " + (t.start || "؟") + (t.end ? " ← " + t.end : "")))
       : "لا شيء بعد")));
 
-  root.append(sec("الأوراق (" + papers.documents.length + ")", el("div.card", {},
+  inner.append(sec("الأوراق (" + papers.documents.length + ")", el("div.card", {},
     papers.documents.length ? papers.documents.map(d =>
       el("div", {}, "🪪 " + paperLabel(store, d) + (d.expiry ? " — تنتهي " + d.expiry : "")))
       : "لا شيء بعد")));
@@ -745,10 +748,10 @@ export function mydata(ctx){
     ...[...prefs.bands].map(k => WARMTH_AR[k] || k),
     ...[...prefs.rain],
     ...[...prefs.airports]];
-  root.append(sec("تفضيلاتك", el("div.card", {},
+  inner.append(sec("تفضيلاتك", el("div.card", {},
     prefBits.length ? prefBits.join(" · ") : "لا شيء بعد")));
 
-  root.append(sec("الجواز", el("div.card", {},
+  inner.append(sec("الجواز", el("div.card", {},
     filter.passport ? "جواز " + (PASSPORT_AR[filter.passport] || filter.passport) : "غير محدد")));
 
   // المحو الذاتي — سؤال تأكيد في المكان نفسه، ثم لا رجعة.
@@ -765,18 +768,22 @@ export function mydata(ctx){
         el("button.later", { onclick: () => render() }, "تراجع")));
   } }, "احذف بياناتي من الحساب");
   eraseBox.append(arm);
-  root.append(sec("المحو", eraseBox));
+  inner.append(sec("المحو", eraseBox));
   return root;
 }
 
 /* ── أوراقي ────────────────────────────────────────────────────────── */
 export function papers(ctx){
   const { store, papers } = ctx;
-  const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "أوراقي"),
-    el("a.circle", { href: "#/next" }, "‹")));
-  root.append(el("div.sub", {},
-    "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS."));
+  const root = el("div.wide");
+  root.append(el("div.hero3", {},
+    el("div.herorow", {},
+      el("h1", {}, "أوراقي"),
+      el("a.circle", { href: "#/next" }, "‹")),
+    el("p", {}, "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS.")));
+  const inner = el("div.section");
+  root.append(inner);
+  const append = node => inner.append(node);
 
   const list = el("div.section");
   for (const d of papers.documents){
@@ -788,7 +795,7 @@ export function papers(ctx){
         onclick: () => { papers.remove(d); render(); } }, "حذف")));
   }
   if (!papers.documents.length) list.append(el("div.empty", {}, "لا أوراق بعد"));
-  root.append(list);
+  append(list);
 
   const kind = el("select", {},
     el("option", { value: "visa" }, "تأشيرة"),
@@ -803,7 +810,7 @@ export function papers(ctx){
     countryOptions.push(el("option", { value: c.country_code }, c.country_name_ar));
   }
   if (!cloud.user){
-    root.append(el("div.card", { style: "text-align:center;padding:22px 18px" },
+    append(el("div.card", { style: "text-align:center;padding:22px 18px" },
       el("p", {}, "أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك."),
       el("button.btn", { onclick: () =>
         askSignIn("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت.") }, "الدخول بحساب جوجل")));
@@ -811,7 +818,7 @@ export function papers(ctx){
   }
   const country = el("select", {}, countryOptions);
   const expiry = el("input", { type: "date" });
-  root.append(el("div.section", {}, el("h2", {}, "أضف ورقة"),
+  append(el("div.section", {}, el("h2", {}, "أضف ورقة"),
     el("div.frow", {}, kind, country, expiry),
     el("button.btn", { onclick: () => {
       if (!country.value) return;

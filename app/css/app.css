@@ -396,3 +396,13 @@ select.menu{color:var(--accent-ink)}
 .ftitle{display:inline-flex;align-items:center;gap:6px}
 button.chip .ficon{margin-inline-end:5px}
 button.chip .ficon svg{width:14px;height:14px}
+
+/* البطل الثانوي: للصفحات الشخصية (أوراقي، بياناتي، المفضلة) — نفس
+   الامتداد من الطرف للطرف، لكن بصوت أخفض: رملٌ فاتح وحبرٌ داكن وارتفاع أقل. */
+.hero3{background:linear-gradient(120deg,#EFE9DC,#F8F4EC);
+  border-bottom:1px solid var(--line);position:relative;
+  margin-inline:calc(50% - 50vw);
+  padding-block:clamp(18px,3vw,30px) clamp(18px,3vw,28px);
+  padding-inline:max(clamp(16px,5vw,48px),calc(50vw - 530px + clamp(16px,5vw,48px)))}
+.hero3 h1{font-size:clamp(21px,3vw,28px);font-weight:900;color:var(--text);margin:0}
+.hero3 p{color:var(--muted);margin-top:4px;font-size:clamp(13px,1.5vw,15.5px)}
