@@ -191,19 +191,25 @@ export function searchStrip(ctx, compact = false){
 // the app opens a menu — the month, the origin country then its airport, the
 // passport. Chips only where the app uses chips: weather, visa ease, papers.
 export function finder(ctx){
-  const root = el("div");
+  // بطلٌ كأخيه في «رحلاتك السابقة»: العنوان وأزراره على سطر، ثم الوعد،
+  // ثم شريط البحث داخل السماء — والفلتر تحته على أرض الصفحة.
   // القلب في الرأس كما في التطبيق — المفضلة بنت هذه الصفحة لا بابٌ رابع.
-  root.append(el("div.top", {},
-    el("h1", {}, "وجهاتك القادمة"),
-    el("div", { style: "display:flex;gap:8px" },
-      el("a.circle", { href: "#/fav", title: "المفضلة",
-        onclick: e => { if (!cloud.user){ e.preventDefault();
-          askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك.",
-            { type: "nav", hash: "#/fav" }); } } }, "♥"),
-      el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪"))));
-  root.append(searchStrip(ctx, true));
+  const root = el("div.wide");
+  root.append(el("div.hero2", {},
+    el("div.herorow", {},
+      el("h1", {}, "وجهاتك القادمة"),
+      el("div", { style: "display:flex;gap:8px" },
+        el("a.circle", { href: "#/fav", title: "المفضلة",
+          onclick: e => { if (!cloud.user){ e.preventDefault();
+            askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك.",
+              { type: "nav", hash: "#/fav" }); } } }, "♥"),
+        el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪"))),
+    el("p", {}, "رشّح وجهتك بالشهر والأجواء والتأشيرة والطيران المباشر — والقلب يحفظها في مفضلتك."),
+    searchStrip(ctx, true)));
+  const inner = el("div.section");
+  root.append(inner);
   const fs = filterSection(ctx);
-  root.append(fs.controls, fs.results);
+  inner.append(fs.controls, fs.results);
   // رقاقة الرئيسية أودعت مقصدها — الصندوق المطلوب يُزار ويومض مرحّبًا.
   const want = sessionStorage.getItem("sv.facet");
   if (want){
