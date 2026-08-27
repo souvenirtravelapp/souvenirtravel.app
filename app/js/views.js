@@ -473,13 +473,13 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
                         warmthWord(store, t.t_max_avg_c)));
   // بطاقة أفقية بعرض الصفحة كما في بوكينج: صورة، تفاصيل، ثم الحرارة والزر.
   const band = t ? store.warmthBand(t.t_max_avg_c) : null;
+  // العلم بجوار اسم دولته لا فوق الصورة — قرار طارق: الصورة للمدينة وحدها.
   return el("div.dest-row", { onclick: () => goto("#/d/" + city.id) },
     el("div.cover", { style: coverStyle(city, band) },
-      coverStamp(city), el("span.cflag", {}, flag(city.country_code)),
-      heart, keptPill),
+      coverStamp(city), heart, keptPill),
     el("div.names", {},
       el("div.n", {}, cityName(city)),
-      el("div.c", {}, countryName(city)),
+      el("div.c", {}, flag(city.country_code) + " " + countryName(city)),
       el("div.badges", {}, badges),
       t && t.p_mm_avg != null
         ? el("div.det", {}, rainWordOf(store, t.p_mm_avg) + " · " + MONTHS_AR[month - 1])
