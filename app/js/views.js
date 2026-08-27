@@ -57,16 +57,16 @@ export function home(ctx){
   const facet = (icon, label, target) => el("button.chip", {
     style: "background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)",
     onclick: () => { sessionStorage.setItem("sv.facet", target || label);
-                     goto("#/next"); } }, icon + " " + label);
+                     goto("#/next"); } }, ficon(icon), label);
   root.append(el("div.hero2", {},
     el("h1", {}, "إلى أين وجهتك القادمة؟"),
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
     searchStrip(ctx),
     el("div.chips", { style: "margin-top:12px;justify-content:center" },
-      facet("🌤", "الأجواء"),
-      facet("🌧", "الأمطار"),
-      facet("🛂", "التأشيرة"),
-      facet("✈️", "طيران مباشر", "المطار"),
+      facet("weather", "الأجواء"),
+      facet("rain", "الأمطار"),
+      facet("visa", "التأشيرة"),
+      facet("airport", "طيران مباشر", "المطار"),
       el("button.chip", {
         style: "background:#fff;color:var(--deep);font-weight:800",
         onclick: () => goto("#/next") }, "الفلتر الكامل ›"))));
@@ -251,8 +251,8 @@ export function filterSection(ctx, opts = {}){
     () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
   const monthSel = menu(MONTHS_AR.map((m, i) => [i + 1, m]), filter.month,
     v => { filter.month = +v; render(); });
-  rows.append(frow("📅 الشهر", monthSel));
-  rows.append(frow("✈️ المطار", countrySel, airportSel, nonstop));
+  rows.append(frow("month", "الشهر", monthSel));
+  rows.append(frow("airport", "المطار", countrySel, airportSel, nonstop));
 
   // الأجواء دفئًا في صف، والأمطار في صف خاص بها — طلب طارق.
   const warmth = Object.entries(WARMTH_AR).map(([k, ar]) =>
@@ -261,12 +261,12 @@ export function filterSection(ctx, opts = {}){
       next.has(k) ? next.delete(k) : next.add(k);
       filter.bands = next; render();
     }));
-  rows.append(frow("🌤 الأجواء", scrollChips(el("div.chips", {}, warmth))));
+  rows.append(frow("weather", "الأجواء", scrollChips(el("div.chips", {}, warmth))));
 
   const rains = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
     () => { filter.rain = filter.rain === k ? "any" : k; render(); },
     undefined, k !== "any"));
-  rows.append(frow("🌧 الأمطار", scrollChips(el("div.chips", {}, rains))));
+  rows.append(frow("rain", "الأمطار", scrollChips(el("div.chips", {}, rains))));
 
   // التفضيل خرج من الفلتر (قرار طارق) — الوسوم بقيت في التفضيلات توجّه
   // الاقتراحات؛ وأي وسوم مخزنة من قبل تُمسح كي لا تصفّي النتائج خفيةً.
@@ -284,7 +284,7 @@ export function filterSection(ctx, opts = {}){
   }, !filter.passport));
   visaChips.push(chip("تأشيرة شنغن", filter.schengen,
     () => { filter.schengen = !filter.schengen; render(); }, !filter.passport));
-  const visaBox = frow("🛂 التأشيرة",
+  const visaBox = frow("visa", "التأشيرة",
     ...(passSel ? [passSel] : []),
     scrollChips(el("div.chips", {}, visaChips)));
   visaBox.classList.add("span");
@@ -300,7 +300,7 @@ export function filterSection(ctx, opts = {}){
         render();
       }, !filter.passport);
     });
-    const paperBox = frow("🪪 أوراقي", scrollChips(el("div.chips", {}, paperChips)));
+    const paperBox = frow("papers", "أوراقي", scrollChips(el("div.chips", {}, paperChips)));
     paperBox.classList.add("span");
     rows.append(paperBox);
   }
@@ -363,9 +363,26 @@ function drawMap(holder, list, open){
   });
 }
 
-function frow(label, ...controls){
+// أيقونات البنود: عائلة Material المصمتة — شكل واحد وروح واحدة، تُرسم
+// بـcurrentColor فترث لون عنوانها أينما جلست (بني البند، أبيض البطل).
+const FICONS = {
+  month: '<path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>',
+  airport: '<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>',
+  weather: '<path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/>',
+  rain: '<path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/>',
+  visa: '<path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-9-2h2v2h-2V4zM4 8h16v3h-3v-2h-2v2H9v-2H7v2H4V8zm0 11v-6h3v2h2v-2h6v2h2v-2h3v6H4z"/>',
+  papers: '<path d="M20 7h-5V4c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zM9 12c.83 0 1.5.67 1.5 1.5S9.83 15 9 15s-1.5-.67-1.5-1.5S8.17 12 9 12zm3 6H6v-.75c0-1 2-1.55 3-1.55s3 .55 3 1.55V18zm3-3h-2v-1.5h2V15zm3 0h-2v-1.5h2V15zm-3 3h-2v-1.5h2V18zm3 0h-2v-1.5h2V18zm-5-11h-2V4h2v3z"/>',
+};
+
+function ficon(name){
+  const s = el("span.ficon");
+  s.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${FICONS[name]}</svg>`;
+  return s;
+}
+
+function frow(iconName, label, ...controls){
   return el("div.fbox", {},
-    el("div.ftitle", {}, label),
+    el("div.ftitle", {}, ficon(iconName), label),
     el("div.fcontrols", {}, controls));
 }
 
