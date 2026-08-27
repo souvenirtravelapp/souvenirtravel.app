@@ -582,7 +582,7 @@ export function destination(ctx, cityId){
     if (r){
       inner.append(el("div.row", {},
         el("span.who", {}, r.seasonal
-          ? "طيران مباشر من " + (o ? o.city_ar : origin) + " (رحلات موسمية وليست دائمة)"
+          ? "طيران مباشر من " + (o ? o.city_ar : origin) + " (رحلة موسمية)"
           : "مباشر من " + (o ? o.city_ar : origin)),
         el("span.meta", {}, r.airlines.slice(0, 3).map(name =>
           el("span", { style: "margin-inline-start:8px" }, name, el("span.tail", {}, name[0]))))));
