@@ -45,18 +45,17 @@ function visaLine(ctx, city){
   return REQUIREMENT_AR[v.requirement] || REQUIREMENT_AR.unclear;
 }
 
-/* ── الرئيسية: الصفحة المتكاملة — بطل، شريط بحث موحد، أقسام أفقية ──── */
+/* ── الرئيسية: بوابة لا صفحة بحث — بطل بسؤالَي الجميع (الوجهة والشهر)،
+   ثم مقترحات تُغني الضيف، ثم شريط ذاكرة رشيق. الفلتر الكامل يعيش مرة
+   واحدة في «وجهاتك القادمة» — قرار طارق: ميلٌ نحو بوكينج بلا نسخه. */
 export function home(ctx){
   const { store, filter, prefs, shortlist, papers } = ctx;
   const root = el("div.wide");
 
-  const guest = "إلى أين وجهتك القادمة؟";
-  const fs = filterSection(ctx);
   root.append(el("div.hero2", {},
-    el("h1", {}, guest),
+    el("h1", {}, "إلى أين وجهتك القادمة؟"),
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
     searchStrip(ctx)));
-  root.append(el("div.section", {}, fs.controls, fs.results));
 
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 
@@ -101,19 +100,55 @@ export function home(ctx){
     root.append(section("رحلاتك القادمة", row));
   }
 
+  // شريط الذاكرة: القادمة تملك البطل، والسابقة سطرٌ متواضع أسفله —
+  // تسلسل لا تزاحم، كما في رئيسية التطبيق نفسها.
+  root.append(memoryBand(ctx));
+
   return root;
+}
+
+function memoryBand(ctx){
+  if (!cloud.user){
+    return el("div.section", {},
+      el("h2", {}, "رحلاتك السابقة"),
+      el("div.card", { style: "display:flex;align-items:center;gap:14px;flex-wrap:wrap" },
+        el("span", { style: "font-size:26px" }, "✈︎"),
+        el("span", { style: "flex:1;min-width:200px" },
+          "ذكريات صنعتها لتبقى — سجّل لتحفظ رحلاتك وتجدها على كل أجهزتك."),
+        el("button.btn", { onclick: () =>
+          askSignIn("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.") }, "تسجيل الدخول")));
+  }
+  const stats = Memory.stats;
+  const goTrips = () => goto("#/trips");
+  return el("div.section", {},
+    el("h2", {}, "رحلاتك السابقة"),
+    el("div.memstats", {},
+      statBox(stats.trips, "الرحلات"),
+      statBox(stats.places, "الأماكن"),
+      statBox(stats.countries, "الدول")),
+    el("div", { style: "display:flex;gap:8px;margin-top:10px" },
+      el("button.btn", { onclick: goTrips }, "رحلاتك السابقة ›"),
+      el("button.chip", { onclick: () => { memAdding = true; goTrips(); } },
+        "أضف رحلة سابقة")));
 }
 
 function section(title, inner){
   return el("div.section", {}, el("h2", {}, title), inner);
 }
 
-// The unified strip: destination · month · passport · origin · search — one
-// bordered band, the page's single most important object.
+// شريط البطل: سؤالا الجميع — الوجهة والشهر — لا غير؛ زره يغوص في
+// «وجهاتك القادمة» حيث الفلتر الكامل. النسخة المدمجة (داخل صفحة الفلتر)
+// بلا شهر، فالشهر هناك في صندوقه.
 export function searchStrip(ctx, compact = false){
   const { store, filter } = ctx;
   const q = el("input", { placeholder: "إلى أين؟ اكتب وجهة أو دولة…",
     value: filter.query || "" });
+  const month = compact ? null : el("select.menu", {},
+    MONTHS_AR.map((m, i) => {
+      const o = el("option", { value: i + 1 }, m);
+      if (i + 1 === filter.month) o.selected = true;
+      return o;
+    }));
   // الجواز يُسأل عنه مرة واحدة: بعد أول اختيار يُحفظ ويختفي الحقل،
   // ويبقى تغييره من لوحة الإعدادات.
   const pass = filter.passport ? null : el("select", {},
@@ -122,11 +157,14 @@ export function searchStrip(ctx, compact = false){
       el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc))));
   const go = el("button.go", { onclick: () => {
     filter.query = q.value;
+    if (month) filter.month = +month.value;
     if (pass && pass.value) filter.passport = pass.value;
-    render();
+    if (compact) render(); else goto("#/next");
   } }, "ابحث");
+  q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
   return el("div.strip" + (compact ? ".compact" : ""), {},
     el("div.f.grow", {}, "🔎", q),
+    month ? el("div.f", {}, "📅", month) : null,
     pass ? el("div.f", {}, "🪪", pass) : null,
     go);
 }
@@ -138,9 +176,15 @@ export function searchStrip(ctx, compact = false){
 // passport. Chips only where the app uses chips: weather, visa ease, papers.
 export function finder(ctx){
   const root = el("div");
+  // القلب في الرأس كما في التطبيق — المفضلة بنت هذه الصفحة لا بابٌ رابع.
   root.append(el("div.top", {},
-    el("h1", {}, "فلتر الوجهات"),
-    el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪")));
+    el("h1", {}, "وجهاتك القادمة"),
+    el("div", { style: "display:flex;gap:8px" },
+      el("a.circle", { href: "#/fav", title: "المفضلة",
+        onclick: e => { if (!cloud.user){ e.preventDefault();
+          askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك.",
+            { type: "nav", hash: "#/fav" }); } } }, "♥"),
+      el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪"))));
   root.append(searchStrip(ctx, true));
   const fs = filterSection(ctx);
   root.append(fs.controls, fs.results);
@@ -375,7 +419,7 @@ export function destination(ctx, cityId){
   const month = filter.month;
 
   const root = el("div");
-  root.append(el("a.back", { href: "#/find" }, "‹ كل الوجهات"));
+  root.append(el("a.back", { href: "#/next" }, "‹ كل الوجهات"));
 
   const heart = el("button.heart" + (shortlist.contains(city.id) ? ".on" : ""), {
     onclick: () => {
@@ -566,7 +610,8 @@ export function prefs(ctx, redraw = render){
 export function favorites(ctx){
   const { store, shortlist } = ctx;
   const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "المفضلة")));
+  root.append(el("div.top", {}, el("h1", {}, "المفضلة"),
+    el("a.circle", { href: "#/next", title: "وجهاتك القادمة" }, "‹")));
   if (!cloud.user){
     root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "♡"),
@@ -669,7 +714,7 @@ export function papers(ctx){
   const { store, papers } = ctx;
   const root = el("div");
   root.append(el("div.top", {}, el("h1", {}, "أوراقي"),
-    el("a.circle", { href: "#/find" }, "‹")));
+    el("a.circle", { href: "#/next" }, "‹")));
   root.append(el("div.sub", {},
     "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS."));
 
@@ -744,7 +789,7 @@ let memAdding = false;
 export function trips(ctx){
   const { store } = ctx;
   const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "رحلاتك")));
+  root.append(el("div.top", {}, el("h1", {}, "رحلاتك السابقة")));
   root.append(el("div.sub", {},
     "سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS."));
   if (!cloud.user){

@@ -10,10 +10,12 @@ import * as views from "./views.js";
 import * as cloud from "./cloud.js";
 import { Trips } from "./trips-store.js";
 
+// أبواب سوفينير الثلاثة كما رتبها طارق: بيتٌ يستقبل، وقادمٌ يُخطط،
+// وماضٍ يُحفظ. المفضلة ليست بابًا رابعًا — قلبها يسكن رأس «وجهاتك القادمة».
 const TABS = [
-  { hash: "#/home", label: "ابحث",     icon: "icons/TabHome.svg" },
-  { hash: "#/map",  label: "خريطة",   icon: "icons/TabFind.svg" },
-  { hash: "#/fav",  label: "المفضلة", icon: "icons/TabFav.svg"  },
+  { hash: "#/home",  label: "الرئيسية",        icon: "icons/TabHome.svg"  },
+  { hash: "#/next",  label: "وجهاتك القادمة",  icon: "icons/TabFind.svg"  },
+  { hash: "#/trips", label: "رحلاتك السابقة",  icon: "icons/TabTrips.svg" },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -26,13 +28,16 @@ function currentRoute(){
 
 function drawTabs(){
   const { path } = currentRoute();
-  const on = { d: "home", find: "home", prefs: "home", papers: "home",
-               trips: "home", mydata: "home" }[path] || path;
+  // كل طريق يضيء بابه: الوجهة والمفضلة والبحث أبناء «وجهاتك القادمة»،
+  // والتفضيلات والأوراق والبيانات أبناء البيت.
+  const on = { d: "next", find: "next", map: "next", fav: "next",
+               prefs: "home", papers: "home", mydata: "home" }[path] || path;
+  const tripsGuard = e => guardNav(e, "#/trips",
+    "رحلاتك تُحفظ في حسابك لتجدها على كل أجهزتك.");
   const nav = document.getElementById("tabs");
   nav.replaceChildren(el("div.pill", {},
     TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "",
-      ...(t.hash === "#/fav" ? { onclick: e => guardNav(e, "#/fav",
-        "المفضلة تعيش في حسابك لتجدها على كل أجهزتك.") } : {}) },
+      ...(t.hash === "#/trips" ? { onclick: tripsGuard } : {}) },
       el("img", { src: t.icon, alt: "" }),
       t.label))));
   // The desktop wears a brand bar instead of a thumb pill.
@@ -42,11 +47,10 @@ function drawTabs(){
     el("a.brand", { href: "#/home" },
       el("img", { src: "/icon.png", alt: "" }), "سوفينير"),
     el("div.links", {},
-      el("a", { href: "#/home", class: on === "home" ? "on" : "" }, "ابحث"),
-      el("a", { href: "#/map",  class: on === "map"  ? "on" : "" }, "خريطة"),
-      el("a", { href: "#/fav",  class: on === "fav"  ? "on" : "",
-        onclick: e => guardNav(e, "#/fav",
-          "المفضلة تعيش في حسابك لتجدها على كل أجهزتك.") }, "المفضلة")),
+      el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, "الرئيسية"),
+      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, "وجهاتك القادمة"),
+      el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
+        onclick: tripsGuard }, "رحلاتك السابقة")),
     avatarFace());
 }
 
@@ -118,24 +122,12 @@ function openSettings(){
         el("h2", {}, "الإعدادات"),
         el("button.x", { onclick: close, "aria-label": "إغلاق" }, "✕")),
       account(),
+      // الشخصي وحده يسكن هنا — الرحلات والمفضلة صارتا في القائمة العلوية.
       el("div.sheetlinks", {},
-        el("a", { href: "#/trips",  onclick: e => { close(); guardNav(e, "#/trips",
-          "الرحلات تُحفظ في حسابك لتجدها على كل أجهزتك.") } }, "رحلاتك"),
         el("a", { href: "#/papers", onclick: e => { close(); guardNav(e, "#/papers",
           "أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها.") } }, "أوراقي"),
         el("a", { href: "#/mydata", onclick: e => { close(); guardNav(e, "#/mydata") } }, "بياناتي")),
-      sheetTrips(),
       strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
-  }
-  // رحلاته القادمة، بين يدي حسابه.
-  function sheetTrips(){
-    const coming = Trips.upcoming();
-    if (!coming.length) return el("div");
-    return el("div.sheettrips", {},
-      el("h3", {}, "رحلاتك القادمة"),
-      coming.map(t => el("a.trow", { href: "#/trips", onclick: close },
-        "✈︎ ", t.title,
-        el("span.d", {}, (t.start || "") + (t.end ? " ← " + t.end : "")))));
   }
 
   // حسابه: دخول جوجل للضيف، وبطاقته مع «خروج» لمن دخل.
@@ -188,12 +180,13 @@ export function render(){
   view.replaceChildren();
   const draw = {
     home:   () => views.home(ctx),
-    find:   () => views.finder(ctx),
+    next:   () => views.finder(ctx),
+    find:   () => views.finder(ctx),   // عناوين قديمة محفوظة تهبط في البيت الجديد
+    map:    () => { ctx.filter.presentation = "map"; return views.finder(ctx); },
     d:      () => views.destination(ctx, arg),
     prefs:  () => views.prefs(ctx),
     papers: () => views.papers(ctx),
     trips:  () => views.trips(ctx),
-    map:    () => { ctx.filter.presentation = "map"; return views.finder(ctx); },
     fav:    () => views.favorites(ctx),
     mydata: () => views.mydata(ctx),
   }[path] || (() => views.home(ctx));
