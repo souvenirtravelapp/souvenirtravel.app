@@ -835,33 +835,39 @@ let memAdding = false;
 
 export function trips(ctx){
   const { store } = ctx;
-  const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "رحلاتك السابقة")));
-  root.append(el("div.sub", {},
-    "سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS."));
+  // بطلٌ للصفحة الداخلية كما اقترح طارق: العنوان ووعده وعدّاداته الثلاثة
+  // على المدرج الليلي نفسه — والعدسات تحته على أرض الصفحة.
+  const root = el("div.wide");
+  const stats = cloud.user ? Memory.stats : null;
+  root.append(el("div.hero2", {},
+    el("h1", {}, "رحلاتك السابقة"),
+    el("p", {}, "سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS."),
+    stats ? el("div.memstats", { style: "margin-top:14px" },
+      statBox(stats.trips, "الرحلات"),
+      statBox(stats.places, "الأماكن"),
+      statBox(stats.countries, "الدول")) : null));
+
+  const body = wrap => { root.append(el("div.section", {}, wrap)); return root; };
+
   if (!cloud.user){
-    root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+    return body(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "✈︎"),
       el("p", {}, "الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر."),
       el("button.btn", { onclick: () =>
         askSignIn("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.") }, "الدخول بحساب جوجل")));
-    return root;
   }
+
+  const inner = el("div.section");
+  root.append(inner);
+  const append = node => inner.append(node);
 
   // القادمة أولًا — قصيرة، ثم الذاكرة وهي البيت.
   const coming = Trips.upcoming();
   if (coming.length){
     const list = el("div");
     for (const t of coming) list.append(tripCard(ctx, t));
-    root.append(el("div.section", {}, el("h2", {}, "القادمة"), list));
+    append(el("div.section", {}, el("h2", {}, "القادمة"), list));
   }
-
-  // إحصاءات البيت الثلاث كما في التطبيق.
-  const stats = Memory.stats;
-  root.append(el("div.memstats", {},
-    statBox(stats.trips, "الرحلات"),
-    statBox(stats.places, "الأماكن"),
-    statBox(stats.countries, "الدول")));
 
   // العدسات + زر الإضافة.
   const lensRow = el("div.countbar", {},
@@ -872,13 +878,13 @@ export function trips(ctx){
       lensBtn("الرفقاء", memLens === "companions", () => { memLens = "companions"; render(); })),
     el("button.btn", { onclick: () => { memAdding = !memAdding; render(); } },
       memAdding ? "إغلاق" : "أضف رحلة سابقة"));
-  root.append(lensRow);
+  append(lensRow);
 
-  if (memAdding) root.append(addTripForm(ctx));
+  if (memAdding) append(addTripForm(ctx));
 
-  const body = { timeline: memTimeline, countries: memCountries,
-                 map: memMap, companions: memCompanions }[memLens];
-  root.append(body(ctx));
+  const lensBody = { timeline: memTimeline, countries: memCountries,
+                     map: memMap, companions: memCompanions }[memLens];
+  append(lensBody(ctx));
   return root;
 }
 
