@@ -488,11 +488,11 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
   const badges = [];
   const visa = visaLine(ctx, city);
   if (visa) badges.push(el("span.badge" + (visa === "لا تتطلب تأشيرة" ? ".good" : ""), {}, visa));
-  // قاعدة طارق: الادعاء بلا دليل لا يُطبع — الشارة تظهر فقط حين وجد
-  // الفحص الشهري عرضًا مباشرًا حقيقيًا لشهر البطاقة نفسه.
-  const from = ctx.prefs.departures(filter.origin)
-    .find(i => store.route(i, city.id) && store.flightVerified(i, city.id, month));
-  if (from) badges.push(el("span.badge", {}, "طيران مباشر"));
+  // الدرجة الوسطى: المُثبت شهريًا يُجزم به، والمسجل بلا دليل يحمل
+  // علامة سؤال — لا وعد بلا سند، ولا صمت يخفي خطًا مسجلًا.
+  const from = ctx.prefs.departures(filter.origin).find(i => store.route(i, city.id));
+  if (from) badges.push(el("span.badge", {},
+    store.flightVerified(from, city.id, month) ? "طيران مباشر" : "طيران مباشر؟"));
   if (t) badges.push(el("span.badge.w-" + store.warmthBand(t.t_max_avg_c), {},
                         warmthWord(store, t.t_max_avg_c)));
   // بطاقة أفقية بعرض الصفحة كما في بوكينج: صورة، تفاصيل، ثم الحرارة والزر.
@@ -609,7 +609,10 @@ export function destination(ctx, cityId){
         el("span.who", {}, "طيران مباشر من " + (o ? o.city_ar : origin)),
         el("span.meta", {}, r.airlines.slice(0, 3).map(name =>
           el("span", { style: "margin-inline-start:8px" }, name, el("span.tail", {}, name[0]))))));
-    } else if (!r && store.hasRoutes(origin)){
+    } else if (r){
+      inner.append(el("div.row", {},
+        el("span.who", {}, "طيران مباشر من " + (o ? o.city_ar : origin) + "؟ تحقق بالبحث")));
+    } else if (store.hasRoutes(origin)){
       inner.append(el("div.row", {}, el("span.who", {},
         "لا رحلة مباشرة مسجلة من " + (o ? o.city_ar : origin) + " — ستبدّل طائرة")));
     }
