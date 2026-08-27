@@ -201,14 +201,7 @@ export function finder(ctx){
   // القلب في الرأس كما في التطبيق — المفضلة بنت هذه الصفحة لا بابٌ رابع.
   const root = el("div.wide");
   root.append(el("div.hero2", {},
-    el("div.herorow", {},
-      el("h1", {}, "وجهاتك القادمة"),
-      el("div", { style: "display:flex;gap:8px" },
-        el("a.circle", { href: "#/fav", title: "المفضلة",
-          onclick: e => { if (!cloud.user){ e.preventDefault();
-            askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك.",
-              { type: "nav", hash: "#/fav" }); } } }, "♥"),
-        el("a.circle", { href: "#/papers", title: "أوراقي" }, "🪪"))),
+    el("h1", {}, "وجهاتك القادمة"),
     el("p", {}, "رشّح وجهتك بالشهر والأجواء والتأشيرة والطيران المباشر — والقلب يحفظها في مفضلتك."),
     searchStrip(ctx, true)));
   const inner = el("div.section");
@@ -301,20 +294,24 @@ export function filterSection(ctx, opts = {}){
   visaBox.classList.add("span");
   rows.append(visaBox);
 
-  // الأوراق — رقاقة لكل ورقة يحملها، كما يعرض التطبيق جواز أمريكا وشنغن.
-  if (docs.documents.length){
-    const paperChips = docs.documents.map(d => {
-      const key = d.bloc ? "bloc:" + d.bloc : d.countryCode;
-      return chip(paperLabel(store, d), filter.byDocument.has(key), () => {
-        filter.byDocument.has(key) ? filter.byDocument.delete(key)
-                                   : filter.byDocument.add(key);
-        render();
-      }, !filter.passport);
-    });
-    const paperBox = frow("papers", "أوراقي", scrollChips(el("div.chips", {}, paperChips)));
-    paperBox.classList.add("span");
-    rows.append(paperBox);
-  }
+  // أوراقي تُدار حيث تُستعمل — قرار طارق: الصندوق حاضر دائمًا، رقائقه
+  // لمن يملك أوراقًا، ودعوة إضافة لمن لا يملك، ورابط الإدارة في طرفه.
+  const paperChips = docs.documents.map(d => {
+    const key = d.bloc ? "bloc:" + d.bloc : d.countryCode;
+    return chip(paperLabel(store, d), filter.byDocument.has(key), () => {
+      filter.byDocument.has(key) ? filter.byDocument.delete(key)
+                                 : filter.byDocument.add(key);
+      render();
+    }, !filter.passport);
+  });
+  const manageLink = el("a", { href: "#/papers",
+    style: "font-size:13px;white-space:nowrap;align-self:center;font-weight:700" },
+    docs.documents.length ? "إدارة أوراقي ›" : "أضف أوراقك ›");
+  const paperBox = frow("papers", "أوراقي",
+    docs.documents.length ? scrollChips(el("div.chips", {}, paperChips)) : null,
+    manageLink);
+  paperBox.classList.add("span");
+  rows.append(paperBox);
 
   const resWrap = el("div.fresults");
 
@@ -322,7 +319,10 @@ export function filterSection(ctx, opts = {}){
     lensBtn("خريطة", filter.presentation === "map",
       () => { filter.presentation = "map"; render(); }),
     lensBtn("قائمة", filter.presentation === "list",
-      () => { filter.presentation = "list"; render(); }));
+      () => { filter.presentation = "list"; render(); }),
+    // المفضلة نتائج سبق اختيارها — فموضعها بين عدسات عرض النتائج.
+    lensBtn("♥ المفضلة", filter.presentation === "fav",
+      () => { filter.presentation = "fav"; render(); }));
   resWrap.append(el("div.countbar", {}, lens));
 
   const results = el("div");
@@ -331,6 +331,26 @@ export function filterSection(ctx, opts = {}){
   function redrawResults(){
     const list = filter.matches(store);
     results.replaceChildren();
+    if (filter.presentation === "fav"){
+      if (!cloud.user){
+        results.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+          el("div", { style: "font-size:34px" }, "♡"),
+          el("p", {}, "المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر."),
+          el("button.btn", { onclick: () =>
+            askSignIn("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.") }, "تسجيل الدخول")));
+        return;
+      }
+      const kept = [...shortlist.cityIDs]
+        .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
+      if (!kept.length){
+        results.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
+        return;
+      }
+      for (const city of kept)
+        results.append(destRow(ctx, city, redrawResults,
+                               shortlist.keptMonth(city.id) || filter.month));
+      return;
+    }
     if (filter.presentation === "map"){
       const holder = el("div.findmap");
       results.append(holder);
