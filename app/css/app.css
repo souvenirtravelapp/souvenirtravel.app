@@ -191,7 +191,8 @@ a.book{box-shadow:0 4px 14px rgba(224,164,88,.4);font-size:16px}
   background:var(--card);border-bottom:1px solid var(--line);
   /* محتوى الهيدر على عمود الصفحة نفسه الذي تحت البطل */
   padding:12px max(clamp(16px,5vw,48px),calc(50vw - 530px + clamp(16px,5vw,48px)))}
-.topbar .brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:900;color:var(--brand);text-decoration:none}
+/* كلمة سوفينير كما في شاشة بداية التطبيق: Tajawal Medium بحبر #28241E */
+.topbar .brand{display:flex;align-items:center;gap:10px;font-size:21px;font-weight:500;color:#28241E;text-decoration:none}
 .topbar .brand img{width:30px;height:30px;border-radius:8px}
 .topbar .links{display:flex;gap:4px}
 .topbar .links a{padding:7px 14px;border-radius:999px;text-decoration:none;

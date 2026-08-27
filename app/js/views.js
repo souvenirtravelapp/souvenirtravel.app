@@ -210,7 +210,7 @@ export function finder(ctx){
     sessionStorage.removeItem("sv.facet");
     queueMicrotask(() => {
       const box = [...root.querySelectorAll(".fbox")].find(b =>
-        b.querySelector(".ftitle")?.textContent === want);
+        b.querySelector(".ftitle")?.textContent.includes(want));
       if (!box) return;
       box.scrollIntoView({ behavior: "smooth", block: "center" });
       box.style.transition = "box-shadow .4s";
@@ -251,8 +251,8 @@ export function filterSection(ctx, opts = {}){
     () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
   const monthSel = menu(MONTHS_AR.map((m, i) => [i + 1, m]), filter.month,
     v => { filter.month = +v; render(); });
-  rows.append(frow("الشهر", monthSel));
-  rows.append(frow("المطار", countrySel, airportSel, nonstop));
+  rows.append(frow("📅 الشهر", monthSel));
+  rows.append(frow("✈️ المطار", countrySel, airportSel, nonstop));
 
   // الأجواء دفئًا في صف، والأمطار في صف خاص بها — طلب طارق.
   const warmth = Object.entries(WARMTH_AR).map(([k, ar]) =>
@@ -261,12 +261,12 @@ export function filterSection(ctx, opts = {}){
       next.has(k) ? next.delete(k) : next.add(k);
       filter.bands = next; render();
     }));
-  rows.append(frow("الأجواء", scrollChips(el("div.chips", {}, warmth))));
+  rows.append(frow("🌤 الأجواء", scrollChips(el("div.chips", {}, warmth))));
 
   const rains = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
     () => { filter.rain = filter.rain === k ? "any" : k; render(); },
     undefined, k !== "any"));
-  rows.append(frow("الأمطار", scrollChips(el("div.chips", {}, rains))));
+  rows.append(frow("🌧 الأمطار", scrollChips(el("div.chips", {}, rains))));
 
   // التفضيل خرج من الفلتر (قرار طارق) — الوسوم بقيت في التفضيلات توجّه
   // الاقتراحات؛ وأي وسوم مخزنة من قبل تُمسح كي لا تصفّي النتائج خفيةً.
@@ -284,7 +284,7 @@ export function filterSection(ctx, opts = {}){
   }, !filter.passport));
   visaChips.push(chip("تأشيرة شنغن", filter.schengen,
     () => { filter.schengen = !filter.schengen; render(); }, !filter.passport));
-  const visaBox = frow("التأشيرة",
+  const visaBox = frow("🛂 التأشيرة",
     ...(passSel ? [passSel] : []),
     scrollChips(el("div.chips", {}, visaChips)));
   visaBox.classList.add("span");
@@ -300,7 +300,7 @@ export function filterSection(ctx, opts = {}){
         render();
       }, !filter.passport);
     });
-    const paperBox = frow("الأوراق", scrollChips(el("div.chips", {}, paperChips)));
+    const paperBox = frow("🪪 أوراقي", scrollChips(el("div.chips", {}, paperChips)));
     paperBox.classList.add("span");
     rows.append(paperBox);
   }
