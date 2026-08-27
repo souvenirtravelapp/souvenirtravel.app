@@ -406,3 +406,8 @@ button.chip .ficon svg{width:14px;height:14px}
   padding-inline:max(clamp(16px,5vw,48px),calc(50vw - 530px + clamp(16px,5vw,48px)))}
 .hero3 h1{font-size:clamp(21px,3vw,28px);font-weight:900;color:var(--text);margin:0}
 .hero3 p{color:var(--muted);margin-top:4px;font-size:clamp(13px,1.5vw,15.5px)}
+
+/* طابع الغلاف المرسوم: الحرف الأول علامة مائية ضخمة خلف العلم */
+.dest-row .cover .stamp{position:absolute;inset-inline-start:6px;bottom:-14px;
+  font-family:"Tajawal",sans-serif;font-size:96px;font-weight:900;line-height:1;
+  color:rgba(255,255,255,.16);pointer-events:none;user-select:none}

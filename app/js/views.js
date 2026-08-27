@@ -11,6 +11,7 @@ import { Trips } from "./trips-store.js";
 import { Memory } from "./memory-store.js";
 import { render, askSignIn } from "./app.js";
 import * as cloud from "./cloud.js";
+import { COVERS } from "./covers.js";
 
 const goto = h => { location.hash = h; };
 
@@ -414,10 +415,28 @@ function scrollChips(inner){
   return w;
 }
 
-// Direction D: every cover is a piece of the aurora sky — one identity,
-// the tag chips still say what kind of place it is.
-function coverStyle(){
-  return "background:var(--aurora)";
+// الغلاف لا يُترك فارغًا: صورة المدينة إن وُجدت (منقاة بمراجعة وكيل)،
+// وإلا تدرجٌ يُشتق من مناخها في الشهر المعروض — أزرق البرد، خضرة الاعتدال،
+// ذهب الدفء، طين الحر — بزاوية تُبذر من هوية المدينة فلا يتطابق جاران.
+const COVER_PALETTES = {
+  cold: ["#23455C", "#4E7E9C"],
+  mild: ["#1D5C50", "#3FA08B"],
+  warm: ["#8A5A18", "#D8A548"],
+  hot:  ["#8A3B1E", "#C96A3C"],
+};
+function coverStyle(city, band){
+  if (city && COVERS.has(city.id))
+    return `background:linear-gradient(rgba(20,30,28,.18),rgba(20,30,28,.30)),`
+         + `url(covers/${city.id}.jpg) center/cover no-repeat`;
+  const [a, b] = COVER_PALETTES[band] ?? COVER_PALETTES.mild;
+  const seed = city ? [...city.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) : 0;
+  return `background:linear-gradient(${100 + seed % 60}deg,${a},${b})`;
+}
+
+// طابع الحرف الأول — علامة مائية تملأ الغلاف المرسوم؛ الصورة تُغني عنه.
+function coverStamp(city){
+  if (!city || COVERS.has(city.id)) return null;
+  return el("span.stamp", {}, (city.name_ar || "؟").trim()[0]);
 }
 
 function destRow(ctx, city, redraw, month = ctx.filter.month){
@@ -448,8 +467,10 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
   if (t) badges.push(el("span.badge.w-" + store.warmthBand(t.t_max_avg_c), {},
                         warmthWord(store, t.t_max_avg_c)));
   // بطاقة أفقية بعرض الصفحة كما في بوكينج: صورة، تفاصيل، ثم الحرارة والزر.
+  const band = t ? store.warmthBand(t.t_max_avg_c) : null;
   return el("div.dest-row", { onclick: () => goto("#/d/" + city.id) },
-    el("div.cover", { style: coverStyle(city) }, flag(city.country_code), heart, keptPill),
+    el("div.cover", { style: coverStyle(city, band) },
+      coverStamp(city), flag(city.country_code), heart, keptPill),
     el("div.names", {},
       el("div.n", {}, cityName(city)),
       el("div.c", {}, countryName(city)),
@@ -836,7 +857,7 @@ export function papers(ctx){
 export function tripCard(ctx, t){
   const city = t.cityId ? ctx.store.cities.find(c => c.id === t.cityId) : null;
   return el("div.dest-row", { ...(city ? { onclick: () => goto("#/d/" + city.id) } : {}) },
-    el("div.cover", { style: city ? coverStyle(city)
+    el("div.cover", { style: city ? coverStyle(city, null)
       : "background:linear-gradient(135deg,var(--band1),var(--band2))" },
       city ? flag(city.country_code) : "✈︎"),
     el("div.names", {},
