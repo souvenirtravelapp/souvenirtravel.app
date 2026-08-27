@@ -363,10 +363,15 @@ select.menu{color:var(--accent-ink)}
 
 /* ── ذاكرة الرحلات في الويب ── */
 .memstats{display:flex;gap:10px;margin:14px 0}
-.memstats .stat{flex:1;background:var(--card);border:1px solid var(--line);
-  border-radius:14px;padding:12px;text-align:center}
-.memstats .n{font-size:24px;font-weight:900;color:var(--deep)}
-.memstats .l{font-size:12.5px;color:var(--muted)}
+.memstats .stat{flex:1;position:relative;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:26px 12px 14px;
+  text-align:center}
+.memstats .n{font-size:42px;font-weight:900;line-height:1;color:var(--deep)}
+.memstats .l{position:absolute;top:9px;right:12px;font-size:12.5px;
+  color:var(--muted)}
+/* سطر بطل الصفحة الداخلية: العنوان وزره وجهًا لوجه */
+.herorow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.herorow h1{margin:0}
 .year-h{font-size:17px;font-weight:900;color:var(--brand);margin:16px 0 8px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .ccell{background:var(--card);border:1px solid var(--line);border-radius:14px;

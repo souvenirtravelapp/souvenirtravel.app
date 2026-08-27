@@ -840,7 +840,11 @@ export function trips(ctx){
   const root = el("div.wide");
   const stats = cloud.user ? Memory.stats : null;
   root.append(el("div.hero2", {},
-    el("h1", {}, "رحلاتك السابقة"),
+    el("div.herorow", {},
+      el("h1", {}, "رحلاتك السابقة"),
+      cloud.user ? el("button.btn", { onclick: () => {
+        memAdding = !memAdding; render(); } },
+        memAdding ? "إغلاق" : "أضف رحلة سابقة") : null),
     el("p", {}, "سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS."),
     stats ? el("div.memstats", { style: "margin-top:14px" },
       statBox(stats.trips, "الرحلات"),
@@ -875,9 +879,7 @@ export function trips(ctx){
       lensBtn("الخط الزمني", memLens === "timeline", () => { memLens = "timeline"; render(); }),
       lensBtn("الدول", memLens === "countries", () => { memLens = "countries"; render(); }),
       lensBtn("الخريطة", memLens === "map", () => { memLens = "map"; render(); }),
-      lensBtn("الرفقاء", memLens === "companions", () => { memLens = "companions"; render(); })),
-    el("button.btn", { onclick: () => { memAdding = !memAdding; render(); } },
-      memAdding ? "إغلاق" : "أضف رحلة سابقة"));
+      lensBtn("الرفقاء", memLens === "companions", () => { memLens = "companions"; render(); })));
   append(lensRow);
 
   if (memAdding) append(addTripForm(ctx));
