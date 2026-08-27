@@ -460,3 +460,5 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .attr-card .tik{background:var(--accent);color:#fff;font-weight:800;font-size:13px;
   border-radius:10px;padding:7px 12px;text-decoration:none}
 .attr-card .off{font-size:12.5px;color:var(--deep)}
+
+.attr-card .disc{font-size:10.5px;color:var(--muted);margin-top:6px}

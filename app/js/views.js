@@ -656,7 +656,9 @@ export function destination(ctx, cityId){
             a.tickets_url ? el("a.tik", { href: a.tickets_url, target: "_blank",
               rel: "noopener nofollow" }, "شراء التذاكر") : null,
             a.official_url ? el("a.off", { href: a.official_url, target: "_blank",
-              rel: "noopener nofollow" }, "الموقع الرسمي ↗") : null)))));
+              rel: "noopener nofollow" }, "الموقع الرسمي ↗") : null),
+          // طلب طارق: تنبيه بسيط في كل بطاقة — استرشادية، والمصدر الحكم.
+          el("div.disc", {}, "معلومات استرشادية — تأكد من المصدر")))));
     root.append(el("div.section", {},
       el("h2", {}, "أبرز المعالم"), grid,
       el("div", { style: "font-size:11px;color:var(--muted);margin-top:6px" },
