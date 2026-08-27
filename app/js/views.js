@@ -530,7 +530,9 @@ export function destination(ctx, cityId){
     strip.append(cell);
   }
   root.append(el("div.section", {},
-    el("h2", {}, "متوسط الحرارة والأمطار لكل شهر:"), strip));
+    el("h2", {}, "متوسط الحرارة والأمطار لكل شهر:"), strip,
+    el("div", { style: "font-size:11px;color:var(--muted);margin-top:6px" },
+      "بيانات الطقس: Open-Meteo.com (CC BY 4.0)")));
   queueMicrotask(() => {
     const sel = strip.querySelector(".sel");
     if (sel) sel.scrollIntoView({ inline: "center", block: "nearest" });

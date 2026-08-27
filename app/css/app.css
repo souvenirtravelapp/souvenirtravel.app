@@ -411,3 +411,11 @@ button.chip .ficon svg{width:14px;height:14px}
 .dest-row .cover .stamp{position:absolute;inset-inline-start:6px;bottom:-14px;
   font-family:"Tajawal",sans-serif;font-size:96px;font-weight:900;line-height:1;
   color:rgba(255,255,255,.16);pointer-events:none;user-select:none}
+
+/* شاشة الافتتاح — كما يقدم تطبيق iOS نفسه: العلامة والاسم، لا نص انتظار */
+.splash{min-height:70vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:18px}
+.splash img{width:104px;height:104px;border-radius:24px;
+  box-shadow:0 10px 30px rgba(59,47,33,.18)}
+.splash .w{font-family:"Tajawal",sans-serif;font-weight:500;font-size:30px;
+  color:#28241E}

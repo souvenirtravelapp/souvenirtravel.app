@@ -125,13 +125,6 @@
   "artist": "The 3B's",
   "license": "CC BY 2.0"
  },
- "city-587084": {
-  "name_en": "Baku",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=26347003",
-  "artist": "See above. Compilation by <a href=\"//commons.wikimedia.org/wiki/User:Interfase\" title=\"User:Interfase\">Interfase</a>",
-  "license": "CC BY-SA 3.0"
- },
  "city-611717": {
   "name_en": "Tbilisi",
   "source": "wikipedia-pageimage",
@@ -384,13 +377,6 @@
   "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/60098692@N00\">Andries Oudshoorn</a>",
   "license": "CC BY-SA 2.0"
  },
- "city-250774": {
-  "name_en": "Aqaba",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=61966159",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Freedom%27s_Falcon\" title=\"User:Freedom's Falcon\">Freedom's Falcon</a>",
-  "license": "CC BY-SA 3.0"
- },
  "city-360502": {
   "name_en": "Luxor",
   "source": "wikipedia-pageimage",
@@ -489,20 +475,6 @@
   "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Aitenir&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Aitenir (page does not exist)\">Aitenir</a>",
   "license": "CC0"
  },
- "city-257056": {
-  "name_en": "Mykonos",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=11986212",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Pitichinaccio\" title=\"User:Pitichinaccio\">Pitichinaccio</a>",
-  "license": "CC BY 3.0"
- },
- "city-400666": {
-  "name_en": "Rhodes",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=132766660",
-  "artist": "European Union, Sentinel-2 Imagery",
-  "license": "Attribution"
- },
  "city-146384": {
   "name_en": "Limassol",
   "source": "wikipedia-pageimage",
@@ -543,13 +515,6 @@
   "source": "wikipedia-pageimage",
   "page": "https://commons.wikimedia.org/w/index.php?curid=72227145",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Zysko_serhii\" title=\"User:Zysko serhii\">Zysko serhii</a>",
-  "license": "CC BY-SA 4.0"
- },
- "city-3198934": {
-  "name_en": "Jajce",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=44186884",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Golden_Bosnian_Lily\" title=\"User:Golden Bosnian Lily\">Golden Bosnian Lily</a>",
   "license": "CC BY-SA 4.0"
  },
  "city-3054643": {
@@ -734,27 +699,6 @@
   "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/132646954@N02\">dronepicr</a>",
   "license": "CC BY 2.0"
  },
- "city-740230": {
-  "name_en": "Sapanca",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=57264952",
-  "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20161030051530/http://www.panoramio.com/user/8073776?with_photo_id=103086358\">BERAT oyunda</a>",
-  "license": "CC BY-SA 3.0"
- },
- "city-738025": {
-  "name_en": "Yalova",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=41751855",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:E-92\" title=\"User:E-92\">E-92</a>",
-  "license": "CC BY-SA 4.0"
- },
- "city-740483": {
-  "name_en": "Rize",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=62631319",
-  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Gaga.vaa&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Gaga.vaa (page does not exist)\">Gaga.vaa</a>",
-  "license": "CC BY-SA 4.0"
- },
  "city-314967": {
   "name_en": "Fethiye",
   "source": "wikipedia-pageimage",
@@ -922,13 +866,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=56780238",
   "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20161028101106/http://www.panoramio.com/user/3773936?with_photo_id=94080874\">TomasEE</a>",
   "license": "CC BY 3.0"
- },
- "city-638936": {
-  "name_en": "Rovaniemi",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=88610690",
-  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:JariJK&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:JariJK (page does not exist)\">Jari Kolehmainen</a>, <a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/lindstorm/2327703260/\">Flickr user lindstormORG</a>, <a href=\"//commons.wikimedia.org/wiki/User:Idobi\" title=\"User:Idobi\">Idobi</a>, <a href=\"//commons.wikimedia.org/wiki/User:Andriychenko\" title=\"User:Andriychenko\">Andriychenko</a>, <a href=\"//commons.wikimedia.org/wiki/User:Biergerry\" title=\"User:Biergerry\">Biergerry</a>, <a href=\"//commons.wikimedia.org/w/index.php?title=User:Arktikum&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Arktikum (page does not exist)\">Arktikum</a>, and Vincent Guth <a rel=\"nofollow\" class=\"external text\" href=\"https://unsplash.com/@vingtcent\">vingtcent</a>",
-  "license": "CC BY-SA 3.0"
  },
  "city-792680": {
   "name_en": "Belgrade",
@@ -1343,13 +1280,6 @@
   "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Cisse.abba&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Cisse.abba (page does not exist)\">Boubacar Amadou Cisse</a>",
   "license": "CC BY-SA 4.0"
  },
- "city-2659994": {
-  "name_en": "Lausanne",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=81333736",
-  "artist": "<ul><li><a href=\"//commons.wikimedia.org/wiki/File:Musee_olympique.jpg\" title=\"File:Musee olympique.jpg\">File:Musee olympique.jpg</a>: Arnaud Gaillard (arnaud () amarys.com)</li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Cath%C3%A9drale_de_Lausanne_depuis_le_Champ_de_l%27Air.JPG\" title=\"File:Cathédrale de Lausanne depuis le Champ de l'Air.JPG\">File:Cathédrale de Lausanne depuis le Champ de l'Air.JPG</a>: <a href=\"//commons.wikimedia.org/wiki/User:Gzzz\" title=\"User:Gzzz\">Gzzz</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Federal_Supreme_Court_of_Switzerland.jpg\" title=\"File:Federal Supreme Court of Switzerland.jpg\">File:Federal Supreme Court of Switzerland.jpg</a>: Roland Zumbühl. Original uploader was <a href=\"https://de.wikipedia.org/wiki/User:Hagelhans\" class=\"extiw\" title=\"de:User:Hagelhans\">Hagelhans</a> at <a class=\"external text\" data-mw-original-href=\"http://de.wikipedia.org\" href=\"https://de.wikipedia.org\">de.wikipedia</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Lausanne_img_0585.jpg\" title=\"File:Lausanne img 0585.jpg\">File:Lausanne img 0585.jpg</a>: <a href=\"//commons.wikimedia.org/wiki/User:Rama\" title=\"User:Rama\">Rama</a></li>\n<li>Composition: <a href=\"//commons.wikimedia.org/w/index.php?title=User:Noldo18&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Noldo18 (page does not exist)\">Noldo18</a></li></ul>",
-  "license": "CC BY-SA 3.0"
- },
  "city-2658813": {
   "name_en": "St. Moritz",
   "source": "wikipedia-pageimage",
@@ -1427,13 +1357,6 @@
   "artist": "<bdi><a href=\"https://www.wikidata.org/wiki/Q78209280\" class=\"extiw\" title=\"d:Q78209280\"><span title=\"Photographer\">Arne Müseler</span></a></bdi>",
   "license": "CC BY-SA 3.0 de"
  },
- "city-2511174": {
-  "name_en": "Tenerife",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=115342831",
-  "artist": "European Space Agency",
-  "license": "CC BY-SA 3.0 igo"
- },
  "city-3110044": {
   "name_en": "San Sebastián",
   "source": "wikipedia-pageimage",
@@ -1489,13 +1412,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=78717130",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:DXR\" title=\"User:DXR\">DXR</a>",
   "license": "CC BY-SA 4.0"
- },
- "city-1856035": {
-  "name_en": "Naha",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=12400674",
-  "artist": "<ul><li><a href=\"//commons.wikimedia.org/wiki/User:663highland\" title=\"User:663highland\">663highland</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/User:Nnh\" title=\"User:Nnh\">nnh</a></li>\n<li>Composition by <a href=\"//commons.wikimedia.org/wiki/User:Kyoww\" title=\"User:Kyoww\">Kyoww</a></li></ul>",
-  "license": "CC BY-SA 3.0"
  },
  "city-1735132": {
   "name_en": "Genting Highlands",
@@ -1707,20 +1623,6 @@
   "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:JeCCo&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:JeCCo (page does not exist)\">JeCCo</a>",
   "license": "CC BY 4.0"
  },
- "city-2523920": {
-  "name_en": "Palermo",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=15915835",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Tango7174\" title=\"User:Tango7174\">Tango7174</a>",
-  "license": "CC BY-SA 4.0"
- },
- "city-3128026": {
-  "name_en": "Bilbao",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=75856318",
-  "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.panoramio.com/user/5173669?with_photo_id=89402964\">Tommie Hansen</a>, <a href=\"//commons.wikimedia.org/wiki/User:Ardfern\" title=\"User:Ardfern\">Ardfern</a>, <a href=\"//www.flickr.com/people/17012490@N00\" class=\"extiw\" title=\"flickruser:17012490@N00\">Tomas Fano</a>, <a href=\"//www.flickr.com/people/31709917@N0\" class=\"extiw\" title=\"flickruser:31709917@N0\">0Igor González Martín</a>, <a rel=\"nofollow\" class=\"external text\" href=\"https://500px.com/JESUSBRAVO\">Jesús Ignacio Bravo Soler</a>, <a href=\"//commons.wikimedia.org/wiki/User:Pedro_J_Pacheco\" title=\"User:Pedro J Pacheco\">Pedro J Pacheco</a>, Irekia/Gobierno Vasco, <a href=\"//commons.wikimedia.org/wiki/User:Euskaldunaa\" title=\"User:Euskaldunaa\">Euskaldunaa</a>, <a href=\"//commons.wikimedia.org/wiki/User:Basotxerri\" title=\"User:Basotxerri\">Basotxerri</a>, <a href=\"//www.flickr.com/people/24431382@N03\" class=\"extiw\" title=\"flickruser:24431382@N03\">Eric Fischer</a>, <a href=\"//commons.wikimedia.org/wiki/User:Kulmalukko\" title=\"User:Kulmalukko\">Tiia Monto</a>, <a rel=\"nofollow\" class=\"external text\" href=\"https://www.panoramio.com/user/7383557?with_photo_id=91188772\">pictures Jettcom</a> y <a href=\"//commons.wikimedia.org/wiki/User:Zarateman\" title=\"User:Zarateman\">Zarateman</a>",
-  "license": "CC BY-SA 4.0"
- },
  "city-2521978": {
   "name_en": "Alicante",
   "source": "wikipedia-pageimage",
@@ -1741,13 +1643,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=102351074",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Kallerna\" title=\"User:Kallerna\">kallerna</a>",
   "license": "CC BY-SA 4.0"
- },
- "city-3031582": {
-  "name_en": "Bordeaux",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=4033621",
-  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Mariette&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Mariette (page does not exist)\">Mariette</a>",
-  "license": "Public domain"
  },
  "city-2995469": {
   "name_en": "Marseille",
@@ -1868,13 +1763,6 @@
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Taxiarchos228\" title=\"User:Taxiarchos228\">Taxiarchos228</a>",
   "license": "FAL"
  },
- "city-2661039": {
-  "name_en": "Davos",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=5797173",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:MadGeographer\" title=\"User:MadGeographer\">MadGeographer</a>",
-  "license": "CC BY-SA 3.0"
- },
  "city-2659869": {
   "name_en": "Locarno",
   "source": "wikipedia-pageimage",
@@ -1916,13 +1804,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=149464980",
   "artist": "<bdi><a href=\"https://www.wikidata.org/wiki/Q78209280\" class=\"extiw\" title=\"d:Q78209280\"><span title=\"Photographer\">Arne Müseler</span></a></bdi>",
   "license": "CC BY-SA 3.0 de"
- },
- "city-255720": {
-  "name_en": "Paros",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=13024851",
-  "artist": "Dimorsitanos",
-  "license": "CC BY-SA 3.0"
  },
  "city-2262912": {
   "name_en": "Sintra",
@@ -1973,13 +1854,6 @@
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Michielverbeek\" title=\"User:Michielverbeek\">Michielverbeek</a>",
   "license": "CC BY-SA 4.0"
  },
- "city-3078610": {
-  "name_en": "Brno",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=89748849",
-  "artist": "<ul><li><a href=\"//commons.wikimedia.org/wiki/File:Brno-Freiheitsplatz2.jpg\" title=\"File:Brno-Freiheitsplatz2.jpg\">Brno-Freiheitsplatz2.jpg</a>: <a href=\"//commons.wikimedia.org/wiki/User:SchiDD\" title=\"User:SchiDD\">SchiDD</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Brno_Katedr%C3%A1la_sv._Petra_a_Pavla_(St.Peter_and_St.Paul_Cathedral).jpg\" title=\"File:Brno Katedrála sv. Petra a Pavla (St.Peter and St.Paul Cathedral).jpg\">Brno_Katedrála_sv._Petra_a_Pavla_(St.Peter_and_St.Paul_Cathedral).jpg</a>:  <a href=\"//commons.wikimedia.org/w/index.php?title=User:JRodSilva&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:JRodSilva (page does not exist)\">JRodSilva</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Brno-Lu%C5%BE%C3%A1nky_XIV.jpg\" title=\"File:Brno-Lužánky XIV.jpg\">Brno-Lužánky_XIV.jpg</a>: <a href=\"//commons.wikimedia.org/wiki/User:Millenium187\" title=\"User:Millenium187\">Millenium187</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Brno,_Vila_Tugendhat.jpg\" title=\"File:Brno, Vila Tugendhat.jpg\">Brno,_Vila_Tugendhat.jpg</a>: <a href=\"//commons.wikimedia.org/w/index.php?title=User:Petr1987&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Petr1987 (page does not exist)\">Petr1987</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Ignis_Brunensis_Grandfinale_2007.jpg\" title=\"File:Ignis Brunensis Grandfinale 2007.jpg\">Ignis_Brunensis_Grandfinale_2007.jpg</a>: Jiří Nedorost</li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Brno,_BVV,_v%C3%BDhled_z_v%C3%BD%C5%A1kov%C3%A9_budovy_(11.29.22).jpg\" title=\"File:Brno, BVV, výhled z výškové budovy (11.29.22).jpg\">Brno,_BVV,_výhled_z_výškové_budovy_(11.29.22).jpg</a>: <a href=\"//commons.wikimedia.org/wiki/User:Bazi\" title=\"User:Bazi\">Martin Strachoň</a></li>\n<li><a href=\"//commons.wikimedia.org/wiki/File:Hrad_%C5%A0pilberk,_Brno_04.jpg\" title=\"File:Hrad Špilberk, Brno 04.jpg\">Hrad_Špilberk,_Brno_04.jpg</a>: <a href=\"//commons.wikimedia.org/wiki/User:Doronenko\" title=\"User:Doronenko\">Doronenko</a></li></ul>",
-  "license": "CC BY-SA 4.0"
- },
  "city-3099434": {
   "name_en": "Gdańsk",
   "source": "wikipedia-pageimage",
@@ -1993,13 +1867,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=35291914",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Jar.ciurus\" title=\"User:Jar.ciurus\">Jar.ciurus</a>",
   "license": "CC BY-SA 3.0 pl"
- },
- "city-721239": {
-  "name_en": "Eger",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=43584905",
-  "artist": "Imoti95",
-  "license": "CC BY-SA 4.0"
  },
  "city-3186952": {
   "name_en": "Zadar",
@@ -2028,13 +1895,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=63464390",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Dreizung\" title=\"User:Dreizung\">Dreizung</a>",
   "license": "CC BY-SA 4.0"
- },
- "city-3186999": {
-  "name_en": "Žabljak",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=7738100",
-  "artist": "<table style=\"margin: 1.5em auto; width:625px; background-color:#f6f6f6; border:2px solid #cccccc; padding:1px;\" cellspacing=\"10\">\n\n\n<tbody><tr>\n<td align=\"center\"><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:Viktorie_kr%C3%A1lovsk%C3%A1_-_kv%C4%9Bt.JPG\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Viktorie_kr%C3%A1lovsk%C3%A1_-_kv%C4%9Bt.JPG/250px-Viktorie_kr%C3%A1lovsk%C3%A1_-_kv%C4%9Bt.JPG\" decoding=\"async\" width=\"140\" height=\"105\" class=\"mw-file-element\" srcset=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Viktorie_kr%C3%A1lovsk%C3%A1_-_kv%C4%9Bt.JPG/330px-Viktorie_kr%C3%A1lovsk%C3%A1_-_kv%C4%9Bt.JPG 2x\" data-file-width=\"2592\" data-file-height=\"1944\"></a></span>\n</td>\n<td align=\"center\"><a href=\"https://upload.wikimedia.org/wikipedia/commons/5/56/%C5%BDabljak%2C_Montenegro_-_main_square.jpg\" class=\"internal\" title=\"Žabljak, Montenegro - main square.jpg\"><b>This image</b></a> is a work by <a href=\"//commons.wikimedia.org/wiki/User:Mercy\" title=\"User:Mercy\"><b>Mercy</b></a>.\n<p>When reusing, please credit me as: <i>Mercy from Wikimedia Commons</i>.\n</p><p><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:UserIconMail.svg\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/UserIconMail.svg/40px-UserIconMail.svg.png\" decoding=\"async\" width=\"24\" height=\"24\" class=\"mw-file-element\" srcset=\"https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/UserIconMail.svg/60px-UserIconMail.svg.png 2x\" data-file-width=\"700\" data-file-height=\"700\"></a></span> I would appreciate <a href=\"//commons.wikimedia.org/wiki/Special:EmailUser/Mercy\" title=\"Special:EmailUser/Mercy\">being notified</a> if you use my work outside Wikimedia.\n</p><p>Do not copy this image illegally by ignoring the terms of the license below, as it is not in the public domain. If you would like special permission to use, license, or purchase the image please <a href=\"//commons.wikimedia.org/wiki/Special:EmailUser/Mercy\" title=\"Special:EmailUser/Mercy\">contact me</a> to negotiate terms.\n</p><p>More of my work can be found in my <a href=\"//commons.wikimedia.org/wiki/Category:Files_by_User:Mercy\" title=\"Category:Files by User:Mercy\">personal gallery</a>.\n</p>\n</td></tr></tbody></table>",
-  "license": "CC BY-SA 3.0"
  },
  "city-3193341": {
   "name_en": "Piran",
@@ -2092,26 +1952,12 @@
   "artist": "<table border=\"3\"><tbody><tr><td>\n<table border=\"0\" cellpadding=\"2\" style=\"background:#dfd3c7;\"><tbody><tr><td>\n<p>This image was produced by me, David Castor (<a href=\"//commons.wikimedia.org/wiki/User:Dcastor\" title=\"User:Dcastor\">user:dcastor</a>). The pictures I submit to the Wikipedia Project are released to the public domain. This gives you the right to use them in any way you like, without any kind of notification. This said, I would still appreciate to be mentioned as the originator whenever you think it complies well with your use of the picture. A <a rel=\"nofollow\" class=\"external text\" href=\"mailto:epost@pastorcastor.se\">message</a> to me  about how it has been used would also be welcome. You are obviously not required to respond to these wishes of mine, just in a friendly manner encouraged to. (All my photos are placed in <a href=\"//commons.wikimedia.org/wiki/Category:Images_by_David_Castor\" title=\"Category:Images by David Castor\">Category:Images by David Castor</a> or a subcategory thereof.)\n</p>\n</td><td>\n<p><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:David_Castor_Wikimedia.jpg\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/David_Castor_Wikimedia.jpg/250px-David_Castor_Wikimedia.jpg\" decoding=\"async\" width=\"170\" height=\"128\" class=\"mw-file-element\" srcset=\"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/David_Castor_Wikimedia.jpg/500px-David_Castor_Wikimedia.jpg 2x\" data-file-width=\"3081\" data-file-height=\"2325\"></a></span>\n</p>\n</td></tr></tbody></table>\n</td></tr></tbody></table>",
   "license": "CC0"
  },
- "city-605155": {
-  "name_en": "Kiruna",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=29776741",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Jonipoon\" title=\"User:Jonipoon\">Jonipoon</a>",
-  "license": "CC BY-SA 3.0"
- },
  "city-2624652": {
   "name_en": "Aarhus",
   "source": "wikipedia-pageimage",
   "page": "https://commons.wikimedia.org/w/index.php?curid=139917977",
   "artist": "SmartDrones Aarhus",
   "license": "CC0"
- },
- "city-7117281": {
-  "name_en": "Levi",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=62700301",
-  "artist": "<bdi><a href=\"https://en.wikipedia.org/wiki/en:Francisco_de_Zurbar%C3%A1n\" class=\"extiw\" title=\"w:en:Francisco de Zurbarán\"><span title=\"Spanish painter (1598–1664)\">Francisco de Zurbarán</span></a></bdi>",
-  "license": "Public domain"
  },
  "city-2633274": {
   "name_en": "Akureyri",
@@ -2155,20 +2001,6 @@
   "artist": "金沢市",
   "license": "CC BY 2.1 jp"
  },
- "city-1864750": {
-  "name_en": "Beppu",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=77867698",
-  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:%E6%B0%B4%E3%81%A0%E3%82%89%E3%81%91%E3%81%AE%E3%83%97%E3%83%BC%E3%83%AB&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:水だらけのプール (page does not exist)\">水だらけのプール</a>",
-  "license": "CC BY-SA 4.0"
- },
- "city-1841603": {
-  "name_en": "Gyeongju",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=56510925",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Kyoww\" title=\"User:Kyoww\">Kyoww</a> (montage)",
-  "license": "CC BY-SA 4.0"
- },
  "city-1836553": {
   "name_en": "Sokcho",
   "source": "wikipedia-pageimage",
@@ -2204,13 +2036,6 @@
   "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/loridstone/\">Lori_NY</a>",
   "license": "CC BY-SA 2.0"
  },
- "city-1580240": {
-  "name_en": "Hue",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=811991",
-  "artist": "KoenB",
-  "license": "Public domain"
- },
  "city-1735262": {
   "name_en": "Cameron Highlands",
   "source": "wikipedia-pageimage",
@@ -2244,13 +2069,6 @@
   "source": "wikipedia-pageimage",
   "page": "https://commons.wikimedia.org/w/index.php?curid=76257367",
   "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/47199786@N08\">consigliere ivan</a>",
-  "license": "CC BY 2.0"
- },
- "city-6295587": {
-  "name_en": "Batam",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=122297608",
-  "artist": "Ivetta Inaray",
   "license": "CC BY 2.0"
  },
  "city-1253405": {
@@ -2322,13 +2140,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=97307972",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Ulises_Icardi\" title=\"User:Ulises Icardi\">Ulises Icardi</a>",
   "license": "CC BY-SA 4.0"
- },
- "city-288471": {
-  "name_en": "Duqm",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=157063063",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:ChristianSP124\" title=\"User:ChristianSP124\">ChristianSP124</a>",
-  "license": "CC0"
  },
  "city-290171": {
   "name_en": "Muharraq",
@@ -2407,13 +2218,6 @@
   "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Moleskine&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Moleskine (page does not exist)\">Moleskine</a>",
   "license": "CC BY 4.0"
  },
- "city-2470181": {
-  "name_en": "Djerba",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=105965547",
-  "artist": "NASA Earth Observatory images by Lauren Dauphin, using Landsat data from the U.S. Geological Survey. Story by Adam Voiland.",
-  "license": "Public domain"
- },
  "city-2464648": {
   "name_en": "Tozeur",
   "source": "wikipedia-pageimage",
@@ -2448,13 +2252,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=8790770",
   "artist": "George Nikoladze",
   "license": "Public domain"
- },
- "city-616752": {
-  "name_en": "Dilijan",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=27493502",
-  "artist": "See above.",
-  "license": "CC BY-SA 3.0"
  },
  "city-616635": {
   "name_en": "Gyumri",
@@ -2547,13 +2344,6 @@
   "artist": "No machine-readable author provided. <a href=\"//commons.wikimedia.org/wiki/User:Arctic.gnome\" title=\"User:Arctic.gnome\">Arctic.gnome</a> assumed (based on copyright claims).",
   "license": "CC BY 2.5"
  },
- "city-3521342": {
-  "name_en": "Playa del Carmen",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=186742525",
-  "artist": "",
-  "license": "CC BY 4.0"
- },
  "city-3515040": {
   "name_en": "Tulum",
   "source": "wikipedia-pageimage",
@@ -2581,13 +2371,6 @@
   "page": "https://commons.wikimedia.org/w/index.php?curid=9035054",
   "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:SamirNosteb&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:SamirNosteb (page does not exist)\">SamirNosteb</a>",
   "license": "CC BY 3.0"
- },
- "city-7647007": {
-  "name_en": "Bariloche",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=52799975",
-  "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://web.archive.org/web/20161015143239/http://www.panoramio.com/user/1319911?with_photo_id=33207139\">enzofloyd</a>",
-  "license": "CC BY-SA 3.0"
  },
  "city-3833367": {
   "name_en": "Ushuaia",
@@ -2678,13 +2461,6 @@
   "source": "wikipedia-pageimage",
   "page": "https://commons.wikimedia.org/w/index.php?curid=2493674",
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mgiganteus\" title=\"User:Mgiganteus\">Mgiganteus</a>",
-  "license": "CC BY-SA 3.0"
- },
- "city-184707": {
-  "name_en": "Naivasha",
-  "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=5930011",
-  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Rotsee2\" class=\"mw-redirect\" title=\"User:Rotsee2\">Rotsee2</a>",
   "license": "CC BY-SA 3.0"
  },
  "city-160263": {
@@ -2792,11 +2568,396 @@
   "artist": "<a href=\"//commons.wikimedia.org/wiki/User:%D8%B9%D8%A8%D8%A7%D8%AF_%D8%AF%D9%8A%D8%B1%D8%A7%D9%86%D9%8A%D8%A9\" title=\"User:عباد ديرانية\">عباد ديرانية</a>",
   "license": "CC BY-SA 3.0"
  },
- "city-110690": {
-  "name_en": "Abha",
+ "city-109953": {
+  "name_en": "Al Bahah",
   "source": "wikipedia-pageimage",
-  "page": "https://commons.wikimedia.org/w/index.php?curid=95100782",
-  "artist": "أشخاص متنوعين ولكن هناك صورة مصورة من أمانة منطقة عسير وصورة مصورة من عوض زارب",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=115603161",
+  "artist": "Prof. Mortel",
+  "license": "CC BY 2.0"
+ },
+ "city-103630": {
+  "name_en": "Najran",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=63416965",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Mansour_mohsen&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Mansour mohsen (page does not exist)\">Mansour mohsen</a>",
   "license": "CC BY-SA 4.0"
+ },
+ "city-100926": {
+  "name_en": "Umluj",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=115637337",
+  "artist": "Prof. Mortel",
+  "license": "CC BY 2.0"
+ },
+ "city-108773": {
+  "name_en": "Al Wajh",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=83282830",
+  "artist": "Yasser.Bakhsh",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-101516": {
+  "name_en": "Tayma",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=146408544",
+  "artist": "Richard Mortel",
+  "license": "CC BY 2.0"
+ },
+ "city-107304": {
+  "name_en": "Buraidah",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=19647640",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Daydream-Pho&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Daydream-Pho (page does not exist)\">Daydream-Pho</a>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-110336": {
+  "name_en": "Dammam",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=160129410",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:%D8%B9%D9%84%D9%8A_%D8%B9%D8%AF%D9%86%D8%A7%D9%86_%D8%A7%D9%84%D8%B1%D9%85%D8%B6%D8%A7%D9%86&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:علي عدنان الرمضان (page does not exist)\">علي عدنان الرمضان</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-109323": {
+  "name_en": "Khobar",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=31244074",
+  "artist": "<a href=\"//www.flickr.com/people/10345599@N03\" class=\"extiw\" title=\"flickruser:10345599@N03\">Francisco Anzola</a>",
+  "license": "CC BY 2.0"
+ },
+ "city-109435": {
+  "name_en": "Jubail",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=42938021",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Aaiq2005&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Aaiq2005 (page does not exist)\">Aaiq2005</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-102527": {
+  "name_en": "Sakaka",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=82321047",
+  "artist": "saudipics",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-524901": {
+  "name_en": "Moscow",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=105454511",
+  "artist": "U.S. Department of State",
+  "license": "Public domain"
+ },
+ "city-498817": {
+  "name_en": "Saint Petersburg",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=182383586",
+  "artist": "<b><span class=\"plainlinks\"><a class=\"external text\" href=\"https://commons.wikimedia.org/wiki/User:A.Savin\">A.Savin</a></span></b>",
+  "license": "FAL"
+ },
+ "city-1176615": {
+  "name_en": "Islamabad",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=62937942",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Fassifarooq&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Fassifarooq (page does not exist)\">Fassifarooq</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-1172451": {
+  "name_en": "Lahore",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=35115529",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Rohaan_Bhatti\" title=\"User:Rohaan Bhatti\">Rohaan Bhatti</a>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-1164709": {
+  "name_en": "Skardu",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=69582459",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Sheroshah042\" title=\"User:Sheroshah042\">S SHER XAMAN photography</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-683506": {
+  "name_en": "Bucharest",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=151048924",
+  "artist": "Madalin Pentelie",
+  "license": "CC0"
+ },
+ "city-733462": {
+  "name_en": "Bansko",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=57197443",
+  "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/132862914@N04\">www.bdmundo.com</a>",
+  "license": "CC BY-SA 2.0"
+ },
+ "city-588409": {
+  "name_en": "Tallinn",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=84328055",
+  "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/franganillo/\">Jorge Franganillo</a>",
+  "license": "CC BY 2.0"
+ },
+ "city-456172": {
+  "name_en": "Riga",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=78939387",
+  "artist": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/46191841@N00\">Jorge Franganillo</a> from Barcelona, Spain",
+  "license": "CC BY 2.0"
+ },
+ "city-593116": {
+  "name_en": "Vilnius",
+  "source": "wikipedia-pageimage",
+  "page": null,
+  "artist": null,
+  "license": null
+ },
+ "city-3060972": {
+  "name_en": "Bratislava",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=154726103",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Arne_M%C3%BCseler\" title=\"User:Arne Müseler\">Arne Müseler</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-3042030": {
+  "name_en": "Vaduz",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=173256069",
+  "artist": "<bdi><a href=\"https://www.wikidata.org/wiki/Q125695900\" class=\"extiw\" title=\"d:Q125695900\"><span title=\"British photographer\">Lucas Kendall</span></a></bdi>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-3041563": {
+  "name_en": "Andorra la Vella",
+  "source": "wikipedia-pageimage",
+  "page": null,
+  "artist": null,
+  "license": null
+ },
+ "city-2028462": {
+  "name_en": "Ulaanbaatar",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=45568112",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Zazaa_Mongolia\" title=\"User:Zazaa Mongolia\">Zazaa Mongolia</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-1655559": {
+  "name_en": "Luang Prabang",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=15523957",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:%E6%9D%BE%E5%B2%A1%E6%98%8E%E8%8A%B3\" title=\"User:松岡明芳\">松岡明芳</a>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-1821306": {
+  "name_en": "Phnom Penh",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=160994961",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Looppty&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Looppty (page does not exist)\">Looppty</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-1820906": {
+  "name_en": "Bandar Seri Begawan",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=146974869",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Pangalau\" title=\"User:Pangalau\">Pangalau</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-344979": {
+  "name_en": "Addis Ababa",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=126083596",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Abshewaga&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Abshewaga (page does not exist)\">Abshewaga</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-202061": {
+  "name_en": "Kigali",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=87450263",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Emmanuelkwizera\" title=\"User:Emmanuelkwizera\">Emmanuelkwizera</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-233508": {
+  "name_en": "Entebbe",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=54538958",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Mateo.Mfalme\" title=\"User:Mateo.Mfalme\">Mateo.Mfalme</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-3352136": {
+  "name_en": "Windhoek",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=146543152",
+  "artist": "Christoph Strässler",
+  "license": "CC BY-SA 2.0"
+ },
+ "city-3352844": {
+  "name_en": "Swakopmund",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=81384369",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Olga_Ernst\" title=\"User:Olga Ernst\">Olga Ernst</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-1070940": {
+  "name_en": "Antananarivo",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=10985681",
+  "artist": "Sascha Grabow <a rel=\"nofollow\" class=\"external text\" href=\"https://www.saschagrabow.com\">www.saschagrabow.com</a>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-2306104": {
+  "name_en": "Accra",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=74721041",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Amoat7&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Amoat7 (page does not exist)\">Amoat7</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-2253354": {
+  "name_en": "Dakar",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=2999601",
+  "artist": "mostroneddo",
+  "license": "CC BY 2.0"
+ },
+ "city-2332459": {
+  "name_en": "Lagos",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=138515705",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Koutchika_Lihouenou_Gaspard&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Koutchika Lihouenou Gaspard (page does not exist)\">Koutchika Lihouenou Gaspard</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-2507480": {
+  "name_en": "Algiers",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=81730104",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Rowmenpers&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Rowmenpers (page does not exist)\">Manini row</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-2485926": {
+  "name_en": "Oran",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=94858314",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:R_hakka&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:R hakka (page does not exist)\">R hakka</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-98182": {
+  "name_en": "Baghdad",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=15654541",
+  "artist": "USACE HQ , JIM GORDAN, CIV, USACE",
+  "license": "Public domain"
+ },
+ "city-98860": {
+  "name_en": "Najaf",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=140920334",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Goudarz.memar&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Goudarz.memar (page does not exist)\">Goudarz.memar</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-94824": {
+  "name_en": "Karbala",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=63424456",
+  "artist": "Karbobala Photos",
+  "license": "CC BY 4.0"
+ },
+ "city-99532": {
+  "name_en": "Basra",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=46146308",
+  "artist": "<a href=\"https://en.wikipedia.org/wiki/User:File:Basra_city.jpg\" class=\"extiw\" title=\"en:User:File:Basra city.jpg\">File:Basra city.jpg</a>",
+  "license": "Public domain"
+ },
+ "city-3553478": {
+  "name_en": "Havana",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=95264999",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:RenaatPeeters&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:RenaatPeeters (page does not exist)\">RenaatPeeters</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-3494242": {
+  "name_en": "Punta Cana",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=105932938",
+  "artist": "<a rel=\"nofollow\" class=\"external free\" href=\"https://www.flickr.com/photos/uira/\">https://www.flickr.com/photos/uira/</a>",
+  "license": "CC BY-SA 2.0"
+ },
+ "city-3489460": {
+  "name_en": "Montego Bay",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=24948937",
+  "artist": "<bdi><a href=\"//commons.wikimedia.org/wiki/Category:Photographs_by_Don_Ramey_Logan\" title=\"Category:Photographs by Don Ramey Logan\">Don Ramey Logan</a></bdi>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-3674962": {
+  "name_en": "Medellín",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=2662257",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Daniel-1-1&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Daniel-1-1 (page does not exist)\">Daniel-1-1</a>",
+  "license": "CC BY 3.0"
+ },
+ "city-3703443": {
+  "name_en": "Panama City",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=73792773",
+  "artist": "<div class=\"fn value\">\n<a rel=\"nofollow\" class=\"external text\" href=\"https://500px.com/dronepicr\">Dronepicr</a></div>",
+  "license": "CC BY 3.0"
+ },
+ "city-3652462": {
+  "name_en": "Quito",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=87537623",
+  "artist": "Asamblea Nacional  del Ecuador",
+  "license": "CC BY-SA 2.0"
+ },
+ "city-3441575": {
+  "name_en": "Montevideo",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=28767335",
+  "artist": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Eduardo_Ruggieri&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Eduardo Ruggieri (page does not exist)\">Eduardo Ruggieri</a>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-2202064": {
+  "name_en": "Nadi",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=9657490",
+  "artist": "Henning Blatt",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-625144": {
+  "name_en": "Minsk",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=81491408",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Homoatrox\" title=\"User:Homoatrox\">Homoatrox</a>",
+  "license": "CC BY-SA 3.0"
+ },
+ "city-1221874": {
+  "name_en": "Dushanbe",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=96081802",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Adam_Harangoz%C3%B3\" title=\"User:Adam Harangozó\">Adam Harangozó</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-347863": {
+  "name_en": "Siwa Oasis",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=58434786",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Adelbayoumi\" title=\"User:Adelbayoumi\">Adelbayoumi</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-3177952": {
+  "name_en": "Cortina d'Ampezzo",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=82878244",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Kallerna\" title=\"User:Kallerna\">kallerna</a>",
+  "license": "CC BY-SA 4.0"
+ },
+ "city-3181913": {
+  "name_en": "Bolzano",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=148774742",
+  "artist": "<a href=\"//commons.wikimedia.org/wiki/User:Bartleby08\" title=\"User:Bartleby08\">Bartleby08</a>",
+  "license": "CC BY 4.0"
+ },
+ "city-3174326": {
+  "name_en": "Madonna di Campiglio",
+  "source": "wikipedia-pageimage",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=23249432",
+  "artist": "Luca Capuccini",
+  "license": "Copyrighted free use"
  }
 }
