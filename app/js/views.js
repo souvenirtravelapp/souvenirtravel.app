@@ -52,10 +52,23 @@ export function home(ctx){
   const { store, filter, prefs, shortlist, papers } = ctx;
   const root = el("div.wide");
 
+  // عصب الموقع لا يُخبأ: تحت الشريط صف يكشف أدوات الفلتر نفسها،
+  // وكل لمسة تهبط بصاحبها في «وجهاتك القادمة» حيث يعيش كاملًا.
+  const facet = (icon, label) => el("button.chip", {
+    style: "background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)",
+    onclick: () => goto("#/next") }, icon + " " + label);
   root.append(el("div.hero2", {},
     el("h1", {}, "إلى أين وجهتك القادمة؟"),
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
-    searchStrip(ctx)));
+    searchStrip(ctx),
+    el("div.chips", { style: "margin-top:12px;justify-content:center" },
+      facet("🌤", "الأجواء"),
+      facet("🌧", "الأمطار"),
+      facet("🛂", "التأشيرة"),
+      facet("✈️", "طيران مباشر"),
+      el("button.chip", {
+        style: "background:#fff;color:var(--deep);font-weight:800",
+        onclick: () => goto("#/next") }, "الفلتر الكامل ›"))));
 
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 
