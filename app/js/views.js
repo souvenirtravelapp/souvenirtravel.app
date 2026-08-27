@@ -154,7 +154,9 @@ function section(title, inner){
 // بلا شهر، فالشهر هناك في صندوقه.
 export function searchStrip(ctx, compact = false){
   const { store, filter } = ctx;
-  const q = el("input", { placeholder: "إلى أين؟ اكتب وجهة أو دولة…",
+  // الصندوق لا يسأل بل يَعِد: يخبر الكاتب بما سيناله من كتابته.
+  const q = el("input", { placeholder:
+    "اكتب اسم الوجهة لترى طقسها والتأشيرة المطلوبة وباقي تفاصيلها…",
     value: filter.query || "" });
   const month = compact ? null : el("select.menu", {},
     MONTHS_AR.map((m, i) => {
