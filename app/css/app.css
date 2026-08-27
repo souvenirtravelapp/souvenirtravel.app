@@ -137,8 +137,8 @@ nav.tabs a.on img{opacity:1}
 .fcontrols{display:flex;align-items:center;gap:8px;min-width:0;overflow-x:auto}
 select.menu{appearance:none;-webkit-appearance:none;
   padding-inline-end:26px;
-  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="%2310231F" stroke-width="1.8" stroke-linecap="round"/></svg>');
-  background-repeat:no-repeat;background-position:left 9px center;background-size:10px 6px;background-color:var(--accent);color:#fff;font-weight:700;border:0;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="%23ffffff"/></svg>');
+  background-repeat:no-repeat;background-position:left 7px center;background-size:16px;background-color:var(--accent);color:#fff;font-weight:700;border:0;
   border-radius:999px;padding:7px 14px;font-size:14px;max-width:46vw;
   -webkit-appearance:none;appearance:none}
 select.menu:disabled{background:var(--card);color:var(--muted)}
@@ -423,3 +423,9 @@ button.chip .ficon svg{width:14px;height:14px}
 /* علم الغلاف: ركن أعلى اليمين، لا وسط الصورة */
 .dest-row .cover .cflag{position:absolute;top:6px;right:8px;font-size:23px;
   line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
+
+/* بقية القوائم — سهم العائلة نفسه بحبر النص بدل سهم النظام */
+select:not(.menu){appearance:none;-webkit-appearance:none;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="%2328241E"/></svg>');
+  background-repeat:no-repeat;background-position:left 6px center;
+  background-size:16px;padding-inline-end:24px}
