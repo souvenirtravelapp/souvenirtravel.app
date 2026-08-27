@@ -430,3 +430,12 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="%2328241E"/></svg>');
   background-repeat:no-repeat;background-position:left 6px center;
   background-size:16px;padding-inline-end:24px}
+
+/* لوحة الإعدادات: صفوف أزرار كقائمة التطبيق */
+.sheetrows{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:11px 14px;text-decoration:none;color:var(--text)}
+.srow .t{font-weight:800;font-size:15px}
+.srow .s{font-size:12.5px;color:var(--muted)}
+.srow .ch{color:var(--muted);font-size:18px}

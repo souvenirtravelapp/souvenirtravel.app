@@ -122,12 +122,26 @@ function openSettings(){
         el("h2", {}, "الإعدادات"),
         el("button.x", { onclick: close, "aria-label": "إغلاق" }, "✕")),
       account(),
-      // الشخصي وحده يسكن هنا — الرحلات والمفضلة صارتا في القائمة العلوية.
-      el("div.sheetlinks", {},
-        el("a", { href: "#/papers", onclick: e => { close(); guardNav(e, "#/papers",
-          "أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها.") } }, "أوراقي"),
-        el("a", { href: "#/mydata", onclick: e => { close(); guardNav(e, "#/mydata") } }, "بياناتي")),
-      strip(views.prefs(ctx, () => { sheet.replaceChildren(...content()); }))];
+      // أزرار صفوف تغطي كل الإعدادات — قرار طارق: لا تفضيلات مبعثرة هنا؛
+      // كلٌ خلف زره، كقائمة إعدادات التطبيق.
+      el("div.sheetrows", {},
+        row("تفضيلات السفر", "جوازك وما يعجبك وأجواؤك ومطاراتك", "#/prefs"),
+        row("أوراقي", "تأشيراتك وإقاماتك بتواريخها", "#/papers",
+          "أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها."),
+        row("بياناتي", "كل ما في حسابك، وباب المحو", "#/mydata", ""),
+        row("سياسة الخصوصية", "ما يُحفظ وكيف تتحقق بنفسك", "/privacy/"),
+        row("تواصل معنا", "support@souvenirtravel.app",
+            "mailto:support@souvenirtravel.app"))];
+  }
+  // صف إعدادات: عنوان وسطر شارح وسهم — يغلق اللوحة ويمضي، ويحرس ما يحتاج حسابًا.
+  function row(title, sub, href, guardMsg){
+    return el("a.srow", { href,
+      onclick: e => { close();
+        if (guardMsg !== undefined) guardNav(e, href, guardMsg || undefined); } },
+      el("div", {},
+        el("div.t", {}, title),
+        el("div.s", {}, sub)),
+      el("span.ch", {}, "‹"));
   }
 
   // حسابه: دخول جوجل للضيف، وبطاقته مع «خروج» لمن دخل.
@@ -165,10 +179,6 @@ function openSettings(){
       // باب ناقص؟ اربطه فيصير الحساب واحدًا بمدخلين.
       !provs.includes("apple.com") ? linkBtn("apple", "أبل ") : null,
       !provs.includes("google.com") ? linkBtn("google", "جوجل") : null);
-  }
-  function strip(prefsEl){
-    prefsEl.querySelector(".top")?.remove();   // the sheet already has its head
-    return prefsEl;
   }
   sheet.replaceChildren(...content());
   document.body.append(back, sheet);
