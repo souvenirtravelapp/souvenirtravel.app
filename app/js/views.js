@@ -581,7 +581,9 @@ export function destination(ctx, cityId){
     const inner = el("div.rows");
     if (r){
       inner.append(el("div.row", {},
-        el("span.who", {}, (r.seasonal ? "مباشر موسميًا" : "مباشر") + " من " + (o ? o.city_ar : origin)),
+        el("span.who", {}, r.seasonal
+          ? "طيران مباشر من " + (o ? o.city_ar : origin) + " (رحلات موسمية وليست دائمة)"
+          : "مباشر من " + (o ? o.city_ar : origin)),
         el("span.meta", {}, r.airlines.slice(0, 3).map(name =>
           el("span", { style: "margin-inline-start:8px" }, name, el("span.tail", {}, name[0]))))));
     } else if (store.hasRoutes(origin)){
