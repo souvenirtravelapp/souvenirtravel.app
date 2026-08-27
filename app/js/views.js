@@ -668,10 +668,6 @@ export function prefs(ctx, redraw = render){
   const root = el("div");
   root.append(el("div.top", {}, el("h1", {}, "تفضيلات السفر"),
     el("a.circle", { href: "#/home" }, "‹")));
-  // لا حديث عن مكان الحفظ — قرار طارق: المستخدم لا يسأل ولا يهتم؛
-  // يبقى ما ينفعه وحده.
-  root.append(el("div.sub", {},
-    "توجّه الاقتراحات — المعلن يسبق المستنتج."));
 
   // الجواز يُسأل عنه مرة واحدة في البحث — وتغييره من هنا.
   const passMenu = menu(
