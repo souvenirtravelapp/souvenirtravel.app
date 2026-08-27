@@ -419,3 +419,7 @@ button.chip .ficon svg{width:14px;height:14px}
   box-shadow:0 10px 30px rgba(59,47,33,.18)}
 .splash .w{font-family:"Tajawal",sans-serif;font-weight:500;font-size:30px;
   color:#28241E}
+
+/* علم الغلاف: ركن أعلى اليمين، لا وسط الصورة */
+.dest-row .cover .cflag{position:absolute;top:6px;right:8px;font-size:23px;
+  line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}

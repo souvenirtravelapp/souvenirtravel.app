@@ -181,7 +181,7 @@ export function searchStrip(ctx, compact = false){
   q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
   return el("div.strip" + (compact ? ".compact" : ""), {},
     el("div.f.grow", {}, "🔎", q),
-    month ? el("div.f", {}, "📅", month) : null,
+    month ? el("div.f", {}, ficon("month"), month) : null,
     pass ? el("div.f", {}, "🪪", pass) : null,
     go);
 }
@@ -470,7 +470,8 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
   const band = t ? store.warmthBand(t.t_max_avg_c) : null;
   return el("div.dest-row", { onclick: () => goto("#/d/" + city.id) },
     el("div.cover", { style: coverStyle(city, band) },
-      coverStamp(city), flag(city.country_code), heart, keptPill),
+      coverStamp(city), el("span.cflag", {}, flag(city.country_code)),
+      heart, keptPill),
     el("div.names", {},
       el("div.n", {}, cityName(city)),
       el("div.c", {}, countryName(city)),
