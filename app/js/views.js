@@ -180,9 +180,9 @@ export function searchStrip(ctx, compact = false){
   } }, "ابحث");
   q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
   return el("div.strip" + (compact ? ".compact" : ""), {},
-    el("div.f.grow", {}, "🔎", q),
+    el("div.f.grow", {}, ficon("search"), q),
     month ? el("div.f", {}, ficon("month"), month) : null,
-    pass ? el("div.f", {}, "🪪", pass) : null,
+    pass ? el("div.f", {}, ficon("papers"), pass) : null,
     go);
 }
 
@@ -373,6 +373,7 @@ function drawMap(holder, list, open){
 // أيقونات البنود: عائلة Material المصمتة — شكل واحد وروح واحدة، تُرسم
 // بـcurrentColor فترث لون عنوانها أينما جلست (بني البند، أبيض البطل).
 const FICONS = {
+  search: '<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>',
   month: '<path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>',
   airport: '<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>',
   weather: '<path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/>',
