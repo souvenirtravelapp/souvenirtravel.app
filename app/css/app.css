@@ -445,3 +445,18 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .section>h2.shelfhead{background:linear-gradient(120deg,#EFE9DC,#F8F4EC);
   border:1px solid var(--line);border-radius:12px;padding:10px 14px;
   margin-bottom:12px}
+
+/* أبرز المعالم — بطاقات تجربة باريس */
+.attr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.attr-card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;display:flex;flex-direction:column}
+.attr-card img{width:100%;aspect-ratio:10/7;object-fit:cover;display:block}
+.attr-card .b{padding:10px 12px;display:flex;flex-direction:column;gap:5px;flex:1}
+.attr-card .n{font-weight:800;font-size:15.5px}
+.attr-card .d{font-size:12.5px;color:var(--muted);line-height:1.55}
+.attr-card .h{font-size:12.5px;color:var(--text);display:flex;align-items:baseline;gap:5px}
+.attr-card .h .ficon{align-self:center}
+.attr-card .links{margin-top:auto;padding-top:8px;display:flex;gap:8px;align-items:center}
+.attr-card .tik{background:var(--accent);color:#fff;font-weight:800;font-size:13px;
+  border-radius:10px;padding:7px 12px;text-decoration:none}
+.attr-card .off{font-size:12.5px;color:var(--deep)}

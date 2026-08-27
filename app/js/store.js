@@ -89,7 +89,7 @@ export class TravelDataStore {
   ///  - airports:     array of airport records
   ///  - cityAirports: array of city ↔ airport links (city_airports table)
   constructor({ cities, climate, visas, routes, origins, airports, cityAirports,
-                flightcheck } = {}) {
+                flightcheck, attractions } = {}) {
     this.cities = cities ?? [];
     this.origins = origins ?? [];
 
@@ -112,6 +112,9 @@ export class TravelDataStore {
     }
 
     // Keyed by departure airport, then city id — first record wins.
+    // معالم المدن — تجربة باريس أولًا، والتعميم بعد اعتماد طارق للشكل.
+    this.attractions = attractions ?? {};
+
     // إثباتات الطيران: origin|city → شهور وُجد لها عرض مباشر حقيقي.
     this.verifiedFlights = {};
     for (const r of flightcheck ?? [])

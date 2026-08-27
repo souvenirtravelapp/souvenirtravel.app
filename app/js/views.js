@@ -401,6 +401,7 @@ function drawMap(holder, list, open){
 // أيقونات البنود: عائلة Material المصمتة — شكل واحد وروح واحدة، تُرسم
 // بـcurrentColor فترث لون عنوانها أينما جلست (بني البند، أبيض البطل).
 const FICONS = {
+  hours: '<path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm.01 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>',
   search: '<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>',
   month: '<path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13z"/>',
   airport: '<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>',
@@ -636,6 +637,30 @@ export function destination(ctx, cityId){
         href: kiwiLink(from, a.iata, `webapp_${city.id.replace("city-", "")}_${from}`) },
         "ابحث عن طيران " + MONTHS_AR[month - 1]),
       el("div.disclose", {}, "رابط شريك — الأسعار والحجز لدى الموقع الشريك.")));
+  }
+
+  // أبرز المعالم — تجربة باريس: إجماعٌ مقيس، ومواعيد وروابط رسمية،
+  // وتذاكر حيث تُباع، وضوابط المراجعة الثلاثة قبل الدخول.
+  const spots = store.attractions?.[city.id];
+  if (spots?.length){
+    const grid = el("div.attr-grid", {},
+      spots.map(a => el("div.attr-card", {},
+        el("img", { src: "attractions/" + a.qid + ".jpg", alt: a.name_ar || a.name_en,
+                    loading: "lazy" }),
+        el("div.b", {},
+          el("div.n", {}, a.name_ar || a.name_en),
+          a.blurb ? el("div.d", {}, a.blurb) : null,
+          a.hours_ar ? el("div.h", {}, ficon("hours"), " ", a.hours_ar) : null,
+          a.note ? el("div.d", { style: "margin-top:4px" }, a.note) : null,
+          el("div.links", {},
+            a.tickets_url ? el("a.tik", { href: a.tickets_url, target: "_blank",
+              rel: "noopener nofollow" }, "شراء التذاكر") : null,
+            a.official_url ? el("a.off", { href: a.official_url, target: "_blank",
+              rel: "noopener nofollow" }, "الموقع الرسمي ↗") : null)))));
+    root.append(el("div.section", {},
+      el("h2", {}, "أبرز المعالم"), grid,
+      el("div", { style: "font-size:11px;color:var(--muted);margin-top:6px" },
+        "المواعيد كما نشرتها المواقع الرسمية يوم جمعها — تحقق قبل زيارتك. الصور: Wikimedia Commons بمرخصها.")));
   }
 
   // احفظها رحلة — من هنا، لا من صفحة أخرى.

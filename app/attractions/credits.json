@@ -1,0 +1,49 @@
+{
+ "Q243": {
+  "name_en": "Eiffel Tower",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/w/index.php?curid=46873322",
+  "artist": "<div style=\"clear:both; border: 1px solid #000000; margin: 1em; padding: 1em; background-color: #E0DBD7;\">\n<table cellspacing=\"0\" cellpadding=\"5\" style=\"background:transparent;\">\n<tbody><tr>\n<td valign=\"top\" width=\"180px\">\n</td></tr>\n<tr>\n<td align=\"center\"><small><br></small><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:OptiCC_some_rights_reserved.svg\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/OptiCC_some_rights_reserved.svg/250px-OptiCC_some_rights_reserved.svg.png\" decoding=\"async\" width=\"150\" height=\"60\" class=\"mw-file-element\" srcset=\"https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/OptiCC_some_rights_reserved.svg/330px-OptiCC_some_rights_reserved.svg.png 2x\" data-file-width=\"744\" data-file-height=\"300\"></a></span>\n<p><br>\n</p>\n</td>\n<td>This photograph was taken by <b><a href=\"//commons.wikimedia.org/wiki/User:Rijinatwiki\" title=\"User:Rijinatwiki\">Rijin S</a></b> and released under the license stated below. You are free to use it for any purpose as long as you credit the author (<a href=\"//commons.wikimedia.org/wiki/User:Rijinatwiki\" title=\"User:Rijinatwiki\">Rijin S</a>), the Source (Wikimedia Commons), the license (CC-BY-SA 4.0) in close relation to the image and send me a  <a class=\"external text\" href=\"https://commons.wikimedia.org/w/index.php?title=User_talk:Rijinatwiki&amp;action=edit&amp;section=new\">message</a><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:Crystal_128_mail.png\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Crystal_128_mail.png/40px-Crystal_128_mail.png\" decoding=\"async\" width=\"25\" height=\"25\" class=\"mw-file-element\" srcset=\"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Crystal_128_mail.png/60px-Crystal_128_mail.png 2x\" data-file-width=\"128\" data-file-height=\"128\"></a></span>\n</td></tr></tbody></table>\n<div style=\"clear:both; border:2px solid #00cc00; background-color:#f7f7f7; margin-top:6px;\">\n<table><tbody><tr><td style=\"padding:4px;\"><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:Telif_inceleme.png\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/a/a5/Telif_inceleme.png\" decoding=\"async\" width=\"64\" height=\"64\" class=\"mw-file-element\" data-file-width=\"110\" data-file-height=\"110\"></a></span>\n</td><td style=\"padding:4px;\"><div style=\"margin-top:0.5em;\">This image is <b>not <a href=\"https://en.wikipedia.org/wiki/Public_domain\" class=\"extiw\" title=\"en:Public domain\">public domain</a></b>. Please respect the copyright protection. It may only be used according to the rules mentioned here. This specifically <b>excludes use in social media</b>, if applicable terms of the licenses listed here not appropriate.</div>\n</td></tr></tbody></table></div>\n<div style=\"clear:both; border:2px solid #00cc00; background-color:#7ADAF5; margin-top:6px;\">\n<table><tbody><tr><td style=\"padding:4px;\"><span typeof=\"mw:File\"><a href=\"//commons.wikimedia.org/wiki/File:Upload-problem2.svg\" class=\"mw-file-description\"><img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Upload-problem2.svg/120px-Upload-problem2.svg.png\" decoding=\"async\" width=\"64\" height=\"57\" class=\"mw-file-element\" srcset=\"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Upload-problem2.svg/250px-Upload-problem2.svg.png 2x\" data-file-width=\"159\" data-file-height=\"142\"></a></span>\n</td><td style=\"padding:4px;\">\n<div>\n<ul><li>Please do not upload an updated image here without consultation with the Author. The author would like to make corrections only at his own source RAW. This ensures that the changes are preserved.<br></li>\n<li>If you think that any changes should be required, please inform the author.<br></li>\n<li>Otherwise you can upload a new image with a new name. Please use one of the templates <a href=\"//commons.wikimedia.org/wiki/Template:Derived_from\" title=\"Template:Derived from\">derivative</a> or <a href=\"//commons.wikimedia.org/wiki/Template:Extracted_from\" title=\"Template:Extracted from\">extract</a>.</li></ul>\n<p><br>\n</p>\n</div>\n</td></tr></tbody></table></div>\n</div>\n<table>\n\n<tbody><tr style=\"vertical-align: top\"><td style=\"\" class=\"fileinfo-paramfield\">Attribution<br><small>(<a href=\"//commons.wikimedia.org/wiki/Commons:Credit_line\" title=\"Commons:Credit line\">required by the license</a>)</small><div style=\"display: none;\">InfoField</div></td><td style=\"\">© Rijin S/ Wikimedia Commons / <div class=\"plainlinks noprint\" style=\"display:inline;\"><a href=\"//creativecommons.org/licenses/by-sa/4.0/\" class=\"extiw\" title=\"creativecommons:by-sa/4.0/\">CC BY-SA 4.0</a></div></td>\n</tr><tr style=\"vertical-align: top\"><td style=\"display:none;\" class=\"fileinfo-paramfield fileinfotpl_credit\" id=\"fileinfotpl_credit\"><div style=\"display: none;\">InfoField</div></td><td style=\"display:none;\">© Rijin S/ Wikimedia Commons</td>\n</tr>\n</tbody></table>",
+  "license": "CC BY-SA 4.0"
+ },
+ "Q19675": {
+  "name_en": "Louvre Museum",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Cour%20Napol%C3%A9on%20at%20night%20-%20Louvre.jpg"
+ },
+ "Q2981": {
+  "name_en": "Notre-Dame de Paris",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Notre-Dame%20de%20Paris%202013-07-24.jpg"
+ },
+ "Q23402": {
+  "name_en": "Musée d'Orsay",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Gare%20d%27Orsay%20%2849570190081%29.jpg"
+ },
+ "Q550": {
+  "name_en": "avenue des Champs-Élysées",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Avenue%20des%20Champs-%C3%89lys%C3%A9es%2C%20Paris%203%20October%202010.jpg"
+ },
+ "Q1865480": {
+  "name_en": "Bastille",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Bastille%20Exterior%201790%20or%201791.jpg"
+ },
+ "Q64436": {
+  "name_en": "Arc de Triomphe",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Arc%20de%20Triomphe%2C%20Paris%2021%20October%202010.jpg"
+ },
+ "Q13205": {
+  "name_en": "Stade de France",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/StadeFranceNationsLeague2018.jpg"
+ },
+ "Q311": {
+  "name_en": "Père Lachaise Cemetery",
+  "source": "wikidata-P18",
+  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Main%20gate%20of%20the%20P%C3%A8re-Lachaise%20Cemetery%2C%20Paris%2013%20June%202014.jpg"
+ }
+}
