@@ -164,7 +164,7 @@ export function searchStrip(ctx, compact = false){
   const q = el("input", { placeholder:
     "اكتب اسم الوجهة لترى طقسها والتأشيرة المطلوبة وباقي تفاصيلها…",
     value: filter.query || "" });
-  const month = compact ? null : el("select.menu", {},
+  const month = el("select.menu", {},
     MONTHS_AR.map((m, i) => {
       const o = el("option", { value: i + 1 }, m);
       if (i + 1 === filter.month) o.selected = true;
@@ -178,14 +178,14 @@ export function searchStrip(ctx, compact = false){
       el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc))));
   const go = el("button.go", { onclick: () => {
     filter.query = q.value;
-    if (month) filter.month = +month.value;
+    filter.month = +month.value;
     if (pass && pass.value) filter.passport = pass.value;
     if (compact) render(); else goto("#/next");
   } }, "ابحث");
   q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
   // ترتيب طارق: الشهر أولًا، ثم كلمات البحث، ثم زر ابحث.
   return el("div.strip" + (compact ? ".compact" : ""), {},
-    month ? el("div.f", {}, ficon("month"), month) : null,
+    el("div.f", {}, ficon("month"), month),
     el("div.f.grow", {}, ficon("search"), q),
     pass ? el("div.f", {}, ficon("papers"), pass) : null,
     go);
@@ -254,9 +254,7 @@ export function filterSection(ctx, opts = {}){
     v => { filter.origin = v; render(); }, !filter.originCountry);
   const nonstop = chip("مباشر فقط", filter.nonstopOnly,
     () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
-  const monthSel = menu(MONTHS_AR.map((m, i) => [i + 1, m]), filter.month,
-    v => { filter.month = +v; render(); });
-  rows.append(frow("month", "الشهر", monthSel));
+  // الشهر سكن شريط البحث أعلاه — قرار طارق — فلا صندوق له هنا.
   rows.append(frow("airport", "المطار", countrySel, airportSel, nonstop));
 
   // الأجواء دفئًا في صف، والأمطار في صف خاص بها — طلب طارق.
