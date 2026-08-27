@@ -53,10 +53,11 @@ export function home(ctx){
   const root = el("div.wide");
 
   // عصب الموقع لا يُخبأ: تحت الشريط صف يكشف أدوات الفلتر نفسها،
-  // وكل لمسة تهبط بصاحبها في «وجهاتك القادمة» حيث يعيش كاملًا.
-  const facet = (icon, label) => el("button.chip", {
+  // وكل رقاقة تهبط بصاحبها على بندها هي داخل «وجهاتك القادمة».
+  const facet = (icon, label, target) => el("button.chip", {
     style: "background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)",
-    onclick: () => goto("#/next") }, icon + " " + label);
+    onclick: () => { sessionStorage.setItem("sv.facet", target || label);
+                     goto("#/next"); } }, icon + " " + label);
   root.append(el("div.hero2", {},
     el("h1", {}, "إلى أين وجهتك القادمة؟"),
     el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
@@ -65,7 +66,7 @@ export function home(ctx){
       facet("🌤", "الأجواء"),
       facet("🌧", "الأمطار"),
       facet("🛂", "التأشيرة"),
-      facet("✈️", "طيران مباشر"),
+      facet("✈️", "طيران مباشر", "المطار"),
       el("button.chip", {
         style: "background:#fff;color:var(--deep);font-weight:800",
         onclick: () => goto("#/next") }, "الفلتر الكامل ›"))));
@@ -203,6 +204,20 @@ export function finder(ctx){
   root.append(searchStrip(ctx, true));
   const fs = filterSection(ctx);
   root.append(fs.controls, fs.results);
+  // رقاقة الرئيسية أودعت مقصدها — الصندوق المطلوب يُزار ويومض مرحّبًا.
+  const want = sessionStorage.getItem("sv.facet");
+  if (want){
+    sessionStorage.removeItem("sv.facet");
+    queueMicrotask(() => {
+      const box = [...root.querySelectorAll(".fbox")].find(b =>
+        b.querySelector(".ftitle")?.textContent === want);
+      if (!box) return;
+      box.scrollIntoView({ behavior: "smooth", block: "center" });
+      box.style.transition = "box-shadow .4s";
+      box.style.boxShadow = "0 0 0 3px var(--accent)";
+      setTimeout(() => { box.style.boxShadow = ""; }, 1900);
+    });
+  }
   return root;
 }
 
