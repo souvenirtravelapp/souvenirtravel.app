@@ -51,9 +51,29 @@ def commons_file(filename):
             "artist": strip("Artist"), "license": strip("LicenseShortName")}
 
 
-def lookup(name_en):
+def name_variants(name_en):
+    """«Bali (Denpasar)» تُطرق بأبوابها الثلاثة: كاملة، وقبل القوس، وداخله."""
+    variants = [name_en]
+    if "(" in name_en:
+        outer = name_en.split("(")[0].strip()
+        inner = name_en[name_en.find("(") + 1:name_en.rfind(")")].strip()
+        variants += [outer, inner]
+    return [v for v in dict.fromkeys(variants) if v]
+
+
+def lookup(name_en, skip_banner=False):
     """أين صورة هذه المدينة؟ غلاف Wikivoyage أولًا ثم صورة Wikipedia."""
+    for variant in name_variants(name_en):
+        found = lookup_one(variant, skip_banner)
+        if found:
+            return found
+    return None
+
+
+def lookup_one(name_en, skip_banner=False):
     try:
+        if skip_banner:
+            raise Exception("banner skipped")
         body = api("en.wikivoyage.org", titles=name_en, redirects=1,
                    prop="pageprops")
         page = first_page(body)
@@ -105,12 +125,16 @@ def main():
     OUT.mkdir(exist_ok=True)
     credits = json.loads(CREDITS.read_text()) if CREDITS.exists() else {}
     cities = json.loads((ROOT / "app/data/bundle.json").read_text())["cities"]
+    skip_banner_ids = set()
+    blockfile = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else None
+    if blockfile and blockfile.exists():
+        skip_banner_ids = set(json.loads(blockfile.read_text()))
     got = missed = 0
     for i, city in enumerate(cities):
         cid, name = city["id"], city.get("name_en")
         if not name or (OUT / f"{cid}.jpg").exists():
             continue
-        found = lookup(name)
+        found = lookup(name, skip_banner=cid in skip_banner_ids)
         if not found or not found.get("url"):
             missed += 1
             print(f"  · {name}: لا صورة", flush=True)
