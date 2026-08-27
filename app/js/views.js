@@ -183,9 +183,10 @@ export function searchStrip(ctx, compact = false){
     if (compact) render(); else goto("#/next");
   } }, "ابحث");
   q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
+  // ترتيب طارق: الشهر أولًا، ثم كلمات البحث، ثم زر ابحث.
   return el("div.strip" + (compact ? ".compact" : ""), {},
-    el("div.f.grow", {}, ficon("search"), q),
     month ? el("div.f", {}, ficon("month"), month) : null,
+    el("div.f.grow", {}, ficon("search"), q),
     pass ? el("div.f", {}, ficon("papers"), pass) : null,
     go);
 }
