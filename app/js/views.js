@@ -80,7 +80,7 @@ export function home(ctx){
     if (!list.length) continue;
     const row = el("div");
     for (const { city } of list) row.append(destRow(ctx, city, render, +month));
-    root.append(section("وجهات مقترحة — " + MONTHS_AR[month - 1], row));
+    root.append(shelf("وجهات مقترحة لك لشهر " + MONTHS_AR[month - 1], row));
   }
 
   // بلا تأشيرة لجوازك هذا الشهر — القسم الذي يبيع.
@@ -94,7 +94,7 @@ export function home(ctx){
     if (free.length){
       const row = el("div");
       for (const c of free) row.append(destRow(ctx, c, render));
-      root.append(section("بلا تأشيرة لجوازك — معتدلة في " + MONTHS_AR[filter.month - 1], row));
+      root.append(shelf("بلا تأشيرة لجوازك — معتدلة في " + MONTHS_AR[filter.month - 1], row));
     }
   }
 
@@ -153,6 +153,11 @@ function memoryBand(ctx){
 
 function section(title, inner){
   return el("div.section", {}, el("h2", {}, title), inner);
+}
+
+// رف اقتراحات: عنوانه بخلفية رملية تفصله عن أسطر المدن تحته.
+function shelf(title, inner){
+  return el("div.section", {}, el("h2.shelfhead", {}, title), inner);
 }
 
 // شريط البطل: سؤالا الجميع — الوجهة والشهر — لا غير؛ زره يغوص في

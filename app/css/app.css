@@ -440,3 +440,8 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .srow .t{font-weight:800;font-size:15px}
 .srow .s{font-size:12.5px;color:var(--muted)}
 .srow .ch{color:var(--muted);font-size:18px}
+
+/* عناوين رفوف الاقتراحات: شريط رملي يميزها بين البطاقات */
+.section>h2.shelfhead{background:linear-gradient(120deg,#EFE9DC,#F8F4EC);
+  border:1px solid var(--line);border-radius:12px;padding:10px 14px;
+  margin-bottom:12px}
