@@ -662,11 +662,18 @@ export function prefs(ctx, redraw = render){
 
 export function favorites(ctx){
   const { store, shortlist } = ctx;
-  const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "المفضلة"),
-    el("a.circle", { href: "#/next", title: "وجهاتك القادمة" }, "‹")));
+  // السماء الثالثة: بطل المفضلة كأخويه — العنوان وزر العودة على سطر،
+  // والوعد تحته، والقلوب على أرض الصفحة.
+  const root = el("div.wide");
+  root.append(el("div.hero2", {},
+    el("div.herorow", {},
+      el("h1", {}, "المفضلة"),
+      el("a.circle", { href: "#/next", title: "وجهاتك القادمة" }, "‹")),
+    el("p", {}, "الوجهات التي أحببتها، كلٌ بشهرها — تعيش في حسابك على كل أجهزتك.")));
+  const inner = el("div.section");
+  root.append(inner);
   if (!cloud.user){
-    root.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "♡"),
       el("p", {}, "المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر."),
       el("button.btn", { onclick: () =>
@@ -677,15 +684,15 @@ export function favorites(ctx){
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
   const coming = Trips.upcoming();
   if (!kept.length && !coming.length){
-    root.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
+    inner.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
     return root;
   }
   const redraw = () => render();
-  for (const city of kept) root.append(destRow(ctx, city, redraw));
+  for (const city of kept) inner.append(destRow(ctx, city, redraw));
   if (coming.length){
     const list = el("div");
     for (const t of coming) list.append(tripCard(ctx, t));
-    root.append(el("div.section", {}, el("h2", {}, "رحلاتك القادمة"), list));
+    inner.append(el("div.section", {}, el("h2", {}, "رحلاتك القادمة"), list));
   }
   return root;
 }
