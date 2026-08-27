@@ -143,8 +143,12 @@ function memoryBand(ctx){
       statBox(stats.countries, "الدول")),
     el("div", { style: "display:flex;gap:8px;margin-top:10px" },
       el("button.btn", { onclick: goTrips }, "رحلاتك السابقة ›"),
-      el("button.chip", { onclick: () => { memAdding = true; goTrips(); } },
-        "أضف رحلة سابقة")));
+      // زر الإضافة في الرئيسية إنقاذ لبيت فارغ لا روتين — قرار طارق:
+      // يظهر ما دامت الرحلات صفرًا، فإذا امتلأ البيت سكن في صفحته.
+      stats.trips === 0
+        ? el("button.chip", { onclick: () => { memAdding = true; goTrips(); } },
+            "أضف رحلة سابقة")
+        : null));
 }
 
 function section(title, inner){
