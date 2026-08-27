@@ -130,6 +130,7 @@ function openSettings(){
           "أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها."),
         row("بياناتي", "كل ما في حسابك، وباب المحو", "#/mydata", ""),
         row("سياسة الخصوصية", "ما يُحفظ وكيف تتحقق بنفسك", "/privacy/"),
+        row("شروط الاستخدام", "استخدامك الشخصي وحدوده", "/terms/"),
         row("تواصل معنا", "support@souvenirtravel.app",
             "mailto:support@souvenirtravel.app"))];
   }
