@@ -11,11 +11,6 @@
   "source": "wikidata-P18",
   "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Cour%20Napol%C3%A9on%20at%20night%20-%20Louvre.jpg"
  },
- "Q2981": {
-  "name_en": "Notre-Dame de Paris",
-  "source": "wikidata-P18",
-  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Notre-Dame%20de%20Paris%202013-07-24.jpg"
- },
  "Q23402": {
   "name_en": "Musée d'Orsay",
   "source": "wikidata-P18",
@@ -40,10 +35,5 @@
   "name_en": "Stade de France",
   "source": "wikidata-P18",
   "file": "http://commons.wikimedia.org/wiki/Special:FilePath/StadeFranceNationsLeague2018.jpg"
- },
- "Q311": {
-  "name_en": "Père Lachaise Cemetery",
-  "source": "wikidata-P18",
-  "file": "http://commons.wikimedia.org/wiki/Special:FilePath/Main%20gate%20of%20the%20P%C3%A8re-Lachaise%20Cemetery%2C%20Paris%2013%20June%202014.jpg"
  }
 }
