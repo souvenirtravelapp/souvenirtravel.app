@@ -464,3 +464,15 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .attr-card .off{font-size:12.5px;color:var(--deep)}
 
 .attr-card .disc{font-size:10.5px;color:var(--muted);margin-top:6px}
+
+
+/* ── الوجه الإنجليزي: مرآة المواضع الفيزيائية المتعمدة وخط اللاتينية ── */
+[dir="ltr"] body{font-family:"DM Sans","Almarai",-apple-system,Tahoma,sans-serif;line-height:1.55}
+[dir="ltr"] h1,[dir="ltr"] h2,[dir="ltr"] .brand b,[dir="ltr"] button,[dir="ltr"] .tabs,
+[dir="ltr"] .month-title{font-family:"DM Sans","Tajawal",Tahoma,sans-serif}
+[dir="ltr"] .hero{text-align:left}
+[dir="ltr"] .sheet{left:auto;right:0;border-inline-start:1px solid var(--line)}
+[dir="ltr"] .heart{right:auto;left:8px}
+[dir="ltr"] .keptpill{right:auto;left:38px}
+[dir="ltr"] .memstats .stat b{right:auto;left:12px}
+[dir="ltr"] select.menu,[dir="ltr"] .frow select{background-position:right 7px center}
