@@ -5,14 +5,16 @@
    the sunset's ember inside the night: the bridge to the app's logo, which
    stays as it is by his word. */
 :root{
-  --bg:#F7FBFA; --card:#FFFFFF; --text:#0F2B33; --muted:#4E6A70;
-  --accent:#F0A93C; --accent-ink:#10231F; --deep:#1F8F7C; --line:rgba(15,43,51,.12);
+  /* حكم طارق 2026-08-28: «وحّد على قيم التطبيق» — الأرضية والحبر والكهرمان
+     والأخضر من Theme.swift حرفيًا. أبطال الليل والشفق تأليف ويب معتمد يبقى. */
+  --bg:#F6F0E3; --card:#FEFCF8; --text:#28241E; --muted:#676055;
+  --accent:#E0A458; --accent-ink:#28241E; --deep:#B4622E; --line:rgba(40,36,30,.12);
   --brand:#B4622E;   /* تراكوتا كتاب العلامة — لون «سوفينير» في تطبيق أبل */
   --band1:#0E2B44; --band2:#35C493;
   --aurora:linear-gradient(135deg,#0E2B44 0%,#14556A 45%,#1F8F7C 78%,#35C493 100%);
   --night:linear-gradient(165deg,#0A1626 0%,#0E2B44 38%,#14556A 62%,#1F8F7C 82%,#35C493 100%);
-  --cold:#5B84A8; --mild:#2E8B6A; --warm:#C98A3B; --hot:#C25B36;
-  --visited:#2E8B6A; --drop:#4A90D9; --sun:#F0A93C;
+  --cold:#5B84A8; --mild:#678B51; --warm:#C98A3B; --hot:#B15331;
+  --visited:#678B51; --drop:#4D94EB; --sun:#E0A458;
 }
 *{box-sizing:border-box;margin:0}
 html{height:100%}
@@ -54,7 +56,7 @@ input,select{font:inherit;color:var(--text)}
 .dest-row{display:flex;align-items:stretch;gap:0;background:var(--card);
   border:1px solid var(--line);border-radius:16px;padding:0;margin-bottom:14px;
   cursor:pointer;overflow:hidden;transition:box-shadow .15s}
-.dest-row:hover{box-shadow:0 6px 22px rgba(15,43,51,.12)}
+.dest-row:hover{box-shadow:0 6px 22px rgba(59,47,33,.12)}
 .dest-row .flag{font-size:26px}
 .dest-row .names{flex:1;min-width:0}
 .dest-row .names .n{font-weight:700}
@@ -267,7 +269,7 @@ h1,h2,h3,.top h1,.topbar .brand,.strip .go,a.book,.btn,nav.tabs a,.month-title{
 .hero2 h1,.hero2 p{position:relative;z-index:1}
 .hero2 .strip{position:relative;z-index:1}
 .strip .go{color:var(--accent-ink)}
-a.book{color:var(--accent-ink);box-shadow:0 4px 14px rgba(240,169,60,.4)}
+a.book{color:var(--accent-ink);box-shadow:0 4px 14px rgba(224,164,88,.4)}
 .chip.on{color:var(--accent-ink)}
 .m.sel{color:var(--accent-ink)}
 .m.sel .mu{color:rgba(16,35,31,.6)}
