@@ -1,24 +1,26 @@
 // Shared display vocabulary — the app's words, and only the app's words.
-export const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو",
-                          "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+import { t, isEN } from "/app/js/i18n.js";
 
-export const WARMTH_AR = {cold:"باردة", mild:"معتدلة", warm:"دافئة", hot:"حارة"};
-export const RAIN_AR   = {r0:"بلا مطر", r1:"مطر خفيف", r2:"مطر متوسط", r3:"مطر غزير"};
+export const MONTHS_AR = [t("يناير"),t("فبراير"),t("مارس"),t("أبريل"),t("مايو"),t("يونيو"),
+                          t("يوليو"),t("أغسطس"),t("سبتمبر"),t("أكتوبر"),t("نوفمبر"),t("ديسمبر")];
+
+export const WARMTH_AR = {cold:t("باردة"), mild:t("معتدلة"), warm:t("دافئة"), hot:t("حارة")};
+export const RAIN_AR   = {r0:t("بلا مطر"), r1:t("مطر خفيف"), r2:t("مطر متوسط"), r3:t("مطر غزير")};
 
 export const REQUIREMENT_AR = {
-  visa_free: "لا تتطلب تأشيرة",
-  visa_waiver: "إعفاء من التأشيرة",
-  freedom_of_movement: "حرية تنقّل",
-  visa_on_arrival: "تأشيرة عند الوصول",
-  evisa: "تأشيرة إلكترونية",
-  eta: "تصريح سفر إلكتروني",
-  embassy_visa: "تأشيرة من السفارة",
-  restricted: "دخول مقيّد",
-  unclear: "المتطلب غير مؤكد — راجع الجهة الرسمية",
+  visa_free: t("لا تتطلب تأشيرة"),
+  visa_waiver: t("إعفاء من التأشيرة"),
+  freedom_of_movement: t("حرية تنقّل"),
+  visa_on_arrival: t("تأشيرة عند الوصول"),
+  evisa: t("تأشيرة إلكترونية"),
+  eta: t("تصريح سفر إلكتروني"),
+  embassy_visa: t("تأشيرة من السفارة"),
+  restricted: t("دخول مقيّد"),
+  unclear: t("المتطلب غير مؤكد — راجع الجهة الرسمية"),
 };
 
-export const PASSPORT_AR = {SA:"السعودية", AE:"الإمارات", KW:"الكويت",
-                            QA:"قطر", BH:"البحرين", OM:"عُمان"};
+export const PASSPORT_AR = {SA:t("السعودية"), AE:t("الإمارات"), KW:t("الكويت"),
+                            QA:t("قطر"), BH:t("البحرين"), OM:t("عُمان")};
 
 export function flag(cc){
   return [...cc.toUpperCase()].map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join("");
@@ -41,8 +43,8 @@ export function el(spec, attrs = {}, ...children){
   return node;
 }
 
-export function cityName(c){ return c.name_ar || c.name_en; }
-export function countryName(c){ return c.country_name_ar || c.country_name_en; }
+export function cityName(c){ return isEN ? (c.name_en || c.name_ar) : (c.name_ar || c.name_en); }
+export function countryName(c){ return isEN ? (c.country_name_en || c.country_name_ar) : (c.country_name_ar || c.country_name_en); }
 
 // The affiliate handoff — website channel, disclosed. Mirrors the pages.
 const MARKER = "768560";

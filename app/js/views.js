@@ -12,12 +12,17 @@ import { Memory } from "./memory-store.js";
 import { render, askSignIn } from "./app.js";
 import * as cloud from "./cloud.js";
 import { COVERS } from "./covers.js";
+import { t, t as tt } from "/app/js/i18n.js";
+import { isEN } from "/app/js/i18n.js";
+const aName = (a) => isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en);
+const aBlurb = (a) => isEN ? (a.blurb_en || "") : (a.blurb || "");
+const cName = (c) => isEN ? (c.country_name_en || c.country_name_ar) : (c.country_name_ar || c.country_name_en);
 
 const goto = h => { location.hash = h; };
 
-const TAG_AR = { nature: "الطبيعة", history: "التاريخ", sea: "البحر", mountain: "الجبال" };
-const RAIN_WANTED_AR = { any: "لا يهم", some: "مطر خفيف+", moderate: "مطر متوسط+", heavy: "مطر غزير" };
-const GROUP_AR = { no_visa: "بلا تأشيرة", permit: "تصريح/عند الوصول", embassy: "تأشيرة سفارة" };
+const TAG_AR = { nature: t("الطبيعة"), history: t("التاريخ"), sea: t("البحر"), mountain: t("الجبال") };
+const RAIN_WANTED_AR = { any: t("لا يهم"), some: t("مطر خفيف+"), moderate: t("مطر متوسط+"), heavy: t("مطر غزير") };
+const GROUP_AR = { no_visa: t("بلا تأشيرة"), permit: t("تصريح/عند الوصول"), embassy: t("تأشيرة سفارة") };
 
 function warmthWord(store, t){ return WARMTH_AR[store.warmthBand(t)]; }
 function rainWordOf(store, mm){
@@ -25,8 +30,8 @@ function rainWordOf(store, mm){
 }
 
 function paperLabel(store, doc){
-  const kind = doc.kind === "residency" ? "إقامة" : "تأشيرة";
-  const who = doc.bloc === "schengen" ? "شنغن"
+  const kind = doc.kind === "residency" ? t("إقامة") : t("تأشيرة");
+  const who = doc.bloc === "schengen" ? t("شنغن")
             : (store.passportCountryName(doc.countryCode) || doc.countryCode);
   return kind + " " + who;
 }
@@ -42,7 +47,7 @@ function visaLine(ctx, city){
     return REQUIREMENT_AR[v.requirement];
   const held = papers.documentsFor(city.country_code,
                                    store.blocs(city, filter.passport));
-  if (held.length) return "لديك " + paperLabel(store, held[0]);
+  if (held.length) return t`لديك ${paperLabel(store, held[0])}`;
   return REQUIREMENT_AR[v.requirement] || REQUIREMENT_AR.unclear;
 }
 
@@ -60,17 +65,17 @@ export function home(ctx){
     onclick: () => { sessionStorage.setItem("sv.facet", target || label);
                      goto("#/next"); } }, ficon(icon), label);
   root.append(el("div.hero2", {},
-    el("h1", {}, "إلى أين وجهتك القادمة؟"),
-    el("p", {}, "خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز"),
+    el("h1", {}, t("إلى أين وجهتك القادمة؟")),
+    el("p", {}, t("خطط بالشهر والأجواء والتأشيرة والطيران المباشر — ثم احجز")),
     searchStrip(ctx),
     el("div.chips", { style: "margin-top:12px;justify-content:center" },
-      facet("weather", "الأجواء"),
-      facet("rain", "الأمطار"),
-      facet("visa", "التأشيرة"),
-      facet("airport", "طيران مباشر", "المطار"),
+      facet("weather", t("الأجواء")),
+      facet("rain", t("الأمطار")),
+      facet("visa", t("التأشيرة")),
+      facet("airport", t("طيران مباشر"), t("المطار")),
       el("button.chip", {
         style: "background:#fff;color:var(--deep);font-weight:800",
-        onclick: () => goto("#/next") }, "الفلتر الكامل ›"))));
+        onclick: () => goto("#/next") }, t("الفلتر الكامل ›")))));
 
   const ideas = plan({ store, filter, prefs, shortlist, papers });
 
@@ -80,7 +85,7 @@ export function home(ctx){
     if (!list.length) continue;
     const row = el("div");
     for (const { city } of list) row.append(destRow(ctx, city, render, +month));
-    root.append(shelf("وجهات مقترحة لك لشهر " + MONTHS_AR[month - 1], row));
+    root.append(shelf(t`وجهات مقترحة لك لشهر ${MONTHS_AR[month - 1]}`, row));
   }
 
   // بلا تأشيرة لجوازك هذا الشهر — القسم الذي يبيع.
@@ -94,13 +99,13 @@ export function home(ctx){
     if (free.length){
       const row = el("div");
       for (const c of free) row.append(destRow(ctx, c, render));
-      root.append(shelf("بلا تأشيرة لجوازك — معتدلة في " + MONTHS_AR[filter.month - 1], row));
+      root.append(shelf(t`بلا تأشيرة لجوازك — معتدلة في ${MONTHS_AR[filter.month - 1]}`, row));
     }
   }
 
   if (prefs.isEmpty){
     root.append(el("div.nudge", {},
-      el("a", { href: "#/prefs" }, "أضف تفضيلاتك لتحسين الاقتراحات ›")));
+      el("a", { href: "#/prefs" }, t("أضف تفضيلاتك لتحسين الاقتراحات ›"))));
   }
 
   const upcoming = Trips.upcoming();
@@ -112,7 +117,7 @@ export function home(ctx){
         el("div.body", {}, el("div.n", {}, t.title),
           el("div.c", {}, (t.start || "") + (t.end ? " → " + t.end : "")))));
     }
-    root.append(section("رحلاتك القادمة", row));
+    root.append(section(t("رحلاتك القادمة"), row));
   }
 
   // شريط الذاكرة: القادمة تملك البطل، والسابقة سطرٌ متواضع أسفله —
@@ -125,29 +130,29 @@ export function home(ctx){
 function memoryBand(ctx){
   if (!cloud.user){
     return el("div.section", {},
-      el("h2", {}, "رحلاتك السابقة"),
+      el("h2", {}, t("رحلاتك السابقة")),
       el("div.card", { style: "display:flex;align-items:center;gap:14px;flex-wrap:wrap" },
         el("span", { style: "font-size:26px" }, "✈︎"),
         el("span", { style: "flex:1;min-width:200px" },
-          "ذكريات صنعتها لتبقى — سجّل لتحفظ رحلاتك وتجدها على كل أجهزتك."),
+          t("ذكريات صنعتها لتبقى — سجّل لتحفظ رحلاتك وتجدها على كل أجهزتك.")),
         el("button.btn", { onclick: () =>
-          askSignIn("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.") }, "تسجيل الدخول")));
+          askSignIn(t("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.")) }, t("تسجيل الدخول"))));
   }
   const stats = Memory.stats;
   const goTrips = () => goto("#/trips");
   return el("div.section", {},
-    el("h2", {}, "رحلاتك السابقة"),
+    el("h2", {}, t("رحلاتك السابقة")),
     el("div.memstats", {},
-      statBox(stats.trips, "الرحلات"),
-      statBox(stats.places, "الأماكن"),
-      statBox(stats.countries, "الدول")),
+      statBox(stats.trips, t("الرحلات")),
+      statBox(stats.places, t("الأماكن")),
+      statBox(stats.countries, t("الدول"))),
     el("div", { style: "display:flex;gap:8px;margin-top:10px" },
-      el("button.btn", { onclick: goTrips }, "رحلاتك السابقة ›"),
+      el("button.btn", { onclick: goTrips }, t("رحلاتك السابقة ›")),
       // زر الإضافة في الرئيسية إنقاذ لبيت فارغ لا روتين — قرار طارق:
       // يظهر ما دامت الرحلات صفرًا، فإذا امتلأ البيت سكن في صفحته.
       stats.trips === 0
         ? el("button.chip", { onclick: () => { memAdding = true; goTrips(); } },
-            "أضف رحلة سابقة")
+            t("أضف رحلة سابقة"))
         : null));
 }
 
@@ -167,7 +172,7 @@ export function searchStrip(ctx, compact = false){
   const { store, filter } = ctx;
   // الصندوق لا يسأل بل يَعِد: يخبر الكاتب بما سيناله من كتابته.
   const q = el("input", { placeholder:
-    "اكتب اسم الوجهة لترى طقسها والتأشيرة المطلوبة وباقي تفاصيلها…",
+    t("اكتب اسم الوجهة لترى طقسها والتأشيرة المطلوبة وباقي تفاصيلها…"),
     value: filter.query || "" });
   const month = el("select.menu", {},
     MONTHS_AR.map((m, i) => {
@@ -178,15 +183,15 @@ export function searchStrip(ctx, compact = false){
   // الجواز يُسأل عنه مرة واحدة: بعد أول اختيار يُحفظ ويختفي الحقل،
   // ويبقى تغييره من لوحة الإعدادات.
   const pass = filter.passport ? null : el("select", {},
-    el("option", { value: "" }, "جوازك؟"),
+    el("option", { value: "" }, t("جوازك؟")),
     store.passports().map(cc =>
-      el("option", { value: cc }, "جواز " + (PASSPORT_AR[cc] || cc))));
+      el("option", { value: cc }, t`جواز ${PASSPORT_AR[cc] || cc}`)));
   const go = el("button.go", { onclick: () => {
     filter.query = q.value;
     filter.month = +month.value;
     if (pass && pass.value) filter.passport = pass.value;
     if (compact) render(); else goto("#/next");
-  } }, "ابحث");
+  } }, t("ابحث"));
   q.addEventListener("keydown", e => { if (e.key === "Enter") go.click(); });
   // ترتيب طارق: الشهر أولًا، ثم كلمات البحث، ثم زر ابحث.
   return el("div.strip" + (compact ? ".compact" : ""), {},
@@ -207,8 +212,8 @@ export function finder(ctx){
   // القلب في الرأس كما في التطبيق — المفضلة بنت هذه الصفحة لا بابٌ رابع.
   const root = el("div.wide");
   root.append(el("div.hero2", {},
-    el("h1", {}, "وجهاتك القادمة"),
-    el("p", {}, "رشّح وجهتك بالشهر والأجواء والتأشيرة والطيران المباشر — والقلب يحفظها في مفضلتك."),
+    el("h1", {}, t("وجهاتك القادمة")),
+    el("p", {}, t("رشّح وجهتك بالشهر والأجواء والتأشيرة والطيران المباشر — والقلب يحفظها في مفضلتك.")),
     searchStrip(ctx, true)));
   const inner = el("div.section");
   root.append(inner);
@@ -243,10 +248,10 @@ export function filterSection(ctx, opts = {}){
   // The passports' name table lacks one's own country (it is nobody's
   // destination), so country names come from the cities the reader sees.
   const countryAr = cc =>
-    store.cities.find(c => c.country_code === cc)?.country_name_ar
+    (x => x && cName(x))(store.cities.find(c => c.country_code === cc))
       || store.passportCountryName(cc) || cc;
   const countrySel = menu(
-    [["", "اختر الدولة"]].concat(store.originCountries().map(cc =>
+    [["", t("اختر الدولة")]].concat(store.originCountries().map(cc =>
       [cc, countryAr(cc)])),
     filter.originCountry || "",
     v => { filter.originCountry = v || null;
@@ -254,13 +259,13 @@ export function filterSection(ctx, opts = {}){
            render(); });
   const airports = filter.originCountry ? store.originsIn(filter.originCountry) : [];
   const airportSel = menu(
-    [["", "من أين تطير؟"]].concat(airports.map(o => [o.iata, o.city_ar + " — " + o.iata])),
+    [["", t("من أين تطير؟")]].concat(airports.map(o => [o.iata, o.city_ar + " — " + o.iata])),
     filter.origin || "",
     v => { filter.origin = v; render(); }, !filter.originCountry);
-  const nonstop = chip("مباشر فقط", filter.nonstopOnly,
+  const nonstop = chip(t("مباشر فقط"), filter.nonstopOnly,
     () => { filter.nonstopOnly = !filter.nonstopOnly; render(); }, !filter.origin);
   // الشهر سكن شريط البحث أعلاه — قرار طارق — فلا صندوق له هنا.
-  rows.append(frow("airport", "المطار", countrySel, airportSel, nonstop));
+  rows.append(frow("airport", t("المطار"), countrySel, airportSel, nonstop));
 
   // الأجواء دفئًا في صف، والأمطار في صف خاص بها — طلب طارق.
   const warmth = Object.entries(WARMTH_AR).map(([k, ar]) =>
@@ -269,12 +274,12 @@ export function filterSection(ctx, opts = {}){
       next.has(k) ? next.delete(k) : next.add(k);
       filter.bands = next; render();
     }));
-  rows.append(frow("weather", "الأجواء", scrollChips(el("div.chips", {}, warmth))));
+  rows.append(frow("weather", t("الأجواء"), scrollChips(el("div.chips", {}, warmth))));
 
   const rains = RAIN_WANTED.map(k => chip(RAIN_WANTED_AR[k], filter.rain === k,
     () => { filter.rain = filter.rain === k ? "any" : k; render(); },
     undefined, k !== "any"));
-  rows.append(frow("rain", "الأمطار", scrollChips(el("div.chips", {}, rains))));
+  rows.append(frow("rain", t("الأمطار"), scrollChips(el("div.chips", {}, rains))));
 
   // التفضيل خرج من الفلتر (قرار طارق) — الوسوم بقيت في التفضيلات توجّه
   // الاقتراحات؛ وأي وسوم مخزنة من قبل تُمسح كي لا تصفّي النتائج خفيةً.
@@ -282,7 +287,7 @@ export function filterSection(ctx, opts = {}){
 
   // التأشيرة — الجواز قائمة، والمفردات رقائق خاملة بلا جواز.
   const passSel = filter.passport ? null : menu(
-    [["", "جوازك؟"]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
+    [["", t("جوازك؟")]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
     "",
     v => { if (v) filter.passport = v; render(); });
   const visaChips = VISA_GROUPS.map(g => chip(GROUP_AR[g], filter.visaGroups.has(g), () => {
@@ -290,9 +295,9 @@ export function filterSection(ctx, opts = {}){
     next.has(g) ? next.delete(g) : next.add(g);
     filter.visaGroups = next; render();
   }, !filter.passport));
-  visaChips.push(chip("تأشيرة شنغن", filter.schengen,
+  visaChips.push(chip(t("تأشيرة شنغن"), filter.schengen,
     () => { filter.schengen = !filter.schengen; render(); }, !filter.passport));
-  const visaBox = frow("visa", "التأشيرة",
+  const visaBox = frow("visa", t("التأشيرة"),
     ...(passSel ? [passSel] : []),
     scrollChips(el("div.chips", {}, visaChips)));
   visaBox.classList.add("span");
@@ -310,8 +315,8 @@ export function filterSection(ctx, opts = {}){
   });
   const manageLink = el("a", { href: "#/papers",
     style: "font-size:13px;white-space:nowrap;align-self:center;font-weight:700" },
-    docs.documents.length ? "إدارة أوراقي ›" : "أضف أوراقك ›");
-  const paperBox = frow("papers", "أوراقي",
+    docs.documents.length ? t("إدارة أوراقي ›") : t("أضف أوراقك ›"));
+  const paperBox = frow("papers", t("أوراقي"),
     docs.documents.length ? scrollChips(el("div.chips", {}, paperChips)) : null,
     manageLink);
   paperBox.classList.add("span");
@@ -320,12 +325,12 @@ export function filterSection(ctx, opts = {}){
   const resWrap = el("div.fresults");
 
   const lens = el("div.lens", {},
-    lensBtn("خريطة", filter.presentation === "map",
+    lensBtn(t("خريطة"), filter.presentation === "map",
       () => { filter.presentation = "map"; render(); }),
-    lensBtn("قائمة", filter.presentation === "list",
+    lensBtn(t("قائمة"), filter.presentation === "list",
       () => { filter.presentation = "list"; render(); }),
     // المفضلة نتائج سبق اختيارها — فموضعها بين عدسات عرض النتائج.
-    lensBtn("♥ المفضلة", filter.presentation === "fav",
+    lensBtn(t("♥ المفضلة"), filter.presentation === "fav",
       () => { filter.presentation = "fav"; render(); }));
   resWrap.append(el("div.countbar", {}, lens));
 
@@ -339,15 +344,15 @@ export function filterSection(ctx, opts = {}){
       if (!cloud.user){
         results.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
           el("div", { style: "font-size:34px" }, "♡"),
-          el("p", {}, "المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر."),
+          el("p", {}, t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر.")),
           el("button.btn", { onclick: () =>
-            askSignIn("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.") }, "تسجيل الدخول")));
+            askSignIn(t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")) }, t("تسجيل الدخول"))));
         return;
       }
       const kept = [...shortlist.cityIDs]
         .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
       if (!kept.length){
-        results.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
+        results.append(el("div.empty", {}, t("لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا.")));
         return;
       }
       for (const city of kept)
@@ -363,7 +368,7 @@ export function filterSection(ctx, opts = {}){
     }
     for (const city of list.slice(0, 80)) results.append(destRow(ctx, city, redrawResults));
     if (list.length > 80)
-      results.append(el("div.empty", {}, `و${list.length - 80} أخرى — ضيّق البحث`));
+      results.append(el("div.empty", {}, t`و${list.length - 80} أخرى — ضيّق البحث`));
   }
   redrawResults();
   return { controls: root, results: resWrap };
@@ -378,7 +383,7 @@ function lensBtn(label, on, onclick){
 function drawMap(holder, list, open){
   queueMicrotask(() => {
     const L = window.L;
-    if (!L){ holder.textContent = "الخريطة تُحمّل…"; setTimeout(() => drawMap(holder, list, open), 300); return; }
+    if (!L){ holder.textContent = t("الخريطة تُحمّل…"); setTimeout(() => drawMap(holder, list, open), 300); return; }
     const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
@@ -466,7 +471,7 @@ function coverStyle(city, band){
 // طابع الحرف الأول — علامة مائية تملأ الغلاف المرسوم؛ الصورة تُغني عنه.
 function coverStamp(city){
   if (!city || COVERS.has(city.id)) return null;
-  return el("span.stamp", {}, (city.name_ar || "؟").trim()[0]);
+  return el("span.stamp", {}, (city.name_ar || t("؟")).trim()[0]);
 }
 
 function destRow(ctx, city, redraw, month = ctx.filter.month){
@@ -477,7 +482,7 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
     onclick: e => {
       e.stopPropagation();
       if (!cloud.user){
-        askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك — ادخل وسيُحفظ هذا القلب فورًا.",
+        askSignIn(tt("المفضلة تعيش في حسابك لتجدها على كل أجهزتك — ادخل وسيُحفظ هذا القلب فورًا."),
           { type: "heart", cityId: city.id, month });
         return;
       }
@@ -488,12 +493,12 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
     ? el("span.keptpill", {}, MONTHS_AR[kept - 1]) : null;
   const badges = [];
   const visa = visaLine(ctx, city);
-  if (visa) badges.push(el("span.badge" + (visa === "لا تتطلب تأشيرة" ? ".good" : ""), {}, visa));
+  if (visa) badges.push(el("span.badge" + (visa === tt("لا تتطلب تأشيرة") ? ".good" : ""), {}, visa));
   // الدرجة الوسطى: المُثبت شهريًا يُجزم به، والمسجل بلا دليل يحمل
   // علامة سؤال — لا وعد بلا سند، ولا صمت يخفي خطًا مسجلًا.
   const from = ctx.prefs.departures(filter.origin).find(i => store.route(i, city.id));
   if (from) badges.push(el("span.badge", {},
-    store.flightVerified(from, city.id, month) ? "طيران مباشر" : "طيران مباشر؟"));
+    store.flightVerified(from, city.id, month) ? tt("طيران مباشر") : tt("طيران مباشر؟")));
   if (t) badges.push(el("span.badge.w-" + store.warmthBand(t.t_max_avg_c), {},
                         warmthWord(store, t.t_max_avg_c)));
   // بطاقة أفقية بعرض الصفحة كما في بوكينج: صورة، تفاصيل، ثم الحرارة والزر.
@@ -512,24 +517,24 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
     el("div.side", {},
       t ? el("div.temp", {},
         el("div.hi", {}, Math.round(t.t_max_avg_c) + "°"),
-        el("div.lo", {}, "الصغرى " + Math.round(t.t_min_avg_c) + "°")) : el("div"),
-      el("span.view", {}, "عرض الوجهة")));
+        el("div.lo", {}, tt`الصغرى ${Math.round(t.t_min_avg_c)}°`)) : el("div"),
+      el("span.view", {}, tt("عرض الوجهة"))));
 }
 
 /* ── صفحة الوجهة ───────────────────────────────────────────────────── */
 export function destination(ctx, cityId){
   const { store, filter, prefs, shortlist, papers } = ctx;
   const city = store.cities.find(c => c.id === cityId);
-  if (!city) return el("div.empty", {}, "وجهة غير معروفة");
+  if (!city) return el("div.empty", {}, t("وجهة غير معروفة"));
   const month = filter.month;
 
   const root = el("div");
-  root.append(el("a.back", { href: "#/next" }, "‹ كل الوجهات"));
+  root.append(el("a.back", { href: "#/next" }, t("‹ كل الوجهات")));
 
   const heart = el("button.heart" + (shortlist.contains(city.id) ? ".on" : ""), {
     onclick: () => {
       if (!cloud.user){
-        askSignIn("المفضلة تعيش في حسابك لتجدها على كل أجهزتك — ادخل وسيُحفظ هذا القلب فورًا.",
+        askSignIn(t("المفضلة تعيش في حسابك لتجدها على كل أجهزتك — ادخل وسيُحفظ هذا القلب فورًا."),
           { type: "heart", cityId: city.id, month });
         return;
       }
@@ -561,9 +566,9 @@ export function destination(ctx, cityId){
     strip.append(cell);
   }
   root.append(el("div.section", {},
-    el("h2", {}, "متوسط الحرارة والأمطار لكل شهر:"), strip,
+    el("h2", {}, t("متوسط الحرارة والأمطار لكل شهر:")), strip,
     el("div", { style: "font-size:11px;color:var(--muted);margin-top:6px" },
-      "بيانات الطقس: Open-Meteo.com (CC BY 4.0)")));
+      t("بيانات الطقس: Open-Meteo.com (CC BY 4.0)"))));
   queueMicrotask(() => {
     const sel = strip.querySelector(".sel");
     if (sel) sel.scrollIntoView({ inline: "center", block: "nearest" });
@@ -572,7 +577,7 @@ export function destination(ctx, cityId){
   // The visa, in the app's arrangement: my passport, the ruling, my papers.
   const passportSel = el("select", {
     onchange: e => { filter.passport = e.target.value || null; render(); } },
-    el("option", { value: "" }, "اختر جوازك"),
+    el("option", { value: "" }, t("اختر جوازك")),
     store.passports().map(cc => {
       const o = el("option", { value: cc }, PASSPORT_AR[cc] || cc);
       if (filter.passport === cc) o.selected = true;
@@ -581,21 +586,21 @@ export function destination(ctx, cityId){
   const v = filter.passport ? store.visa(city, filter.passport) : null;
   const held = filter.passport
     ? papers.documentsFor(city.country_code, store.blocs(city, filter.passport)) : [];
-  root.append(el("div.section", {}, el("h2", {}, "التأشيرة المطلوبة:"),
+  root.append(el("div.section", {}, el("h2", {}, t("التأشيرة المطلوبة:")),
     el("div.card", {},
-      el("div", {}, "جوازي: ", passportSel),
+      el("div", {}, t("جوازي: "), passportSel),
       v ? el("div", { style: "font-size:19px;font-weight:800;margin:4px 0" },
             REQUIREMENT_AR[v.requirement] || REQUIREMENT_AR.unclear,
             v.allowed_stay_days && v.requirement !== "unclear"
               ? el("span", { style: "font-size:13px;font-weight:400;color:var(--muted)" },
-                  ` · الإقامة حتى ${v.allowed_stay_days} يومًا`) : null)
-        : el("div.sub", {}, "اختر جوازًا لترى الحكم"),
+                  t` · الإقامة حتى ${v.allowed_stay_days} يومًا`) : null)
+        : el("div.sub", {}, t("اختر جوازًا لترى الحكم")),
       held.length ? el("div", { style: "font-size:14px;color:var(--visited)" },
-        "لديك " + paperLabel(store, held[0])
-        + (hasExpired(held[0]) ? " — منتهية!" : "")) : null,
+        t`لديك ${paperLabel(store, held[0])}`
+        + (hasExpired(held[0]) ? t(" — منتهية!") : "")) : null,
       el("div", { style: "font-size:12px;color:var(--muted)" },
-        "القواعد تتغير — تحقق من الجهة الرسمية."),
-      el("a", { href: "#/papers", style: "font-size:13px" }, "أوراقي ›"))));
+        t("القواعد تتغير — تحقق من الجهة الرسمية.")),
+      el("a", { href: "#/papers", style: "font-size:13px" }, t("أوراقي ›")))));
 
   // Nonstop flights from the reader's airport, tails and all.
   const origin = prefs.departures(filter.origin).find(i => store.route(i, city.id))
@@ -607,17 +612,17 @@ export function destination(ctx, cityId){
     const inner = el("div.rows");
     if (verified){
       inner.append(el("div.row", {},
-        el("span.who", {}, "طيران مباشر من " + (o ? o.city_ar : origin)),
+        el("span.who", {}, t`طيران مباشر من ${o ? o.city_ar : origin}`),
         el("span.meta", {}, r.airlines.slice(0, 3).map(name =>
           el("span", { style: "margin-inline-start:8px" }, name, el("span.tail", {}, name[0]))))));
     } else if (r){
       inner.append(el("div.row", {},
-        el("span.who", {}, "طيران مباشر من " + (o ? o.city_ar : origin) + "؟ تحقق بالبحث")));
+        el("span.who", {}, t`طيران مباشر من ${o ? o.city_ar : origin}؟ تحقق بالبحث`)));
     } else if (store.hasRoutes(origin)){
       inner.append(el("div.row", {}, el("span.who", {},
-        "لا رحلة مباشرة مسجلة من " + (o ? o.city_ar : origin) + " — ستبدّل طائرة")));
+        t`لا رحلة مباشرة مسجلة من ${o ? o.city_ar : origin} — ستبدّل طائرة`)));
     }
-    root.append(el("div.section", {}, el("h2", {}, "الرحلات المباشرة:"),
+    root.append(el("div.section", {}, el("h2", {}, t("الرحلات المباشرة:")),
       el("div.card", {}, inner)));
   }
 
@@ -625,18 +630,18 @@ export function destination(ctx, cityId){
   if (near){
     const a = near.airport || near;
     const km = near.distanceKm ?? near.distance_km ?? near.km;
-    root.append(el("div.section", {}, el("h2", {}, "أقرب مطار:"),
+    root.append(el("div.section", {}, el("h2", {}, t("أقرب مطار:")),
       el("div.card", {},
         el("bdi", { dir: "ltr" }, `${a.name_en} (${a.iata})`),
-        ` — على بعد ${Math.round(km)} كم`)));
+        t` — على بعد ${Math.round(km)} كم`)));
 
     // The handoff. This page IS the website — the allowed channel.
     const from = origin || "RUH";
     root.append(el("div.section", {},
       el("a.book", { rel: "nofollow sponsored", target: "_blank",
         href: kiwiLink(from, a.iata, `webapp_${city.id.replace("city-", "")}_${from}`) },
-        "ابحث عن طيران " + MONTHS_AR[month - 1]),
-      el("div.disclose", {}, "رابط شريك — الأسعار والحجز لدى الموقع الشريك.")));
+        t`ابحث عن طيران ${MONTHS_AR[month - 1]}`),
+      el("div.disclose", {}, t("رابط شريك — الأسعار والحجز لدى الموقع الشريك."))));
   }
 
   // أبرز المعالم — تجربة باريس: إجماعٌ مقيس، ومواعيد وروابط رسمية،
@@ -645,24 +650,24 @@ export function destination(ctx, cityId){
   if (spots?.length){
     const grid = el("div.attr-grid", {},
       spots.map(a => el("div.attr-card", {},
-        el("img", { src: "attractions/" + a.qid + ".jpg", alt: a.name_ar || a.name_en,
+        el("img", { src: "attractions/" + a.qid + ".jpg", alt: aName(a),
                     loading: "lazy" }),
         el("div.b", {},
-          el("div.n", {}, a.name_ar || a.name_en),
-          a.blurb ? el("div.d", {}, a.blurb) : null,
+          el("div.n", {}, aName(a)),
+          aBlurb(a) ? el("div.d", {}, aBlurb(a)) : null,
           a.hours_ar ? el("div.h", {}, ficon("hours"), " ", a.hours_ar) : null,
           a.note ? el("div.d", { style: "margin-top:4px" }, a.note) : null,
           el("div.links", {},
             a.tickets_url ? el("a.tik", { href: a.tickets_url, target: "_blank",
-              rel: "noopener nofollow" }, "شراء التذاكر") : null,
+              rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
             a.official_url ? el("a.off", { href: a.official_url, target: "_blank",
-              rel: "noopener nofollow" }, "الموقع الرسمي ↗") : null),
+              rel: "noopener nofollow" }, t("الموقع الرسمي ↗")) : null),
           // طلب طارق: تنبيه بسيط في كل بطاقة — استرشادية، والمصدر الحكم.
-          el("div.disc", {}, "معلومات استرشادية — تأكد من المصدر")))));
+          el("div.disc", {}, t("معلومات استرشادية — تأكد من المصدر"))))));
     root.append(el("div.section", {},
-      el("h2", {}, "أبرز المعالم"), grid,
+      el("h2", {}, t("أبرز المعالم")), grid,
       el("div", { style: "font-size:11px;color:var(--muted);margin-top:6px" },
-        "المواعيد كما نشرتها المواقع الرسمية يوم جمعها — تحقق قبل زيارتك. الصور: Wikimedia Commons بمرخصها.")));
+        t("المواعيد كما نشرتها المواقع الرسمية يوم جمعها — تحقق قبل زيارتك. الصور: Wikimedia Commons بمرخصها."))));
   }
 
   // احفظها رحلة — من هنا، لا من صفحة أخرى.
@@ -672,8 +677,8 @@ export function destination(ctx, cityId){
     for (const t of mine){
       planBox.append(el("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:6px" },
         el("span", { style: "flex:1" },
-          "✈︎ " + (t.start || "؟") + (t.end ? " ← " + t.end : "")),
-        el("button.out", { onclick: () => { Trips.remove(t.id); render(); } }, "حذف")));
+          "✈︎ " + (t.start || tt("؟")) + (t.end ? " ← " + t.end : "")),
+        el("button.out", { onclick: () => { Trips.remove(t.id); render(); } }, tt("حذف"))));
     }
   }
   const ts = el("input", { type: "date" });
@@ -682,7 +687,7 @@ export function destination(ctx, cityId){
     ts, te,
     el("button.btn", { onclick: () => {
       if (!cloud.user){
-        askSignIn("الرحلات تُحفظ في حسابك لتجدها على كل أجهزتك — ادخل وستُحفظ رحلتك هذه فورًا.",
+        askSignIn(t("الرحلات تُحفظ في حسابك لتجدها على كل أجهزتك — ادخل وستُحفظ رحلتك هذه فورًا."),
           { type: "trip", cityId: city.id, title: cityName(city),
             start: ts.value || null, end: te.value || null });
         return;
@@ -690,8 +695,8 @@ export function destination(ctx, cityId){
       Trips.add({ title: cityName(city), cityId: city.id,
                   start: ts.value || null, end: te.value || null });
       render();
-    } }, "احفظ الرحلة")));
-  root.append(el("div.section", {}, el("h2", {}, "خطط رحلة إلى هنا:"), planBox));
+    } }, t("احفظ الرحلة"))));
+  root.append(el("div.section", {}, el("h2", {}, t("خطط رحلة إلى هنا:")), planBox));
   return root;
 }
 
@@ -699,15 +704,15 @@ export function destination(ctx, cityId){
 export function prefs(ctx, redraw = render){
   const { store, prefs, filter } = ctx;
   const root = el("div");
-  root.append(el("div.top", {}, el("h1", {}, "تفضيلات السفر"),
+  root.append(el("div.top", {}, el("h1", {}, t("تفضيلات السفر")),
     el("a.circle", { href: "#/home" }, "‹")));
 
   // الجواز يُسأل عنه مرة واحدة في البحث — وتغييره من هنا.
   const passMenu = menu(
-    [["", "جوازك؟"]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
+    [["", t("جوازك؟")]].concat(store.passports().map(cc => [cc, PASSPORT_AR[cc] || cc])),
     filter.passport || "",
     v => { filter.passport = v || null; redraw(); });
-  root.append(el("div.section", {}, el("h2", {}, "جواز السفر"), passMenu));
+  root.append(el("div.section", {}, el("h2", {}, t("جواز السفر")), passMenu));
 
   const secTags = el("div.chips");
   for (const k of DESTINATION_TAGS){
@@ -735,10 +740,10 @@ export function prefs(ctx, redraw = render){
     }
   }
   root.append(
-    el("div.section", {}, el("h2", {}, "ما الذي يعجبك؟"), secTags),
-    el("div.section", {}, el("h2", {}, "الأجواء"), secBands),
-    el("div.section", {}, el("h2", {}, "الأمطار"), secRain),
-    el("div.section", {}, el("h2", {}, "مطارات انطلاقك"), scrollChips(secAir)));
+    el("div.section", {}, el("h2", {}, t("ما الذي يعجبك؟")), secTags),
+    el("div.section", {}, el("h2", {}, t("الأجواء")), secBands),
+    el("div.section", {}, el("h2", {}, t("الأمطار")), secRain),
+    el("div.section", {}, el("h2", {}, t("مطارات انطلاقك")), scrollChips(secAir)));
   return root;
 }
 
@@ -749,24 +754,24 @@ export function favorites(ctx){
   const root = el("div.wide");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
-      el("h1", {}, "المفضلة"),
-      el("a.circle", { href: "#/next", title: "وجهاتك القادمة" }, "‹")),
-    el("p", {}, "الوجهات التي أحببتها، كلٌ بشهرها — تعيش في حسابك على كل أجهزتك.")));
+      el("h1", {}, t("المفضلة")),
+      el("a.circle", { href: "#/next", title: t("وجهاتك القادمة") }, "‹")),
+    el("p", {}, t("الوجهات التي أحببتها، كلٌ بشهرها — تعيش في حسابك على كل أجهزتك."))));
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
     inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "♡"),
-      el("p", {}, "المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر."),
+      el("p", {}, t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر.")),
       el("button.btn", { onclick: () =>
-        askSignIn("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.") }, "الدخول بحساب جوجل")));
+        askSignIn(t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")) }, t("الدخول بحساب جوجل"))));
     return root;
   }
   const kept = [...shortlist.cityIDs]
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
   const coming = Trips.upcoming();
   if (!kept.length && !coming.length){
-    inner.append(el("div.empty", {}, "لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا."));
+    inner.append(el("div.empty", {}, t("لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا.")));
     return root;
   }
   const redraw = () => render();
@@ -774,7 +779,7 @@ export function favorites(ctx){
   if (coming.length){
     const list = el("div");
     for (const t of coming) list.append(tripCard(ctx, t));
-    inner.append(el("div.section", {}, el("h2", {}, "رحلاتك القادمة"), list));
+    inner.append(el("div.section", {}, el("h2", {}, t("رحلاتك القادمة")), list));
   }
   return root;
 }
@@ -785,72 +790,72 @@ export function mydata(ctx){
   const root = el("div.wide");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
-      el("h1", {}, "بياناتي"),
+      el("h1", {}, t("بياناتي")),
       el("a.circle", { href: "#/home" }, "‹")),
-    el("p", {}, "هذا كل ما يحفظه سوفينير في حسابك — لا شيء غيره. وبيدك محوه كله في الأسفل.")));
+    el("p", {}, t("هذا كل ما يحفظه سوفينير في حسابك — لا شيء غيره. وبيدك محوه كله في الأسفل."))));
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
     inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("p", {}, "ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت."),
+      el("p", {}, t("ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت.")),
       el("button.btn", { onclick: () =>
-        askSignIn("ادخل بحسابك لترى بياناتك وتتحكم بها.") }, "الدخول")));
+        askSignIn(t("ادخل بحسابك لترى بياناتك وتتحكم بها.")) }, t("الدخول"))));
     return root;
   }
 
   const sec = (title, body) => el("div.section", {}, el("h2", {}, title), body);
 
-  inner.append(sec("حسابك", el("div.card", {},
+  inner.append(sec(t("حسابك"), el("div.card", {},
     el("div", {}, el("b", {}, cloud.user.displayName || "—")),
     el("div", { style: "color:var(--muted);font-size:13.5px" }, cloud.user.email || ""),
     el("div", { style: "color:var(--muted);font-size:12.5px;margin-top:4px" },
-      "الدخول عبر " + (cloud.user.providerData?.[0]?.providerId === "apple.com" ? "أبل" : "جوجل")))));
+      t`الدخول عبر ${cloud.user.providerData?.[0]?.providerId === "apple.com" ? t("أبل") : t("جوجل")}`))));
 
   const hearts = [...shortlist.cityIDs]
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
-  inner.append(sec("المفضلة (" + hearts.length + ")", el("div.card", {},
+  inner.append(sec(t`المفضلة (${hearts.length})`, el("div.card", {},
     hearts.length ? hearts.map(c => {
       const m = shortlist.keptMonth(c.id);
       return el("div", {}, "♥ " + cityName(c) + (m ? " — " + MONTHS_AR[m - 1] : ""));
-    }) : "لا شيء بعد")));
+    }) : t("لا شيء بعد"))));
 
   const trips = Trips.all();
-  inner.append(sec("الرحلات (" + trips.length + ")", el("div.card", {},
+  inner.append(sec(t`الرحلات (${trips.length})`, el("div.card", {},
     trips.length ? trips.map(t =>
-      el("div", {}, "✈︎ " + t.title + " — " + (t.start || "؟") + (t.end ? " ← " + t.end : "")))
-      : "لا شيء بعد")));
+      el("div", {}, "✈︎ " + t.title + " — " + (t.start || tt("؟")) + (t.end ? " ← " + t.end : "")))
+      : t("لا شيء بعد"))));
 
-  inner.append(sec("الأوراق (" + papers.documents.length + ")", el("div.card", {},
+  inner.append(sec(t`الأوراق (${papers.documents.length})`, el("div.card", {},
     papers.documents.length ? papers.documents.map(d =>
-      el("div", {}, "🪪 " + paperLabel(store, d) + (d.expiry ? " — تنتهي " + d.expiry : "")))
-      : "لا شيء بعد")));
+      el("div", {}, "🪪 " + paperLabel(store, d) + (d.expiry ? t` — تنتهي ${d.expiry}` : "")))
+      : t("لا شيء بعد"))));
 
   const prefBits = [
     ...[...prefs.tags].map(k => TAG_AR[k] || k),
     ...[...prefs.bands].map(k => WARMTH_AR[k] || k),
     ...[...prefs.rain],
     ...[...prefs.airports]];
-  inner.append(sec("تفضيلاتك", el("div.card", {},
-    prefBits.length ? prefBits.join(" · ") : "لا شيء بعد")));
+  inner.append(sec(t("تفضيلاتك"), el("div.card", {},
+    prefBits.length ? prefBits.join(" · ") : t("لا شيء بعد"))));
 
-  inner.append(sec("الجواز", el("div.card", {},
-    filter.passport ? "جواز " + (PASSPORT_AR[filter.passport] || filter.passport) : "غير محدد")));
+  inner.append(sec(t("الجواز"), el("div.card", {},
+    filter.passport ? t`جواز ${PASSPORT_AR[filter.passport] || filter.passport}` : t("غير محدد"))));
 
   // المحو الذاتي — سؤال تأكيد في المكان نفسه، ثم لا رجعة.
   const eraseBox = el("div.card", { style: "border-color:var(--hot)" });
   const arm = el("button.erase", { onclick: () => {
     eraseBox.replaceChildren(
       el("p", { style: "margin:0 0 10px" },
-        "سيمحو هذا مفضلتك ورحلاتك وأوراقك وتفضيلاتك من حسابك ومن هذا الجهاز — بلا رجعة. متأكد؟"),
+        t("سيمحو هذا مفضلتك ورحلاتك وأوراقك وتفضيلاتك من حسابك ومن هذا الجهاز — بلا رجعة. متأكد؟")),
       el("div", { style: "display:flex;gap:8px" },
         el("button.erase", { onclick: async () => {
           try { await cloud.eraseMyData(); }
-          catch { alert("تعذر المحو — أعد المحاولة."); }
-        } }, "نعم، احذف نهائيًا"),
-        el("button.later", { onclick: () => render() }, "تراجع")));
-  } }, "احذف بياناتي من الحساب");
+          catch { alert(t("تعذر المحو — أعد المحاولة.")); }
+        } }, t("نعم، احذف نهائيًا")),
+        el("button.later", { onclick: () => render() }, t("تراجع"))));
+  } }, t("احذف بياناتي من الحساب"));
   eraseBox.append(arm);
-  inner.append(sec("المحو", eraseBox));
+  inner.append(sec(t("المحو"), eraseBox));
   return root;
 }
 
@@ -860,9 +865,9 @@ export function papers(ctx){
   const root = el("div.wide");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
-      el("h1", {}, "أوراقي"),
+      el("h1", {}, t("أوراقي")),
       el("a.circle", { href: "#/next" }, "‹")),
-    el("p", {}, "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS.")));
+    el("p", {}, t("تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS."))));
   const inner = el("div.section");
   root.append(inner);
   const append = node => inner.append(node);
@@ -871,36 +876,36 @@ export function papers(ctx){
   for (const d of papers.documents){
     list.append(el("div.card", { style: "margin-bottom:8px" },
       el("b", {}, paperLabel(store, d)),
-      d.expiry ? ` — تنتهي ${d.expiry}` : "",
-      hasExpired(d) ? el("b", { style: "color:var(--hot)" }, " · منتهية") : "",
+      d.expiry ? t` — تنتهي ${d.expiry}` : "",
+      hasExpired(d) ? el("b", { style: "color:var(--hot)" }, t(" · منتهية")) : "",
       el("button", { style: "float:left;color:var(--deep)",
-        onclick: () => { papers.remove(d); render(); } }, "حذف")));
+        onclick: () => { papers.remove(d); render(); } }, t("حذف"))));
   }
-  if (!papers.documents.length) list.append(el("div.empty", {}, "لا أوراق بعد"));
+  if (!papers.documents.length) list.append(el("div.empty", {}, t("لا أوراق بعد")));
   append(list);
 
   const kind = el("select", {},
-    el("option", { value: "visa" }, "تأشيرة"),
-    el("option", { value: "residency" }, "إقامة"));
+    el("option", { value: "visa" }, t("تأشيرة")),
+    el("option", { value: "residency" }, t("إقامة")));
   const seen = new Set();
-  const countryOptions = [el("option", { value: "" }, "الدولة / المنطقة"),
-    el("option", { value: "bloc:schengen" }, "شنغن (المنطقة)")];
+  const countryOptions = [el("option", { value: "" }, t("الدولة / المنطقة")),
+    el("option", { value: "bloc:schengen" }, t("شنغن (المنطقة)"))];
   for (const c of [...ctx.store.cities].sort((a, b) =>
-        a.country_name_ar.localeCompare(b.country_name_ar, "ar"))){
+        cName(a).localeCompare(cName(b), isEN ? "en" : "ar"))){
     if (seen.has(c.country_code)) continue;
     seen.add(c.country_code);
-    countryOptions.push(el("option", { value: c.country_code }, c.country_name_ar));
+    countryOptions.push(el("option", { value: c.country_code }, cName(c)));
   }
   if (!cloud.user){
     append(el("div.card", { style: "text-align:center;padding:22px 18px" },
-      el("p", {}, "أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك."),
+      el("p", {}, t("أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك.")),
       el("button.btn", { onclick: () =>
-        askSignIn("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت.") }, "الدخول بحساب جوجل")));
+        askSignIn(t("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت.")) }, t("الدخول بحساب جوجل"))));
     return root;
   }
   const country = el("select", {}, countryOptions);
   const expiry = el("input", { type: "date" });
-  append(el("div.section", {}, el("h2", {}, "أضف ورقة"),
+  append(el("div.section", {}, el("h2", {}, t("أضف ورقة")),
     el("div.frow", {}, kind, country, expiry),
     el("button.btn", { onclick: () => {
       if (!country.value) return;
@@ -910,7 +915,7 @@ export function papers(ctx){
         : { kind: kind.value, countryCode: country.value, expiry: expiry.value || null };
       papers.save(doc);
       render();
-    } }, "أضف")));
+    } }, t("أضف"))));
   return root;
 }
 
@@ -924,12 +929,12 @@ export function tripCard(ctx, t){
     el("div.names", {},
       el("div.n", {}, t.title),
       city ? el("div.c", {}, countryName(city)) : null,
-      el("div.det", {}, (t.start || "؟") + (t.end ? " ← " + t.end : ""))),
+      el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : ""))),
     el("div.side", {},
       el("div"),
       el("button.out", { onclick: e => {
         e.stopPropagation(); Trips.remove(t.id); render();
-      } }, "حذف")));
+      } }, tt("حذف"))));
 }
 
 let memLens = "timeline";   // عدسة الذاكرة تعيش عبر الرسمات
@@ -943,24 +948,24 @@ export function trips(ctx){
   const stats = cloud.user ? Memory.stats : null;
   root.append(el("div.hero2", {},
     el("div.herorow", {},
-      el("h1", {}, "رحلاتك السابقة"),
+      el("h1", {}, t("رحلاتك السابقة")),
       cloud.user ? el("button.btn", { onclick: () => {
         memAdding = !memAdding; render(); } },
-        memAdding ? "إغلاق" : "أضف رحلة سابقة") : null),
-    el("p", {}, "سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS."),
+        memAdding ? t("إغلاق") : t("أضف رحلة سابقة")) : null),
+    el("p", {}, t("سجلات رحلاتك في حسابك على كل أجهزتك — وصورها تبقى في تطبيق iOS.")),
     stats ? el("div.memstats", { style: "margin-top:14px" },
-      statBox(stats.trips, "الرحلات"),
-      statBox(stats.places, "الأماكن"),
-      statBox(stats.countries, "الدول")) : null));
+      statBox(stats.trips, t("الرحلات")),
+      statBox(stats.places, t("الأماكن")),
+      statBox(stats.countries, t("الدول"))) : null));
 
   const body = wrap => { root.append(el("div.section", {}, wrap)); return root; };
 
   if (!cloud.user){
     return body(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "✈︎"),
-      el("p", {}, "الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر."),
+      el("p", {}, t("الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر.")),
       el("button.btn", { onclick: () =>
-        askSignIn("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.") }, "الدخول بحساب جوجل")));
+        askSignIn(t("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.")) }, t("الدخول بحساب جوجل"))));
   }
 
   const inner = el("div.section");
@@ -972,16 +977,16 @@ export function trips(ctx){
   if (coming.length){
     const list = el("div");
     for (const t of coming) list.append(tripCard(ctx, t));
-    append(el("div.section", {}, el("h2", {}, "القادمة"), list));
+    append(el("div.section", {}, el("h2", {}, t("القادمة")), list));
   }
 
   // العدسات + زر الإضافة.
   const lensRow = el("div.countbar", {},
     el("div.lens", {},
-      lensBtn("الخط الزمني", memLens === "timeline", () => { memLens = "timeline"; render(); }),
-      lensBtn("الدول", memLens === "countries", () => { memLens = "countries"; render(); }),
-      lensBtn("الخريطة", memLens === "map", () => { memLens = "map"; render(); }),
-      lensBtn("الرفقاء", memLens === "companions", () => { memLens = "companions"; render(); })));
+      lensBtn(t("الخط الزمني"), memLens === "timeline", () => { memLens = "timeline"; render(); }),
+      lensBtn(t("الدول"), memLens === "countries", () => { memLens = "countries"; render(); }),
+      lensBtn(t("الخريطة"), memLens === "map", () => { memLens = "map"; render(); }),
+      lensBtn(t("الرفقاء"), memLens === "companions", () => { memLens = "companions"; render(); })));
   append(lensRow);
 
   if (memAdding) append(addTripForm(ctx));
@@ -1002,12 +1007,12 @@ function memTimeline(ctx){
   const trips = Memory.trips;
   if (!trips.length){
     wrap.append(el("div.empty", {},
-      "لا رحلات سابقة بعد — أضفها يدويًا هنا، أو امسح صورك في تطبيق iOS فتصل وحدها."));
+      t("لا رحلات سابقة بعد — أضفها يدويًا هنا، أو امسح صورك في تطبيق iOS فتصل وحدها.")));
     return wrap;
   }
   let year = null;
   for (const t of trips){
-    const y = (t.start || "؟").slice(0, 4);
+    const y = (t.start || tt("؟")).slice(0, 4);
     if (y !== year){ year = y; wrap.append(el("div.year-h", {}, year)); }
     wrap.append(memTripCard(ctx, t));
   }
@@ -1017,8 +1022,8 @@ function memTimeline(ctx){
 function memTripCard(ctx, t){
   const { store } = ctx;
   const places = (t.places ?? []).map(p => p.name);
-  const title = places.length ? places.join("، ")
-    : (countryNameAr(store, t.countryIso) || "رحلة");
+  const title = places.length ? places.join(tt("، "))
+    : (countryNameAr(store, t.countryIso) || tt("رحلة"));
   const mates = (t.companionIds ?? [])
     .map(id => Memory.companion(id)?.name).filter(Boolean);
   return el("div.dest-row", {},
@@ -1030,20 +1035,20 @@ function memTripCard(ctx, t){
       mates.length ? el("div.badges", {},
         mates.map(name => el("span.badge", {}, "👤 " + name))) : null,
       t.notes ? el("div.det", {}, t.notes) : null,
-      el("div.det", {}, (t.start || "؟") + (t.end ? " ← " + t.end : "")
-        + (t.source === "photos" ? " · من صورك" : "")),),
+      el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : "")
+        + (t.source === "photos" ? tt(" · من صورك") : "")),),
     el("div.side", {},
       el("div"),
       t.source === "manual"
         ? el("button.out", { onclick: () => {
-            if (confirm("حذف هذه الرحلة من حسابك؟")) { Memory.removeTrip(t.id); render(); }
-          } }, "حذف")
-        : el("span.det", { style: "font-size:11px;color:var(--muted)" }, "من التطبيق")));
+            if (confirm(tt("حذف هذه الرحلة من حسابك؟"))) { Memory.removeTrip(t.id); render(); }
+          } }, tt("حذف"))
+        : el("span.det", { style: "font-size:11px;color:var(--muted)" }, tt("من التطبيق"))));
 }
 
 function countryNameAr(store, iso){
   if (!iso) return null;
-  return store.cities.find(c => c.country_code === iso)?.country_name_ar
+  return (x => x && cName(x))(store.cities.find(c => c.country_code === iso))
     || store.passportCountryName?.(iso) || iso;
 }
 
@@ -1057,12 +1062,12 @@ function memCountries(ctx){
     for (const iso of isos) counts.set(iso, (counts.get(iso) ?? 0) + 1);
   }
   const wrap = el("div.cgrid");
-  if (!counts.size) return el("div.empty", {}, "لا دول بعد");
+  if (!counts.size) return el("div.empty", {}, t("لا دول بعد"));
   for (const [iso, n] of [...counts.entries()].sort((a, b) => b[1] - a[1])){
     wrap.append(el("div.ccell", {},
       el("div.f", {}, flag(iso)),
       el("div.n", {}, countryNameAr(store, iso) || iso),
-      el("div.c", {}, n === 1 ? "رحلة" : n + " رحلات")));
+      el("div.c", {}, n === 1 ? t("رحلة") : t`${n} رحلات`)));
   }
   return wrap;
 }
@@ -1074,7 +1079,7 @@ function memMap(ctx){
   for (const t of Memory.trips)
     for (const p of t.places ?? [])
       if (p.lat != null) points.push(p);
-  if (!points.length) return el("div.empty", {}, "لا أماكن بإحداثيات بعد");
+  if (!points.length) return el("div.empty", {}, t("لا أماكن بإحداثيات بعد"));
   queueMicrotask(() => {
     const L = window.L;
     if (!L) return;
@@ -1098,43 +1103,43 @@ function memCompanions(ctx){
     const tripCount = Memory.trips.filter(t =>
       (t.companionIds ?? []).includes(c.id)).length;
     list.append(el("div.comp-row", {},
-      el("span.avatarletter", {}, (c.name || "؟").trim()[0]),
+      el("span.avatarletter", {}, (c.name || t("؟")).trim()[0]),
       el("div.who", {},
         el("div.n", {}, c.name),
         el("div.e", {}, (c.relation ? c.relation + " · " : "")
-          + (tripCount ? tripCount + " رحلة" : "بلا رحلات بعد"))),
+          + (tripCount ? t`${tripCount} رحلة` : t("بلا رحلات بعد")))),
       el("button.out", { onclick: () => {
-        if (confirm("حذف " + c.name + " من رفقائك؟")) { Memory.removeCompanion(c.id); render(); }
-      } }, "حذف")));
+        if (confirm(t`حذف ${c.name} من رفقائك؟`)) { Memory.removeCompanion(c.id); render(); }
+      } }, t("حذف"))));
   }
   if (!Memory.companions.length)
-    list.append(el("div.empty", {}, "لا رفقاء بعد"));
-  const name = el("input", { placeholder: "اسم الرفيق" });
-  const relation = el("input", { placeholder: "الصلة (اختياري)" });
+    list.append(el("div.empty", {}, t("لا رفقاء بعد")));
+  const name = el("input", { placeholder: t("اسم الرفيق") });
+  const relation = el("input", { placeholder: t("الصلة (اختياري)") });
   wrap.append(list, el("div.card", { style: "margin-top:10px" },
     el("div.planrow", {}, name, relation,
       el("button.btn", { onclick: () => {
         if (!name.value.trim()) return;
         Memory.addCompanion(name.value.trim(), relation.value.trim());
         render();
-      } }, "أضف رفيقًا"))));
+      } }, t("أضف رفيقًا")))));
   return wrap;
 }
 
 /* نموذج إضافة رحلة سابقة يدويًا. */
 function addTripForm(ctx){
   const { store } = ctx;
-  const place = el("input", { placeholder: "المكان — مدينة أو موقع" });
+  const place = el("input", { placeholder: t("المكان — مدينة أو موقع") });
   const seen = new Set();
   const countrySel = el("select.menu", {},
-    el("option", { value: "" }, "الدولة"),
+    el("option", { value: "" }, t("الدولة")),
     [...store.cities].sort((a, b) =>
-      a.country_name_ar.localeCompare(b.country_name_ar, "ar"))
+      cName(a).localeCompare(cName(b), isEN ? "en" : "ar"))
       .filter(c => !seen.has(c.country_code) && seen.add(c.country_code))
-      .map(c => el("option", { value: c.country_code }, c.country_name_ar)));
+      .map(c => el("option", { value: c.country_code }, cName(c))));
   const start = el("input", { type: "date" });
   const end = el("input", { type: "date" });
-  const notes = el("input", { placeholder: "ملاحظات (اختياري)" });
+  const notes = el("input", { placeholder: t("ملاحظات (اختياري)") });
   const picked = new Set();
   const mates = el("div.chips", {},
     Memory.companions.map(c => {
@@ -1150,12 +1155,12 @@ function addTripForm(ctx){
     el("div.planrow", { style: "margin-top:8px" }, notes),
     Memory.companions.length
       ? el("div", { style: "margin-top:8px" },
-          el("div.det", { style: "margin-bottom:6px" }, "الرفقاء:"), mates)
+          el("div.det", { style: "margin-bottom:6px" }, t("الرفقاء:")), mates)
       : null,
     el("div.planrow", { style: "margin-top:10px" },
       el("button.btn", { onclick: () => {
         const name = place.value.trim();
-        if (!name || !start.value) { alert("المكان وتاريخ البداية على الأقل."); return; }
+        if (!name || !start.value) { alert(t("المكان وتاريخ البداية على الأقل.")); return; }
         const iso = countrySel.value || null;
         // إن طابق المكان مدينة معروفة أخذنا إحداثياتها.
         const known = store.cities.find(c => c.name_ar === name
@@ -1170,5 +1175,5 @@ function addTripForm(ctx){
         });
         memAdding = false;
         render();
-      } }, "احفظ الرحلة")));
+      } }, t("احفظ الرحلة"))));
 }

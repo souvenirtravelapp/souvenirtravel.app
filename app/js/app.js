@@ -1,3 +1,5 @@
+import { t, isEN, setLang, applyDir } from "/app/js/i18n.js";
+applyDir();
 // The shell: loads the data bundle once, builds the app's brains, routes by
 // hash. Three tabs, like the iOS app: Home, the destination filter, trips.
 import { TravelDataStore } from "./store.js";
@@ -13,9 +15,9 @@ import { Trips } from "./trips-store.js";
 // أبواب سوفينير الثلاثة كما رتبها طارق: بيتٌ يستقبل، وقادمٌ يُخطط،
 // وماضٍ يُحفظ. المفضلة ليست بابًا رابعًا — قلبها يسكن رأس «وجهاتك القادمة».
 const TABS = [
-  { hash: "#/home",  label: "الرئيسية",        icon: "icons/TabHome.svg"  },
-  { hash: "#/next",  label: "وجهاتك القادمة",  icon: "icons/TabFind.svg"  },
-  { hash: "#/trips", label: "رحلاتك السابقة",  icon: "icons/TabTrips.svg" },
+  { hash: "#/home",  label: t("الرئيسية"),        icon: "icons/TabHome.svg"  },
+  { hash: "#/next",  label: t("وجهاتك القادمة"),  icon: "icons/TabFind.svg"  },
+  { hash: "#/trips", label: t("رحلاتك السابقة"),  icon: "icons/TabTrips.svg" },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -33,7 +35,7 @@ function drawTabs(){
   const on = { d: "next", find: "next", map: "next", fav: "next",
                prefs: "home", papers: "home", mydata: "home" }[path] || path;
   const tripsGuard = e => guardNav(e, "#/trips",
-    "رحلاتك تُحفظ في حسابك لتجدها على كل أجهزتك.");
+    t("رحلاتك تُحفظ في حسابك لتجدها على كل أجهزتك."));
   const nav = document.getElementById("tabs");
   nav.replaceChildren(el("div.pill", {},
     TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "",
@@ -45,16 +47,17 @@ function drawTabs(){
   const bar = document.getElementById("topbar");
   if (bar) bar.replaceChildren(
     el("a.brand", { href: "#/home" },
-      el("img", { src: "/icon.png", alt: "" }), "سوفينير"),
+      el("img", { src: "/icon.png", alt: "" }), t("سوفينير")),
     el("div.links", {},
-      el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, "الرئيسية"),
-      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, "وجهاتك القادمة"),
+      el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, t("الرئيسية")),
+      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("وجهاتك القادمة")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
-        onclick: tripsGuard }, "رحلاتك السابقة")),
+        onclick: tripsGuard }, t("رحلاتك السابقة"))),
+    langPill(),
     avatarFace());
 }
 
-const SIGNIN_MSG = "بحساب واحد تُحفظ مفضلتك ورحلاتك وأوراقك — وتجدها على كل أجهزتك.";
+const SIGNIN_MSG = t("بحساب واحد تُحفظ مفضلتك ورحلاتك وأوراقك — وتجدها على كل أجهزتك.");
 
 // حارس الوجهات المحمية: الضيف يرى نافذة الدخول، ومن دخل يمضي —
 // والوجهة المطلوبة تُعلَّق فيهبط عليها فور عودته.
@@ -68,7 +71,7 @@ function guardNav(e, hash, msg){
 // (أبل لا تمنح صورًا)، و«تسجيل الدخول» صريحةً للضيف.
 function avatarFace(){
   const u = cloud.user;
-  const base = { onclick: openSettings, title: "الإعدادات", "aria-label": "الإعدادات" };
+  const base = { onclick: openSettings, title: t("الإعدادات"), "aria-label": t("الإعدادات") };
   if (u?.photoURL)
     return el("button.avatar.real", base,
       el("img", { src: u.photoURL, alt: "", referrerpolicy: "no-referrer" }));
@@ -77,7 +80,16 @@ function avatarFace(){
     return el("button.avatar.letter", base, letter);
   }
   return el("button.signin", { onclick: () => askSignIn(SIGNIN_MSG) },
-    "تسجيل الدخول");
+    t("تسجيل الدخول"));
+}
+
+// زر اللغة: ظاهر دائمًا — للضيف قبل صاحب الحساب.
+function langPill(){
+  return el("button.langpill", {
+    onclick: () => setLang(isEN ? "ar" : "en"),
+    title: isEN ? "العربية" : "English",
+    "aria-label": isEN ? "العربية" : "English",
+  }, isEN ? "ع" : "EN");
 }
 
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
@@ -88,25 +100,25 @@ export function askSignIn(message, pending = null){
   if (document.querySelector(".sheetback")) return;
   const back = el("div.sheetback", { onclick: close });
   const card = el("div.gate", {},
-    el("h3", {}, "بحساب واحد — على كل أجهزتك"),
+    el("h3", {}, t("بحساب واحد — على كل أجهزتك")),
     el("p", {}, message),
     el("button.gsign", { onclick: async () => {
       if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
       try { await cloud.signIn(); }
       catch (e){
         localStorage.removeItem("sv.pending");
-        if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة.");
+        if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة."));
       }
-    } }, el("span.g", {}, "G"), "الدخول بحساب جوجل"),
+    } }, el("span.g", {}, "G"), t("الدخول بحساب جوجل")),
     el("button.gsign.apple", { onclick: async () => {
       if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
       try { await cloud.signInApple(); }
       catch (e){
         localStorage.removeItem("sv.pending");
-        if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة.");
+        if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة."));
       }
-    } }, el("span.g", {}, "\uF8FF"), "الدخول بحساب أبل"),
-    el("button.later", { onclick: close }, "ليس الآن"));
+    } }, el("span.g", {}, "\uF8FF"), t("الدخول بحساب أبل")),
+    el("button.later", { onclick: close }, t("ليس الآن")));
   function close(){ back.remove(); card.remove(); }
   document.body.append(back, card);
 }
@@ -119,22 +131,32 @@ function openSettings(){
   function content(){
     return [
       el("div.sheethead", {},
-        el("h2", {}, "الإعدادات"),
-        el("button.x", { onclick: close, "aria-label": "إغلاق" }, "✕")),
+        el("h2", {}, t("الإعدادات")),
+        el("button.x", { onclick: close, "aria-label": t("إغلاق") }, "✕")),
       account(),
       // أزرار صفوف تغطي كل الإعدادات — قرار طارق: لا تفضيلات مبعثرة هنا؛
       // كلٌ خلف زره، كقائمة إعدادات التطبيق.
       el("div.sheetrows", {},
-        row("تفضيلات السفر", "جوازك وما يعجبك وأجواؤك ومطاراتك", "#/prefs"),
-        row("أوراقي", "تأشيراتك وإقاماتك بتواريخها", "#/papers",
-          "أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها."),
-        row("بياناتي", "كل ما في حسابك، وباب المحو", "#/mydata", ""),
-        row("سياسة الخصوصية", "ما يُحفظ وكيف تتحقق بنفسك", "/privacy/"),
-        row("شروط الاستخدام", "استخدامك الشخصي وحدوده", "/terms/"),
-        row("تواصل معنا", "support@souvenirtravel.app",
+        langRow(),
+        row(t("تفضيلات السفر"), t("جوازك وما يعجبك وأجواؤك ومطاراتك"), "#/prefs"),
+        row(t("أوراقي"), t("تأشيراتك وإقاماتك بتواريخها"), "#/papers",
+          t("أوراق السفر تُحفظ في حسابك وتتبعك بتواريخ انتهائها.")),
+        row(t("بياناتي"), t("كل ما في حسابك، وباب المحو"), "#/mydata", ""),
+        row(t("سياسة الخصوصية"), t("ما يُحفظ وكيف تتحقق بنفسك"), "/privacy/"),
+        row(t("شروط الاستخدام"), t("استخدامك الشخصي وحدوده"), "/terms/"),
+        row(t("تواصل معنا"), "support@souvenirtravel.app",
             "mailto:support@souvenirtravel.app"))];
   }
   // صف إعدادات: عنوان وسطر شارح وسهم — يغلق اللوحة ويمضي، ويحرس ما يحتاج حسابًا.
+  // صف اللغة: يقلب الواجهة بين العربية والإنجليزية ويعيد التحميل.
+  function langRow() {
+    const r = el("a.srow", { href: "#" });
+    const other = isEN ? "العربية" : "English";
+    const sub = isEN ? "Switch the interface language" : "بدّل لغة الواجهة";
+    r.append(el("div", {}, el("div.t", {}, other), el("div.s", {}, sub)));
+    r.onclick = (e) => { e.preventDefault(); setLang(isEN ? "ar" : "en"); };
+    return r;
+  }
   function row(title, sub, href, guardMsg){
     return el("a.srow", { href,
       onclick: e => { close();
@@ -150,24 +172,24 @@ function openSettings(){
     if (!cloud.user){
       const attempt = fn => async () => {
         try { await fn(); }
-        catch (e){ if (e?.code !== "auth/popup-closed-by-user") alert("تعذر الدخول — أعد المحاولة."); }
+        catch (e){ if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة.")); }
       };
       return el("div", {},
         el("button.gsign", { onclick: attempt(cloud.signIn) },
           el("span.g", {}, "G"),
-          "الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك"),
+          t("الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك")),
         el("button.gsign.apple", { onclick: attempt(cloud.signInApple) },
-          el("span.g", {}, "\uF8FF"), "الدخول بحساب أبل"));
+          el("span.g", {}, "\uF8FF"), t("الدخول بحساب أبل")));
     }
     const provs = cloud.providers();
     const linkBtn = (name, label) => el("button.linkacct", { onclick: async () => {
       try { await cloud.linkProvider(name); }
       catch (e){
         if (e?.code === "auth/credential-already-in-use")
-          alert("هذا الحساب مستعمل عندنا كهوية مستقلة — احذف بياناته من صفحة «بياناتي» وهو داخل، ثم اربطه من هنا.");
+          alert(t("هذا الحساب مستعمل عندنا كهوية مستقلة — احذف بياناته من صفحة «بياناتي» وهو داخل، ثم اربطه من هنا."));
         else if (e?.code !== "auth/popup-closed-by-user")
-          alert("تعذر الربط — أعد المحاولة.");
-      } } }, "اربط حساب " + label);
+          alert(t("تعذر الربط — أعد المحاولة."));
+      } } }, t`اربط حساب ${label}`);
     return el("div", {},
       el("div.account", {},
         cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
@@ -176,10 +198,10 @@ function openSettings(){
         el("div.who", {},
           el("div.n", {}, cloud.user.displayName || ""),
           el("div.e", {}, cloud.user.email || "")),
-        el("button.out", { onclick: () => cloud.signOutNow() }, "خروج")),
+        el("button.out", { onclick: () => cloud.signOutNow() }, t("خروج"))),
       // باب ناقص؟ اربطه فيصير الحساب واحدًا بمدخلين.
-      !provs.includes("apple.com") ? linkBtn("apple", "أبل ") : null,
-      !provs.includes("google.com") ? linkBtn("google", "جوجل") : null);
+      !provs.includes("apple.com") ? linkBtn("apple", t("أبل ")) : null,
+      !provs.includes("google.com") ? linkBtn("google", t("جوجل")) : null);
   }
   sheet.replaceChildren(...content());
   document.body.append(back, sheet);
@@ -237,5 +259,5 @@ async function boot(){
 
 boot().catch(e => {
   document.getElementById("view").replaceChildren(
-    el("div.empty", {}, "تعذر تحميل البيانات — أعد المحاولة. ", String(e)));
+    el("div.empty", {}, t("تعذر تحميل البيانات — أعد المحاولة. "), String(e)));
 });

@@ -472,7 +472,15 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 [dir="ltr"] .month-title{font-family:"DM Sans","Tajawal",Tahoma,sans-serif}
 [dir="ltr"] .hero{text-align:left}
 [dir="ltr"] .sheet{left:auto;right:0;border-inline-start:1px solid var(--line)}
-[dir="ltr"] .heart{right:auto;left:8px}
+[dir="ltr"] .dest-row .heart{right:auto;left:8px}
+[dir="ltr"] .band .heart{left:auto;right:14px}
 [dir="ltr"] .keptpill{right:auto;left:38px}
 [dir="ltr"] .memstats .stat b{right:auto;left:12px}
 [dir="ltr"] select.menu,[dir="ltr"] .frow select{background-position:right 7px center}
+
+/* زر اللغة: حبة صغيرة هادئة بجوار وجه الحساب */
+.langpill{font-family:"Tajawal","DM Sans",Tahoma,sans-serif;font-weight:700;font-size:13px;
+  min-width:34px;height:34px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);margin-inline-start:auto;margin-inline-end:8px}
+.topbar .langpill ~ .avatar, .topbar .langpill ~ .signin{margin-inline-start:0}
+.langpill:hover{color:var(--text);border-color:var(--muted)}
