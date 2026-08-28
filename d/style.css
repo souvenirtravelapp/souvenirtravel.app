@@ -1,11 +1,12 @@
 
 /* Direction D: the aurora identity, Tariq's choice — logo untouched. */
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=Almarai:wght@300;400;700&display=swap');
-:root{--bg:#F7FBFA;--card:#FFFFFF;--text:#0F2B33;--muted:#4E6A70;
---accent:#F0A93C;--accent-ink:#10231F;--deep:#1F8F7C;--line:rgba(15,43,51,.12);
+/* حكم طارق 2026-08-28: «وحّد على قيم التطبيق» — القيم من Theme.swift حرفيًا. */
+:root{--bg:#F6F0E3;--card:#FEFCF8;--text:#28241E;--muted:#676055;
+--accent:#E0A458;--accent-ink:#28241E;--deep:#B4622E;--line:rgba(40,36,30,.12);
 --aurora:linear-gradient(135deg,#0E2B44 0%,#14556A 45%,#1F8F7C 78%,#35C493 100%);
 --band1:#0E2B44;--band2:#35C493;
---cold:#5B84A8;--mild:#2E8B6A;--warm:#C98A3B;--hot:#C25B36}
+--cold:#5B84A8;--mild:#678B51;--warm:#C98A3B;--hot:#B15331}
 *{box-sizing:border-box;margin:0}
 body{background:var(--bg);color:var(--text);
 font-family:"Almarai",-apple-system,"SF Arabic",Tahoma,sans-serif;
