@@ -484,3 +484,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   background:var(--card);color:var(--muted);margin-inline-start:auto;margin-inline-end:8px}
 .topbar .langpill ~ .avatar, .topbar .langpill ~ .signin{margin-inline-start:0}
 .langpill:hover{color:var(--text);border-color:var(--muted)}
+/* فعالية بلا صورة بعد: تلبس الشفق وحرفها — كالأغلفة الاحتياطية */
+.attr-card .aramp{aspect-ratio:10/7;display:flex;align-items:center;justify-content:center;
+  background:var(--aurora);color:rgba(255,255,255,.85);
+  font-family:"Tajawal","DM Sans",Tahoma,sans-serif;font-weight:900;font-size:64px}

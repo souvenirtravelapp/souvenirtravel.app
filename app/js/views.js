@@ -650,7 +650,9 @@ export function destination(ctx, cityId){
   if (spots?.length){
     const grid = el("div.attr-grid", {},
       spots.map(a => el("div.attr-card", {},
-        el("img", { src: "attractions/" + a.qid + ".jpg", alt: aName(a),
+        (a.source && a.source !== "wikidata")
+          ? el("div.aramp", {}, (aName(a) || "؟").trim()[0])
+          : el("img", { src: "attractions/" + a.qid + ".jpg", alt: aName(a),
                     loading: "lazy" }),
         el("div.b", {},
           el("div.n", {}, aName(a)),
