@@ -458,6 +458,9 @@ export function planner(ctx, tripId, render){
           iconSize: [26, 26], iconAnchor: [13, 13] }) })
           .bindTooltip(p.name))).addTo(m);
       m.fitBounds(g.getBounds().pad(0.25));
+      // الجدول يطول ويقصر (أيام تزيد، أدوات تنفتح) — الخريطة تلاحقه حيًّا.
+      if (window.ResizeObserver)
+        new ResizeObserver(() => m.invalidateSize()).observe(mapBox);
     }, 0);
   }
 
