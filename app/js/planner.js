@@ -404,7 +404,8 @@ export function planner(ctx, tripId, render){
   //    ستُوزَّع عند «وزّع الآن». لا سلة: الاختيار كله يُرى في هذا الصف. ──
   const addBox = el("div.card", { style: "margin-bottom:14px" });
   const results = el("div");
-  const reg = city ? (store.attractions?.[city.id] || []).slice(0, 20) : [];
+  const reg = city ? (store.attractions?.[city.id] || []).slice()
+    .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24) : [];
   const regQids = new Set(reg.map(a => a.qid));
   const regBox = el("div.pickrow", { style: "margin-top:4px" });
   for (const a of reg){
@@ -519,7 +520,9 @@ export function planner(ctx, tripId, render){
         document.body.style.overflow = on ? "hidden" : "";
         fullBtn.textContent = on ? "✕" : "⤢";
       } }, "⤢");
-    mapSec = el("div.section.mapsec", {}, fullBtn, mapBox);
+    const homeBtn = el("button.mapfullbtn.maphome", {
+      "aria-label": t("إرجاع الخريطة لوضعها الأصلي") }, "⌖");
+    mapSec = el("div.section.mapsec", {}, fullBtn, homeBtn, mapBox);
     setTimeout(() => {
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -531,7 +534,9 @@ export function planner(ctx, tripId, render){
             : `<div class="pmark"${p.color ? ` style="background:${p.color}"` : ""}>${p.mark}</div>`,
           iconSize: [26, 26], iconAnchor: [13, 13] }) })
           .bindTooltip(p.name))).addTo(m);
-      m.fitBounds(g.getBounds().pad(0.25));
+      const home = g.getBounds().pad(0.25);
+      m.fitBounds(home);
+      homeBtn.onclick = () => m.fitBounds(home);
       // الجدول يطول ويقصر (أيام تزيد، أدوات تنفتح) — الخريطة تلاحقه حيًّا.
       if (window.ResizeObserver)
         new ResizeObserver(() => m.invalidateSize()).observe(mapBox);

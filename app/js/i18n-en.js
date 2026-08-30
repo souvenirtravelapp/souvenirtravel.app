@@ -308,5 +308,6 @@ export const EN = {
  "١ ابحث في الوجهات السياحية": "1 · Browse destinations",
  "٢ رحلاتك القادمة": "2 · Your upcoming trips",
  "٣ تاريخ رحلاتك": "3 · Your travel history",
- "تاريخ رحلاتك": "Your travel history"
+ "تاريخ رحلاتك": "Your travel history",
+ "إرجاع الخريطة لوضعها الأصلي": "Reset the map view"
 };
