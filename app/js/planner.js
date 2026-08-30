@@ -27,6 +27,15 @@ function fmtDay(d){
     weekday: "short", day: "numeric", month: "short" });
 }
 
+// عدّاد المجتمع: إضافةٌ من السجل تزيد «اختارها N» واحدًا — بلا هوية،
+// نار-وانسَ، ومن الموقع الحي فقط كي لا تنتفخ الأعداد من التجارب.
+function tallyPick(qid){
+  if (!qid || location.hostname !== "souvenirtravel.app") return;
+  fetch("https://mcp.souvenirtravel.app/picked", { method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ qid }) }).catch(() => {});
+}
+
 // «وزّع لي»: القرار الذي كان على المستخدم — القريب مع القريب، والمطاعم مساءً،
 // ويوما السفر خفيفان. سلسلة أقرب-جار تحفظ التماسك الجغرافي بلا عناقيد معقدة.
 const FOOD_KINDS = ["طعام", "مقهى"];
@@ -48,6 +57,7 @@ function autoPlan(trip, days, city, store){
         name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
         qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
         kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
+      tallyPick(a.qid);
     }
     pool = trip.plan.slice();
   }
@@ -255,6 +265,7 @@ export function planner(ctx, tripId, render){
           trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
             name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
             kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
+          tallyPick(a.qid);
           save(); render();
         } },
           (a.source && a.source !== "wikidata")
