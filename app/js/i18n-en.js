@@ -249,5 +249,9 @@ export const EN = {
  "ادخل بحسابك لتكون خططك معك على كل أجهزتك.": "Sign in so your plans travel with you, on every device.",
  "لا رحلات قادمة بعد — افتح أي وجهة واضغط «لدي رحلة قادمة لهذه المدينة».": "No upcoming trips yet — open any destination and tap \"I have an upcoming trip to this city\".",
  "متى رحلتك؟": "When is your trip?",
- "اعتمد التواريخ": "Set the dates"
+ "اعتمد التواريخ": "Set the dates",
+ "خطط لي أيامي": "Plan my days for me",
+ "سوفينير يوزع أماكنك على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.": "Souvenir spreads your places across the days: near things together, restaurants in the evening, light travel days. Adjust anything after.",
+ "لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.": "No places picked yet? We start you with travelers' top picks and spread them across your days. Adjust anything after.",
+ "وزّع الآن": "Arrange it now"
 };

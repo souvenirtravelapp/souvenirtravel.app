@@ -26,6 +26,89 @@ function fmtDay(d){
     weekday: "short", day: "numeric", month: "short" });
 }
 
+// «وزّع لي»: القرار الذي كان على المستخدم — القريب مع القريب، والمطاعم مساءً،
+// ويوما السفر خفيفان. سلسلة أقرب-جار تحفظ التماسك الجغرافي بلا عناقيد معقدة.
+const FOOD_KINDS = ["طعام", "مقهى"];
+function autoPlan(trip, days, city, store){
+  let pool = trip.plan.slice();
+  const caps = days.map((d, i) => {
+    if (days.length === 1) return 3;
+    if (i === 0 || i === days.length - 1) return 1;
+    return 3;
+  });
+  const total = caps.reduce((a, b) => a + b, 0);
+  // لا اختيارات بعد؟ نبدأ بأكثر ما اختاره مجتمع سوفينير.
+  if (!pool.length && city){
+    const reg = (store.attractions?.[city.id] || []).slice()
+      .sort((a, b) => (b.added_count || 0) - (a.added_count || 0))
+      .slice(0, Math.min(total, 9));
+    for (const a of reg){
+      trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
+        name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
+        qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
+        kind: a.kind || "", day: -1, slot: "" });
+    }
+    pool = trip.plan.slice();
+  }
+  if (!pool.length) return false;
+  // سلسلة أقرب جار (من لديه إحداثيات)، والبقية في الذيل.
+  const located = pool.filter(p => p.lat || p.lon);
+  const blind = pool.filter(p => !(p.lat || p.lon));
+  const chain = [];
+  if (located.length){
+    const rest = located.slice();
+    chain.push(rest.shift());
+    while (rest.length){
+      const last = chain[chain.length - 1];
+      let bi = 0, bd = Infinity;
+      rest.forEach((p, i) => {
+        const dd = (p.lat - last.lat) ** 2 + (p.lon - last.lon) ** 2;
+        if (dd < bd){ bd = dd; bi = i; }
+      });
+      chain.push(rest.splice(bi, 1)[0]);
+    }
+  }
+  chain.push(...blind);
+  // حصص الأيام: الأيام الكاملة أولًا، ثم يوما السفر إن فاض شيء.
+  const quota = caps.map(() => 0);
+  const fillOrder = [];
+  for (let i = 1; i < days.length - 1; i++) fillOrder.push(i);
+  if (days.length > 1){ fillOrder.push(0, days.length - 1); }
+  else fillOrder.push(0);
+  let left = Math.min(chain.length, total);
+  while (left > 0){
+    let moved = false;
+    for (const i of fillOrder){
+      if (left > 0 && quota[i] < caps[i]){ quota[i]++; left--; moved = true; }
+    }
+    if (!moved) break;
+  }
+  // توزيع السلسلة بترتيب الأيام الزمني — التتابع يحفظ الجغرافيا لليوم الواحد.
+  let cursor = 0;
+  days.forEach((d, i) => {
+    const group = chain.slice(cursor, cursor + quota[i]);
+    cursor += quota[i];
+    const slots = ["morning", "afternoon", "evening"];
+    if (days.length > 1 && i === 0) slots.splice(0, 2);            // الوصول: مساء فقط
+    if (days.length > 1 && i === days.length - 1) slots.splice(1); // العودة: صباح فقط
+    const taken = new Set();
+    // المطاعم والمقاهي تحجز المساء أولًا.
+    for (const p of group){
+      if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening")){
+        p.day = i; p.slot = "evening"; taken.add("evening");
+      }
+    }
+    for (const p of group){
+      if (p.day === i && p.slot) continue;
+      const s = slots.find(x => !taken.has(x));
+      p.day = i; p.slot = s || ""; if (s) taken.add(s);
+    }
+  });
+  // ما فاض عن سعة الأيام يعود للسلة بوضوح.
+  chain.slice(cursor).forEach(p => { p.day = -1; p.slot = ""; });
+  return true;
+}
+
 let nominatimTimer = null;
 async function searchPlaces(q){
   const url = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams({
@@ -67,6 +150,21 @@ export function planner(ctx, tripId, render){
           trip.start = ts.value; trip.end = te.value || ts.value;
           save(); render();
         } }, t("اعتمد التواريخ")))));
+  }
+
+  // ── وزّع لي: سوفينير يقرر التوزيع، والمستخدم يعدّل — لا العكس ──
+  if (trip.start){
+    const hasPlaces = trip.plan.length > 0;
+    const autoBox = el("div.card", { style: "margin-bottom:14px" },
+      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
+      el("p.det", { style: "margin-bottom:10px" },
+        hasPlaces
+          ? t("سوفينير يوزع أماكنك على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
+          : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
+      el("button.btn", { onclick: () => {
+        if (autoPlan(trip, daysOf(trip), city, store)){ save(); render(); }
+      } }, t("وزّع الآن")));
+    inner.append(autoBox);
   }
 
   // ── أضف مكانًا: بحث حر يحدد الموقع، أو انتقاء من سجل سوفينير ──
