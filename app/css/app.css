@@ -569,3 +569,11 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .plansplit .mapside { position: static; }
 .plansplit .mapside .mapsec { height: 100%; margin: 0; display: flex; }
 .plansplit .mapside .mapsec .findmap { height: auto; min-height: 300px; flex: 1; }
+
+/* لون اليوم خلفيةً: خلية اليوم مصبوغة به، وبقية صفوفه مغسولة بظله */
+.daytbl .dt-day { background: var(--dc); color: #fff; }
+.daytbl .dt-day .dd { color: #fff; }
+.daytbl .dt-day .dm { color: rgba(255,255,255,.85); }
+.daytbl .dt-day a { color: #fff; text-decoration: underline; }
+.daytbl .dt-slot, .daytbl .dt-acts {
+  background: color-mix(in srgb, var(--dc) 6%, transparent); }

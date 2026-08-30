@@ -548,9 +548,8 @@ export function planner(ctx, tripId, render){
     const unslotted = dayPlaces.filter(p => !p.slot);
     const nrows = SLOTS.length + (unslotted.length ? 1 : 0);
     const fo = trip.flights.out, fb = trip.flights.back;
-    const dayCell = el("td.dt-day", { rowspan: String(nrows),
-      style: "border-inline-start:5px solid " + dayColor(i) },
-      el("div.dd", { style: "color:" + dayColor(i) }, fmtDay(d)),
+    const dayCell = el("td.dt-day", { rowspan: String(nrows) },
+      el("div.dd", {}, fmtDay(d)),
       (days.length > 1 && i === 0)
         ? el("div.dm", {}, "✈︎ " + (fo.no || tt("يوم الوصول"))
             + (fo.arr ? " — " + tt`الوصول ${fo.arr}` : "")) : null,
@@ -575,7 +574,7 @@ export function planner(ctx, tripId, render){
       body.append(el("tr", {},
         el("td.dt-slot", {}, "—"),
         el("td.dt-acts", {}, unslotted.map(placeRow))));
-    tablesBox.append(el("table.daytbl", {}, body));
+    tablesBox.append(el("table.daytbl", { style: "--dc:" + dayColor(i) }, body));
   });
 
   // ── الجدول يمينًا والخريطة يسارًا — وعلى الجوال تنطوي الخريطة تحت الجدول ──
