@@ -537,3 +537,13 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   box-shadow: 0 1px 3px rgba(0,0,0,.3); }
 /* دبوس دخل الجدول: أخضر الشفق برقم يومه — والبرتقالي متاح للاختيار */
 .pmark.grn { background: #1F8F7C; }
+
+/* صورة المكان في صف الجدول — الجدول يُقرأ بالعين لا بالاسم وحده */
+.rowthumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover;
+  flex: 0 0 44px; }
+.rowthumb.ar { display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.85); font-weight: 800; font-size: 18px;
+  background: var(--aurora); }
+/* دبوس السكن على الخريطة */
+.pmark.stay { background: #fff; color: #222; font-size: 13px;
+  border: 2px solid #1F8F7C; }
