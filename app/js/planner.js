@@ -112,6 +112,22 @@ function autoPlan(trip, days, city, store){
     }
   }
   chain.push(...blind);
+  // التعليل: كل مكان يحمل سبب موضعه — الشفافية تقنع أكثر من السحر.
+  chain.forEach((p, k) => {
+    if (k === 0){
+      p.why = (trip.stays || [])[0]
+        ? t("الأقرب إلى سكنك — بها يبدأ اليوم")
+        : t("نقطة انطلاق المسار");
+    } else {
+      const q = chain[k - 1];
+      if ((p.lat || p.lon) && (q.lat || q.lon)){
+        const dk = Math.round(111 * Math.hypot(p.lat - q.lat,
+          (p.lon - q.lon) * Math.cos(p.lat * Math.PI / 180)));
+        p.why = dk < 1 ? tt`قريبة جدًا من ${q.name}`
+                       : tt`قريبة من ${q.name} (~${dk} كم)`;
+      } else p.why = "";
+    }
+  });
   // حصص الأيام: الأيام الكاملة أولًا، ثم يوما السفر إن فاض شيء.
   const quota = caps.map(() => 0);
   const fillOrder = [];
@@ -145,6 +161,7 @@ function autoPlan(trip, days, city, store){
     for (const p of group){
       if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening")){
         p.day = i; p.slot = "evening"; taken.add("evening");
+        p.why = [p.why, tt("المطاعم والمقاهي مساءً")].filter(Boolean).join(" · ");
       }
     }
     let ci = 0;
@@ -153,6 +170,11 @@ function autoPlan(trip, days, city, store){
       const free = slots.find(x => !taken.has(x));
       p.day = i; p.slot = free || slots[ci % slots.length] || "";
       if (free) taken.add(free); ci++;
+    }
+    if (days.length > 1 && (i === 0 || i === days.length - 1)){
+      const why = i === 0 ? tt("بعد وصولك") : tt("قبل إقلاعك");
+      for (const p of group)
+        p.why = [p.why, why].filter(Boolean).join(" · ");
     }
   });
   // ما فاض عن سعة الأيام يعود للسلة بوضوح.
@@ -463,8 +485,8 @@ export function planner(ctx, tripId, render){
       el("option", { value: "" }, "—"),
       SLOTS.map(([v, ar]) => el("option", { value: v,
         ...(p.slot === v ? { selected: true } : {}) }, tt(ar))));
-    daySel.onchange = () => { p.day = +daySel.value; save(); render(); };
-    slotSel.onchange = () => { p.slot = slotSel.value; save(); render(); };
+    daySel.onchange = () => { p.day = +daySel.value; p.why = ""; save(); render(); };
+    slotSel.onchange = () => { p.slot = slotSel.value; p.why = ""; save(); render(); };
     const thumb = (p.qid && /^Q/.test(p.qid))
       ? el("img.rowthumb", { src: "attractions/" + p.qid + ".jpg", alt: "",
           loading: "lazy" })
@@ -491,7 +513,10 @@ export function planner(ctx, tripId, render){
             ? el("div.s", { style: "font-size:11.5px;color:var(--muted)" },
                 [p.kind, p.count > 0 ? tt`اختارها ${p.count}` : null]
                   .filter(Boolean).join(" · "))
-            : null)),
+            : null,
+          p.why ? el("div.s", { style:
+              "font-size:11px;color:var(--muted);opacity:.85;margin-top:1px" },
+              "↳ " + p.why) : null)),
       tools);
     return row;
   };

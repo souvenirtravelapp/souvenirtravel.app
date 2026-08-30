@@ -280,5 +280,12 @@ export const EN = {
  "الإقلاع ␟": "departs {0}",
  "الخريطة جانب الجدول": "Map beside the table",
  "الخريطة في الأخير": "Map at the end",
- "بيانات رحلتك": "Your trip details"
+ "بيانات رحلتك": "Your trip details",
+ "قريبة جدًا من ␟": "Right next to {0}",
+ "قريبة من ␟ (~␟ كم)": "Near {0} (~{1} km)",
+ "الأقرب إلى سكنك — بها يبدأ اليوم": "Closest to your stay — the day starts here",
+ "نقطة انطلاق المسار": "Route starting point",
+ "المطاعم والمقاهي مساءً": "Restaurants and cafés take the evening",
+ "بعد وصولك": "After you land",
+ "قبل إقلاعك": "Before your departure"
 };

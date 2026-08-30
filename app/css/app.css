@@ -563,3 +563,9 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 
 /* بيانات رحلتك: المحتوى يلزم اليمين — لا توزيع على العرض */
 .factrows .row { justify-content: flex-start; }
+
+/* الخريطة على طول الجدول — عمودان متساويا القامة */
+.plansplit { align-items: stretch; }
+.plansplit .mapside { position: static; }
+.plansplit .mapside .mapsec { height: 100%; margin: 0; display: flex; }
+.plansplit .mapside .mapsec .findmap { height: auto; min-height: 300px; flex: 1; }
