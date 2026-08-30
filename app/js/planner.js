@@ -29,8 +29,10 @@ function fmtDay(d){
 
 // عدّاد المجتمع: إضافةٌ من السجل تزيد «اختارها N» واحدًا — بلا هوية،
 // نار-وانسَ، ومن الموقع الحي فقط كي لا تنتفخ الأعداد من التجارب.
+const tallied = new Set(); // تبديل الاختيار ذهابًا وإيابًا لا يضخّم العدّ
 function tallyPick(qid){
-  if (!qid || location.hostname !== "souvenirtravel.app") return;
+  if (!qid || tallied.has(qid) || location.hostname !== "souvenirtravel.app") return;
+  tallied.add(qid);
   fetch("https://mcp.souvenirtravel.app/picked", { method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ qid }) }).catch(() => {});
@@ -94,6 +96,14 @@ function autoPlan(trip, days, city, store){
     }
     if (!moved) break;
   }
+  // فاض الاختيار عن السعة؟ الأيام الكاملة تتسع — كما اتسع بعدُ ظهرِ جدوله لفعاليتين.
+  let over = chain.length - total;
+  if (over > 0){
+    const fulls = fillOrder.filter(i => caps[i] >= 3);
+    const tgt = fulls.length ? fulls : fillOrder;
+    let j = 0;
+    while (over > 0){ quota[tgt[j % tgt.length]]++; j++; over--; }
+  }
   // توزيع السلسلة بترتيب الأيام الزمني — التتابع يحفظ الجغرافيا لليوم الواحد.
   let cursor = 0;
   days.forEach((d, i) => {
@@ -109,10 +119,12 @@ function autoPlan(trip, days, city, store){
         p.day = i; p.slot = "evening"; taken.add("evening");
       }
     }
+    let ci = 0;
     for (const p of group){
       if (p.day === i && p.slot) continue;
-      const s = slots.find(x => !taken.has(x));
-      p.day = i; p.slot = s || ""; if (s) taken.add(s);
+      const free = slots.find(x => !taken.has(x));
+      p.day = i; p.slot = free || slots[ci % slots.length] || "";
+      if (free) taken.add(free); ci++;
     }
   });
   // ما فاض عن سعة الأيام يعود للسلة بوضوح.
@@ -202,27 +214,57 @@ export function planner(ctx, tripId, render){
         } }, t("اعتمد التواريخ")))));
   }
 
-  // ── وزّع لي: سوفينير يقرر التوزيع، والمستخدم يعدّل — لا العكس ──
-  if (trip.start){
-    const hasPlaces = trip.plan.length > 0;
-    const autoBox = el("div.card", { style: "margin-bottom:14px" },
-      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
-      el("p.det", { style: "margin-bottom:10px" },
-        hasPlaces
-          ? t("سوفينير يوزع أماكنك على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
-          : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
-      el("button.btn", { onclick: () => {
-        if (autoPlan(trip, daysOf(trip), city, store)){ save(); render(); }
-      } }, t("وزّع الآن")));
-    inner.append(autoBox);
-  }
+  const days = daysOf(trip);
+  const planOf = (qid) => trip.plan.find(p => p.qid === qid);
 
-  // ── أضف مكانًا: بحث حر يحدد الموقع، أو انتقاء من سجل سوفينير ──
+  // ── معالم وفعاليات مقترحة: العين تنتقي — إطار الشفق مع ✓ يقول:
+  //    ستُوزَّع عند «وزّع الآن». لا سلة: الاختيار كله يُرى في هذا الصف. ──
   const addBox = el("div.card", { style: "margin-bottom:14px" });
-  const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
-    style: "width:100%" });
   const results = el("div");
-  addBox.append(el("h2", { style: "margin-bottom:8px" }, t("أضف مكانًا")), input, results);
+  const reg = city ? (store.attractions?.[city.id] || []).slice(0, 20) : [];
+  const regQids = new Set(reg.map(a => a.qid));
+  const regBox = el("div.pickrow", { style: "margin-top:4px" });
+  for (const a of reg){
+    const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
+    const chosen = planOf(a.qid);
+    regBox.append(el(chosen ? "button.pick.sel" : "button.pick", { onclick: () => {
+      if (chosen){
+        trip.plan = trip.plan.filter(p => p.qid !== a.qid);
+      } else {
+        trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
+          name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
+          kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
+        tallyPick(a.qid);
+      }
+      save(); render();
+    } },
+      (a.source && a.source !== "wikidata")
+        ? el("div.aramp.sm", {}, (label || "؟").trim()[0])
+        : el("img", { src: "attractions/" + a.qid + ".jpg", alt: label,
+            loading: "lazy" }),
+      el("div.pn", {}, label),
+      el("div.pc", {},
+        a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+")));
+  }
+  // ما جاء من البحث الحر بطاقة مختارة هو الآخر — والضغط عليها يلغيه.
+  for (const p of trip.plan){
+    if (p.qid && regQids.has(p.qid)) continue;
+    regBox.append(el("button.pick.sel", { onclick: () => {
+      trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
+    } },
+      el("div.aramp.sm", {}, (p.name || "؟").trim()[0]),
+      el("div.pn", {}, p.name),
+      el("div.pc", {}, p.kind || "‏")));
+  }
+  const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
+    style: "flex:1;min-width:0" });
+  addBox.append(
+    el("h2", { style: "margin-bottom:8px" }, t("معالم وفعاليات مقترحة")),
+    regBox,
+    el("div", { style: "display:flex;align-items:center;gap:10px;margin-top:12px" },
+      input,
+      el("span.det", { style: "white-space:nowrap" }, t("أضف مكانًا"))),
+    results);
   input.oninput = () => {
     clearTimeout(nominatimTimer);
     const q = input.value.trim();
@@ -251,43 +293,58 @@ export function planner(ctx, tripId, render){
         results.append(el("div.det", {}, t("لم نجده — جرّب اسمًا أدق أو أضف المدينة للاسم.")));
     }, 400);
   };
-
-  // من سجل سوفينير: معالم وفعاليات مدينة الرحلة، بعدّاد من اختاروها.
-  if (city){
-    const reg = (store.attractions?.[city.id] || []).slice(0, 12)
-      .filter(a => !trip.plan.some(p => p.qid === a.qid));
-    if (reg.length){
-      // بطاقات مصورة لا نصوص — العين تختار، والعدّاد الصادق يرشدها.
-      const regBox = el("div.pickrow", { style: "margin-top:10px" });
-      for (const a of reg){
-        const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
-        regBox.append(el("button.pick", { onclick: () => {
-          trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
-            name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
-            kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
-          tallyPick(a.qid);
-          save(); render();
-        } },
-          (a.source && a.source !== "wikidata")
-            ? el("div.aramp.sm", {}, (label || "؟").trim()[0])
-            : el("img", { src: "attractions/" + a.qid + ".jpg", alt: label,
-                loading: "lazy" }),
-          el("div.pn", {}, label),
-          el("div.pc", {},
-            a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+")));
-      }
-      addBox.append(el("div.det", { style: "margin:10px 0 6px" },
-        t("من سوفينير:")), regBox);
-    }
-  }
   inner.append(addBox);
 
-  const days = daysOf(trip);
-  const basket = trip.plan.filter(p => p.day < 0 || p.day >= days.length);
+  // ── الخريطة من البداية: كل معالم المدينة عليها — البرتقالي متاح للاختيار،
+  //    والأخضر بلون الشفق دخل الجدول ويحمل رقم يومه. ──
+  const pins = [];
+  const seenQ = new Set();
+  for (const p of trip.plan){
+    if (p.qid) seenQ.add(p.qid);
+    if (!(p.lat || p.lon)) continue;
+    pins.push({ lat: p.lat, lon: p.lon, name: p.name,
+      mark: p.day >= 0 ? String(p.day + 1) : "•", grn: p.day >= 0 });
+  }
+  for (const a of reg){
+    if (seenQ.has(a.qid) || !(a.lat || a.lon)) continue;
+    pins.push({ lat: a.lat, lon: a.lon,
+      name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
+      mark: "•", grn: false });
+  }
+  if (pins.length && window.L){
+    const mapBox = el("div.findmap", { style: "height:300px;margin-top:6px" });
+    inner.append(el("div.section", { style: "margin-bottom:14px" },
+      el("h2", {}, t("خريطة الرحلة")), mapBox));
+    setTimeout(() => {
+      const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        { attribution: "© OpenStreetMap" }).addTo(m);
+      const g = L.featureGroup(pins.map(p =>
+        L.marker([p.lat, p.lon], { icon: L.divIcon({ className: "pmark-wrap",
+          html: `<div class="pmark${p.grn ? " grn" : ""}">${p.mark}</div>`,
+          iconSize: [26, 26], iconAnchor: [13, 13] }) })
+          .bindTooltip(p.name))).addTo(m);
+      m.fitBounds(g.getBounds().pad(0.25));
+    }, 0);
+  }
+
+  // ── وزّع الآن — بعد الاختيار لا قبله: يختار ثم يوزع، هذا منطق الإجراء ──
+  if (trip.start){
+    const hasPlaces = trip.plan.length > 0;
+    inner.append(el("div.card", { style: "margin-bottom:14px" },
+      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
+      el("p.det", { style: "margin-bottom:10px" },
+        hasPlaces
+          ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
+          : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
+      el("button.btn", { onclick: () => {
+        if (autoPlan(trip, daysOf(trip), city, store)){ save(); render(); }
+      } }, t("وزّع الآن"))));
+  }
 
   const placeRow = (p) => {
     const daySel = el("select.menu", {},
-      el("option", { value: "-1" }, t("السلة")),
+      el("option", { value: "-1" }, t("غير موزع")),
       days.map((d, i) => el("option", { value: String(i),
         ...(p.day === i ? { selected: true } : {}) }, fmtDay(d))));
     if (p.day >= 0) daySel.value = String(p.day);
@@ -311,16 +368,7 @@ export function planner(ctx, tripId, render){
       } }, "✕"));
   };
 
-  if (basket.length){
-    const b = el("div.card");
-    for (const p of basket) b.append(placeRow(p));
-    inner.append(el("div.section", {},
-      el("h2", {}, t("سلة الرحلة")), b,
-      el("div.det", {}, t("أماكن حفظتها، تنتظر يومها."))));
-  }
-
-  // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات —
-  //    الشكل الذي خطط به رحلته الحقيقية هو الشكل الأسهل قراءة. ──
+  // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات ──
   days.forEach((d, i) => {
     const dayPlaces = trip.plan.filter(p => p.day === i);
     const withPos = SLOTS.flatMap(([v]) => dayPlaces.filter(p => p.slot === v))
@@ -328,12 +376,15 @@ export function planner(ctx, tripId, render){
       .filter(p => p.lat || p.lon);
     let route = null;
     if (withPos.length){
+      // المسار من أول مكان في اليوم — لا من موقع القارئ الحالي أينما كان.
       const coords = withPos.map(p => p.lat + "," + p.lon);
-      const dest = coords[coords.length - 1];
-      const wp = coords.slice(0, -1).join("|");
       route = el("a", { target: "_blank", rel: "noopener",
-        href: "https://www.google.com/maps/dir/?api=1&destination=" + dest
-          + (wp ? "&waypoints=" + encodeURIComponent(wp) : ""),
+        href: coords.length > 1
+          ? "https://www.google.com/maps/dir/?api=1&origin=" + coords[0]
+            + "&destination=" + coords[coords.length - 1]
+            + (coords.length > 2
+                ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
+          : "https://www.google.com/maps/search/?api=1&query=" + coords[0],
         style: "font-size:12.5px" }, t("خط السير ›"));
     }
     const unslotted = dayPlaces.filter(p => !p.slot);
@@ -362,25 +413,6 @@ export function planner(ctx, tripId, render){
         el("td.dt-acts", {}, unslotted.map(placeRow))));
     inner.append(el("table.daytbl", {}, body));
   });
-
-  // ── خريطة الرحلة: كل الدبابيس — القرار الذي كان بالعين يُرى بنظرة ──
-  const pinned = trip.plan.filter(p => p.lat || p.lon);
-  if (pinned.length && window.L){
-    const mapBox = el("div.findmap", { style: "height:300px;margin-top:6px" });
-    inner.append(el("div.section", {}, el("h2", {}, t("خريطة الرحلة")), mapBox));
-    setTimeout(() => {
-      const m = L.map(mapBox).setView([pinned[0].lat, pinned[0].lon], 9);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { attribution: "© OpenStreetMap" }).addTo(m);
-      // دائرة برقم اليوم بدل دبوس الصورة — التوزيع يُرى على الخريطة بنظرة.
-      const g = L.featureGroup(pinned.map(p =>
-        L.marker([p.lat, p.lon], { icon: L.divIcon({ className: "pmark-wrap",
-          html: `<div class="pmark">${p.day >= 0 ? p.day + 1 : "•"}</div>`,
-          iconSize: [26, 26], iconAnchor: [13, 13] }) })
-          .bindTooltip(p.name))).addTo(m);
-      m.fitBounds(g.getBounds().pad(0.25));
-    }, 0);
-  }
 
   return root;
 }

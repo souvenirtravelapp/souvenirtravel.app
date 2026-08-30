@@ -263,5 +263,8 @@ export const EN = {
  "اختارها ␟": "Picked by {0}",
  "صباح": "Morning",
  "بعد الظهر": "Afternoon",
- "مساء": "Evening"
+ "مساء": "Evening",
+ "معالم وفعاليات مقترحة": "Suggested sights & activities",
+ "سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.": "Souvenir spreads what you picked across the days: near things together, restaurants in the evening, light travel days. Adjust anything after.",
+ "غير موزع": "Unassigned"
 };
