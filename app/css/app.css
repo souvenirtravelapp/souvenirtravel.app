@@ -581,3 +581,8 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 /* بطاقة مختارة لم تدخل الجدول بعد: إطار ذهبي — تنتظر ضمّها */
 .pick.sel.pend { border-color: var(--accent, #E0A458); }
 .pick.sel.pend::after { background: var(--accent, #E0A458); }
+
+/* الجوال المثبت كتطبيق: الصفحة تمتد تحت شريط الحالة — الهيدر يفسح له،
+   والشريط السفلي يفسح لخط البيت. بدونها الشعار والصورة تحت الساعة. */
+.topbar { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
