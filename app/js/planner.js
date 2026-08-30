@@ -423,8 +423,7 @@ export function planner(ctx, tripId, render){
   let mapSec = null;
   if (pins.length && window.L){
     const mapBox = el("div.findmap", { style: "margin-top:6px" });
-    mapSec = el("div.section.mapsec", {},
-      el("h2", {}, t("خريطة الرحلة")), mapBox);
+    mapSec = el("div.section.mapsec", {}, mapBox);
     setTimeout(() => {
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -497,9 +496,6 @@ export function planner(ctx, tripId, render){
     return row;
   };
 
-  const layout = localStorage.getItem("sv.planlayout") || "side";
-  const lay = (mode, label) => el(mode === layout ? "button.chip.on" : "button.chip",
-    { onclick: () => { localStorage.setItem("sv.planlayout", mode); render(); } }, label);
   const tablesBox = el("div");
 
   // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات ──
@@ -554,20 +550,12 @@ export function planner(ctx, tripId, render){
     tablesBox.append(el("table.daytbl", {}, body));
   });
 
-  // ── عرضان يختار بينهما القارئ: الخريطة جانب الجدول (الشاشة الواسعة
-  //    تسمح بالعين على الاثنين معًا)، أو الخريطة في الأخير. ──
-  if (mapSec || days.length){
-    const layToggle = el("div", { style:
-      "display:flex;gap:8px;margin:2px 0 10px;justify-content:flex-end" },
-      lay("side", t("الخريطة جانب الجدول")), lay("end", t("الخريطة في الأخير")));
-    inner.append(layToggle);
-  }
-  if (layout === "side" && mapSec){
+  // ── الجدول يمينًا والخريطة يسارًا — وعلى الجوال تنطوي الخريطة تحت الجدول ──
+  if (mapSec){
     inner.append(el("div.plansplit", {}, tablesBox,
       el("div.mapside", {}, mapSec)));
   } else {
     inner.append(tablesBox);
-    if (mapSec) inner.append(mapSec);
   }
 
   return root;
