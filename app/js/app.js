@@ -13,12 +13,13 @@ import { planner } from "/app/js/planner.js";
 import * as cloud from "./cloud.js";
 import { Trips } from "./trips-store.js";
 
-// أبواب سوفينير الثلاثة كما رتبها طارق: بيتٌ يستقبل، وقادمٌ يُخطط،
-// وماضٍ يُحفظ. المفضلة ليست بابًا رابعًا — قلبها يسكن رأس «وجهاتك القادمة».
+// أبواب سوفينير الأربعة كما رتبها طارق (2026-08-30): بيتٌ يستقبل، وبحثٌ
+// يرشّح، وقادمٌ يُخطَّط — قسم كبير قائم بذاته — وماضٍ يُحفظ.
 const TABS = [
-  { hash: "#/home",  label: t("الرئيسية"),        icon: "icons/TabHome.svg"  },
-  { hash: "#/next",  label: t("وجهاتك القادمة"),  icon: "icons/TabFind.svg"  },
-  { hash: "#/trips", label: t("رحلاتك السابقة"),  icon: "icons/TabTrips.svg" },
+  { hash: "#/home",     label: t("الرئيسية"),        icon: "icons/TabHome.svg"  },
+  { hash: "#/next",     label: t("ابحث عن الوجهات"), icon: "icons/TabFind.svg"  },
+  { hash: "#/upcoming", label: t("رحلاتك القادمة"),  icon: "icons/TabFav.svg"   },
+  { hash: "#/trips",    label: t("رحلاتك السابقة"),  icon: "icons/TabTrips.svg" },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -34,13 +35,17 @@ function drawTabs(){
   // كل طريق يضيء بابه: الوجهة والمفضلة والبحث أبناء «وجهاتك القادمة»،
   // والتفضيلات والأوراق والبيانات أبناء البيت.
   const on = { d: "next", find: "next", map: "next", fav: "next",
+               plan: "upcoming",
                prefs: "home", papers: "home", mydata: "home" }[path] || path;
   const tripsGuard = e => guardNav(e, "#/trips",
     t("رحلاتك تُحفظ في حسابك لتجدها على كل أجهزتك."));
+  const upcomingGuard = e => guardNav(e, "#/upcoming",
+    t("رحلاتك القادمة وخططها تُحفظ في حسابك لتجدها على كل أجهزتك."));
   const nav = document.getElementById("tabs");
   nav.replaceChildren(el("div.pill", {},
     TABS.map(t => el("a", { href: t.hash, class: ("#/" + on === t.hash) ? "on" : "",
-      ...(t.hash === "#/trips" ? { onclick: tripsGuard } : {}) },
+      ...(t.hash === "#/trips" ? { onclick: tripsGuard }
+        : t.hash === "#/upcoming" ? { onclick: upcomingGuard } : {}) },
       el("img", { src: t.icon, alt: "" }),
       t.label))));
   // The desktop wears a brand bar instead of a thumb pill.
@@ -51,7 +56,9 @@ function drawTabs(){
       el("img", { src: "/icon.png", alt: "" }), t("سوفينير")),
     el("div.links", {},
       el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, t("الرئيسية")),
-      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("وجهاتك القادمة")),
+      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("ابحث عن الوجهات")),
+      el("a", { href: "#/upcoming", class: on === "upcoming" ? "on" : "",
+        onclick: upcomingGuard }, t("رحلاتك القادمة")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
         onclick: tripsGuard }, t("رحلاتك السابقة"))),
     langPill(),
@@ -221,6 +228,7 @@ export function render(){
     prefs:  () => views.prefs(ctx),
     papers: () => views.papers(ctx),
     trips:  () => views.trips(ctx),
+    upcoming: () => views.upcoming(ctx),
     plan:   () => planner(ctx, arg, render),
     fav:    () => views.favorites(ctx),
     mydata: () => views.mydata(ctx),

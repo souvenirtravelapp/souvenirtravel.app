@@ -239,5 +239,15 @@ export const EN = {
  "مساءً": "Evening",
  "يوم الوصول": "Arrival day",
  "يوم العودة": "Return day",
- "الخطة ›": "Plan ›"
+ "الخطة ›": "Plan ›",
+ "ابحث عن الوجهات": "Find destinations",
+ "رحلاتك القادمة وخططها تُحفظ في حسابك لتجدها على كل أجهزتك.": "Your upcoming trips and plans are saved to your account, on every device.",
+ "خطط رحلتك ويحفظها حسابك على كل أجهزتك.": "Plan your trip — your account keeps it on every device.",
+ "لدي رحلة قادمة لهذه المدينة — ابدأ التخطيط لها": "I have an upcoming trip to this city — start planning it",
+ "كل رحلة تنوي السفر إليها — تخطط أيامها هنا، وتجدها على كل أجهزتك.": "Every trip you intend to take — plan its days here, on every device.",
+ "رحلاتك القادمة تحتاج حسابًا — ادخل لتبدأ التخطيط، أو لتسترجع خططك من جهاز آخر.": "Upcoming trips need an account — sign in to start planning, or to pick up plans from another device.",
+ "ادخل بحسابك لتكون خططك معك على كل أجهزتك.": "Sign in so your plans travel with you, on every device.",
+ "لا رحلات قادمة بعد — افتح أي وجهة واضغط «لدي رحلة قادمة لهذه المدينة».": "No upcoming trips yet — open any destination and tap \"I have an upcoming trip to this city\".",
+ "متى رحلتك؟": "When is your trip?",
+ "اعتمد التواريخ": "Set the dates"
 };

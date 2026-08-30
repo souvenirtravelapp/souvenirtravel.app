@@ -566,6 +566,22 @@ export function destination(ctx, cityId){
     el("h1", {}, flag(city.country_code) + " " + cityName(city)),
     el("div.c", {}, countryName(city))));
 
+  // «لدي رحلة قادمة لهذه المدينة» — باب التخطيط من صدر الصفحة (طارق 2026-08-30).
+  root.append(el("button.btn", { style: "width:100%;margin-bottom:12px",
+    onclick: () => {
+      if (!cloud.user){
+        askSignIn(t("خطط رحلتك ويحفظها حسابك على كل أجهزتك."),
+          { type: "trip", cityId: city.id, title: cityName(city),
+            start: null, end: null });
+        return;
+      }
+      const existing = Trips.upcoming().find(x => x.cityId === city.id);
+      const id = existing ? existing.id
+        : Trips.add({ title: cityName(city), cityId: city.id, start: null, end: null });
+      goto("#/plan/" + id);
+    } },
+    t("لدي رحلة قادمة لهذه المدينة — ابدأ التخطيط لها")));
+
   if (city.advisory){
     root.append(el("div.card", { style: "border-color:var(--accent);margin-bottom:12px" },
       "⚠️ " + city.advisory));
@@ -791,18 +807,12 @@ export function favorites(ctx){
   }
   const kept = [...shortlist.cityIDs]
     .map(id => store.cities.find(c => c.id === id)).filter(Boolean);
-  const coming = Trips.upcoming();
-  if (!kept.length && !coming.length){
+  if (!kept.length){
     inner.append(el("div.empty", {}, t("لا مفضلة بعد — المس ♡ على أي وجهة لتبقى هنا.")));
     return root;
   }
   const redraw = () => render();
   for (const city of kept) inner.append(destRow(ctx, city, redraw));
-  if (coming.length){
-    const list = el("div");
-    for (const t of coming) list.append(tripCard(ctx, t));
-    inner.append(el("div.section", {}, el("h2", {}, t("رحلاتك القادمة")), list));
-  }
   return root;
 }
 
@@ -996,13 +1006,7 @@ export function trips(ctx){
   root.append(inner);
   const append = node => inner.append(node);
 
-  // القادمة أولًا — قصيرة، ثم الذاكرة وهي البيت.
-  const coming = Trips.upcoming();
-  if (coming.length){
-    const list = el("div");
-    for (const t of coming) list.append(tripCard(ctx, t));
-    append(el("div.section", {}, el("h2", {}, t("القادمة")), list));
-  }
+  // القادمة انتقلت لبابها المستقل «رحلاتك القادمة» — هنا الذاكرة وحدها.
 
   // العدسات + زر الإضافة.
   const lensRow = el("div.countbar", {},
@@ -1201,3 +1205,35 @@ function addTripForm(ctx){
         render();
       } }, t("احفظ الرحلة"))));
 }
+
+/* ── رحلاتك القادمة: قسم التخطيط القائم بذاته — قرار طارق 2026-08-30 ── */
+export function upcoming(ctx){
+  const root = el("div.wide");
+  root.append(el("div.hero2", {},
+    el("div.herorow", {}, el("h1", {}, t("رحلاتك القادمة"))),
+    el("p", {}, t("كل رحلة تنوي السفر إليها — تخطط أيامها هنا، وتجدها على كل أجهزتك."))));
+  const inner = el("div.section");
+  root.append(inner);
+  if (!cloud.user){
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("div", { style: "font-size:34px" }, "🧭"),
+      el("p", {}, t("رحلاتك القادمة تحتاج حسابًا — ادخل لتبدأ التخطيط، أو لتسترجع خططك من جهاز آخر.")),
+      el("button.btn", { onclick: () =>
+        askSignIn(t("ادخل بحسابك لتكون خططك معك على كل أجهزتك.")) }, t("الدخول"))));
+    return root;
+  }
+  const coming = Trips.upcoming();
+  if (!coming.length){
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("div", { style: "font-size:34px" }, "🧭"),
+      el("p", {}, t("لا رحلات قادمة بعد — افتح أي وجهة واضغط «لدي رحلة قادمة لهذه المدينة».")),
+      el("a.btn", { href: "#/next", style: "display:inline-block;margin-top:6px" },
+        t("ابحث عن الوجهات"))));
+    return root;
+  }
+  const list = el("div");
+  for (const tr of coming) list.append(tripCard(ctx, tr));
+  inner.append(list);
+  return root;
+}
+

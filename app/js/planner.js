@@ -55,6 +55,20 @@ export function planner(ctx, tripId, render){
   const inner = el("div.section");
   root.append(inner);
 
+  // رحلة بلا تواريخ بعد (جاءت من زر الصدر) — الخانة الأولى: متى؟
+  if (!trip.start){
+    const ts = el("input", { type: "date" });
+    const te = el("input", { type: "date" });
+    inner.append(el("div.card", { style: "margin-bottom:14px" },
+      el("h2", { style: "margin-bottom:8px" }, t("متى رحلتك؟")),
+      el("div", { style: "display:flex;gap:8px;flex-wrap:wrap" }, ts, te,
+        el("button.btn", { onclick: () => {
+          if (!ts.value) return;
+          trip.start = ts.value; trip.end = te.value || ts.value;
+          save(); render();
+        } }, t("اعتمد التواريخ")))));
+  }
+
   // ── أضف مكانًا: بحث حر يحدد الموقع، أو انتقاء من سجل سوفينير ──
   const addBox = el("div.card", { style: "margin-bottom:14px" });
   const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
