@@ -586,3 +586,6 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
    والشريط السفلي يفسح لخط البيت. بدونها الشعار والصورة تحت الساعة. */
 .topbar { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
 nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+
+/* لوحة الإعدادات في وضع التطبيق: زر الإغلاق ينزل تحت شريط الحالة */
+.sheet { padding-top: calc(16px + env(safe-area-inset-top, 0px)); }

@@ -153,7 +153,16 @@ function openSettings(){
         row(t("سياسة الخصوصية"), t("ما يُحفظ وكيف تتحقق بنفسك"), "/privacy/"),
         row(t("شروط الاستخدام"), t("استخدامك الشخصي وحدوده"), "/terms/"),
         row(t("تواصل معنا"), "support@souvenirtravel.app",
-            "mailto:support@souvenirtravel.app"))];
+            "mailto:support@souvenirtravel.app"),
+        // الخروج آخر الأبواب لا جار الصورة — وبتأكيد، فالخروج قرار لا زلة إصبع.
+        cloud.user ? el("a.srow", { href: "#", onclick: (e) => {
+            e.preventDefault();
+            if (confirm(t("تريد الخروج من حسابك؟ مفضلتك ورحلاتك تبقى محفوظة في الحساب وتعود بعودتك.")))
+              { cloud.signOutNow(); close(); }
+          } },
+          el("div", {},
+            el("div.t", { style: "color:var(--deep)" }, t("خروج")),
+            el("div.s", {}, t("من حسابك على هذا الجهاز")))) : null)];
   }
   // صف إعدادات: عنوان وسطر شارح وسهم — يغلق اللوحة ويمضي، ويحرس ما يحتاج حسابًا.
   // صف اللغة: يقلب الواجهة بين العربية والإنجليزية ويعيد التحميل.
@@ -205,8 +214,7 @@ function openSettings(){
           : el("span.letter", {}, (cloud.user.displayName || cloud.user.email || "•").trim()[0]),
         el("div.who", {},
           el("div.n", {}, cloud.user.displayName || ""),
-          el("div.e", {}, cloud.user.email || "")),
-        el("button.out", { onclick: () => cloud.signOutNow() }, t("خروج"))),
+          el("div.e", {}, cloud.user.email || ""))),
       // باب ناقص؟ اربطه فيصير الحساب واحدًا بمدخلين.
       !provs.includes("apple.com") ? linkBtn("apple", t("أبل ")) : null,
       !provs.includes("google.com") ? linkBtn("google", t("جوجل")) : null);

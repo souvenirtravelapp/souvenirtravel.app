@@ -289,5 +289,7 @@ export const EN = {
  "بعد وصولك": "After you land",
  "قبل إقلاعك": "Before your departure",
  "هناك ␟ فعالية غير مضافة للجدول — اضغط للإضافة": "{0} activities not in the table yet — tap to add them",
- "أُضيفت للأقرب من أيامها مسارًا": "Joined the day whose route is nearest"
+ "أُضيفت للأقرب من أيامها مسارًا": "Joined the day whose route is nearest",
+ "تريد الخروج من حسابك؟ مفضلتك ورحلاتك تبقى محفوظة في الحساب وتعود بعودتك.": "Sign out of your account? Your favorites and trips stay saved in the account and return when you do.",
+ "من حسابك على هذا الجهاز": "From your account on this device"
 };
