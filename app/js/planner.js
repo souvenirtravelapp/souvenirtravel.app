@@ -540,6 +540,16 @@ export function planner(ctx, tripId, render){
       mark: "•", color: null });
   }
   let mapSec = null;
+  // خط سير كل يوم يُرسم على الخريطة بلون يومه — بين معالم اليوم نفسها
+  // بترتيب فتراتها، لا من موقع القارئ أينما كان.
+  const dayLines = days.map((d, i) => {
+    const dp = trip.plan.filter(p => p.day === i);
+    const ordered = SLOTS.flatMap(([v]) => dp.filter(p => p.slot === v))
+      .concat(dp.filter(p => !p.slot))
+      .filter(p => p.lat || p.lon);
+    return { color: dayColor(i), pts: ordered.map(p => [p.lat, p.lon]) };
+  }).filter(l => l.pts.length > 1);
+
   if (pins.length && window.L){
     const mapBox = el("div.findmap", { style: "margin-top:6px" });
     const fullBtn = el("button.mapfullbtn.mapexp", { "aria-label": t("تكبير الخريطة"),
@@ -563,6 +573,8 @@ export function planner(ctx, tripId, render){
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         { attribution: "© OpenStreetMap" }).addTo(m);
+      dayLines.forEach(l => L.polyline(l.pts,
+        { color: l.color, weight: 3, opacity: .75, dashArray: "6 7" }).addTo(m));
       const g = L.featureGroup(pins.map(p =>
         L.marker([p.lat, p.lon], { icon: L.divIcon({ className: "pmark-wrap",
           html: p.stay
