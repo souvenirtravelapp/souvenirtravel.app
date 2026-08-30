@@ -964,10 +964,7 @@ export function tripCard(ctx, t){
       el("div.n", {}, t.title),
       city ? el("div.c", {}, countryName(city)) : null,
       el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : ""))),
-    el("div.side", {},
-      el("button.out", { onclick: e => {
-        e.stopPropagation(); Trips.remove(t.id); render();
-      } }, tt("حذف"))));
+    el("div.side", {}, el("span.ch", {}, "‹")));
 }
 
 let memLens = "timeline";   // عدسة الذاكرة تعيش عبر الرسمات

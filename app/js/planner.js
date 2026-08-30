@@ -673,5 +673,12 @@ export function planner(ctx, tripId, render){
     inner.append(tablesBox);
   }
 
+  // الحذف قرار ثقيل: في آخر الصفحة، وبتأكيد — لا زر عابر على بطاقة.
+  inner.append(el("div", { style: "margin:26px 0 10px;text-align:center" },
+    el("button.out", { style: "color:var(--deep)", onclick: () => {
+      if (confirm(t("تحذف هذه الرحلة وخطتها كلها؟ لا رجوع بعد الحذف.")))
+        { Trips.remove(tripId); location.hash = "#/upcoming"; }
+    } }, t("احذف هذه الرحلة"))));
+
   return root;
 }
