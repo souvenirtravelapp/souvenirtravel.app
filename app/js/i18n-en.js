@@ -218,5 +218,8 @@ export const EN = {
  "الكويت": "Kuwait",
  "قطر": "Qatar",
  "البحرين": "Bahrain",
- "عُمان": "Oman"
+ "عُمان": "Oman",
+ "لم نجد «␟» بعد — سوفينير يتوسع كل يوم.": "We don't have “{0}” yet — Souvenir grows every day.",
+ "وصل طلبك — سنضيفها قريبًا إن شاء الله.": "Request received — we'll add it soon.",
+ "اطلب إضافتها": "Request it"
 };
