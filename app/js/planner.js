@@ -31,6 +31,42 @@ function allowedSlots(trip, i, nDays){
   }
   return all;
 }
+// أحداث السكن الموقوتة: الدخول = وصول الطائرة + ٣ ساعات مطار + زمن
+// الطريق للفندق (مسافة حقيقية ÷ ٦٠ كم/س)، والخروج ١٢ ظهرًا دومًا.
+function fmtT(t){
+  const mins = Math.round(t * 60), H = Math.floor(mins / 60) % 24, M = mins % 60;
+  return String(H).padStart(2, "0") + ":" + String(M).padStart(2, "0");
+}
+function hotelEvents(trip, dstr, city, store){
+  const evs = [];
+  for (const st of trip.stays || []){
+    if (st.from === dstr){
+      let time = null;
+      const arr = hm(trip.flights?.out?.arr);
+      if (arr != null && trip.start === dstr){
+        let drive = 0.5;
+        const near = city && store.nearestAirport ? store.nearestAirport(city) : null;
+        const a = near?.airport || near;
+        if (a && a.lat != null && (st.lat || st.lon)){
+          const km = 111 * Math.hypot(st.lat - a.lat,
+            (st.lon - a.lon) * Math.cos(st.lat * Math.PI / 180));
+          drive = km / 60;
+        }
+        time = arr + 3 + drive;
+      }
+      evs.push({ kind: "in", name: st.name, time });
+    }
+    if (st.to === dstr) evs.push({ kind: "out", name: st.name, time: 12 });
+  }
+  return evs;
+}
+function eventSlot(ev, allowed){
+  if (ev.time == null) return allowed[0] || "morning";
+  if (ev.time <= 12.5) return "morning";
+  if (ev.time < 18) return "afternoon";
+  return "evening";
+}
+
 // لكل يوم لونه — في الجدول وعلى دبابيس الخريطة سواء.
 const DAYC = ["#B4622E", "#1F8F7C", "#3A6EA5", "#8E5BA6", "#C2903B",
               "#4C8A4C", "#A5486B", "#556B2F", "#20808D", "#7A5C3E"];
@@ -645,12 +681,19 @@ export function planner(ctx, tripId, render){
       (days.length > 1 && i === days.length - 1)
         ? el("div.dm", {}, "✈︎ " + (fb.no || tt("يوم العودة"))
             + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null,
-      ...trip.stays.filter(st => st.from === dstr).map(st =>
-        el("div.dm", {}, "🏨 " + tt`دخول ${st.name}`)),
-      ...trip.stays.filter(st => st.to === dstr).map(st =>
-        el("div.dm", {}, "🏨 " + tt`خروج ${st.name}`)),
       route);
     const ok = allowedSlots(trip, i, days.length);
+    const hev = hotelEvents(trip, dstr, city, store);
+    const evRow = (ev) => el("div",
+      { style: "display:flex;align-items:center;gap:8px;padding:6px 0" },
+      el("div.rowthumb.stayth", {}, "🏨"),
+      el("div", {},
+        el("div.t", { style: "font-weight:700;font-size:14px" },
+          ev.kind === "in" ? tt`تسجيل الدخول للفندق ${ev.name}`
+                           : tt`تسجيل الخروج من الفندق ${ev.name}`),
+        ev.time != null ? el("div.s",
+          { style: "font-size:11.5px;color:var(--muted)" }, "~ " + fmtT(ev.time))
+          : null));
     const body = el("tbody");
     SLOTS.forEach(([v, ar], si) => {
       const slotPlaces = dayPlaces.filter(p => p.slot === v);
@@ -658,10 +701,12 @@ export function planner(ctx, tripId, render){
         si === 0 ? dayCell : null,
         el("td.dt-slot", {}, tt(ar)),
         el("td.dt-acts", {},
+          hev.filter(ev => eventSlot(ev, ok) === v).map(evRow),
           slotPlaces.length
             ? slotPlaces.map(placeRow)
-            : el("div.det", { style: "opacity:.4" },
-                ok.includes(v) ? "—" : "✈︎ " + tt("سفر")))));
+            : (hev.some(ev => eventSlot(ev, ok) === v) ? null
+               : el("div.det", { style: "opacity:.4" },
+                   ok.includes(v) ? "—" : "✈︎ " + tt("سفر"))))));
     });
     if (unslotted.length)
       body.append(el("tr", {},

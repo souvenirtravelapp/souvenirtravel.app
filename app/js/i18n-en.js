@@ -309,5 +309,7 @@ export const EN = {
  "٢ رحلاتك القادمة": "2 · Your upcoming trips",
  "٣ تاريخ رحلاتك": "3 · Your travel history",
  "تاريخ رحلاتك": "Your travel history",
- "إرجاع الخريطة لوضعها الأصلي": "Reset the map view"
+ "إرجاع الخريطة لوضعها الأصلي": "Reset the map view",
+ "تسجيل الدخول للفندق ␟": "Hotel check-in — {0}",
+ "تسجيل الخروج من الفندق ␟": "Hotel check-out — {0}"
 };
