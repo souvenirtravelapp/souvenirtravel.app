@@ -260,5 +260,8 @@ export const EN = {
  "طيران مباشر من ␟ — متحقق منه لهذا الشهر": "Direct flight from {0} — verified for this month",
  "طيران مباشر من ␟ — تحقق بالبحث": "Direct flight from {0} — confirm in search",
  "من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر.": "From official sources and real numbers — no guessing. Rules change; check before you travel.",
- "اختارها ␟": "Picked by {0}"
+ "اختارها ␟": "Picked by {0}",
+ "صباح": "Morning",
+ "بعد الظهر": "Afternoon",
+ "مساء": "Evening"
 };

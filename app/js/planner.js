@@ -7,9 +7,9 @@ import { Trips } from "/app/js/trips-store.js";
 import { visaLine } from "/app/js/views.js";
 
 const SLOTS = [
-  ["morning", "صباحًا"],
-  ["afternoon", "ظهرًا"],
-  ["evening", "مساءً"],
+  ["morning", "صباح"],
+  ["afternoon", "بعد الظهر"],
+  ["evening", "مساء"],
 ];
 
 function daysOf(trip){
@@ -319,40 +319,48 @@ export function planner(ctx, tripId, render){
       el("div.det", {}, t("أماكن حفظتها، تنتظر يومها."))));
   }
 
-  // ── الأيام: ثلاث خانات، ويوما السفر صفان مميزان، ورابط مسار لليوم ──
+  // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات —
+  //    الشكل الذي خطط به رحلته الحقيقية هو الشكل الأسهل قراءة. ──
   days.forEach((d, i) => {
     const dayPlaces = trip.plan.filter(p => p.day === i);
-    const sec = el("div.card", { style: "margin-bottom:10px" });
-    const head = el("div", { style: "display:flex;align-items:baseline;gap:8px" },
-      el("h2", { style: "flex:1" }, fmtDay(d)));
     const withPos = SLOTS.flatMap(([v]) => dayPlaces.filter(p => p.slot === v))
       .concat(dayPlaces.filter(p => !p.slot))
       .filter(p => p.lat || p.lon);
+    let route = null;
     if (withPos.length){
       const coords = withPos.map(p => p.lat + "," + p.lon);
       const dest = coords[coords.length - 1];
       const wp = coords.slice(0, -1).join("|");
-      head.append(el("a", { target: "_blank", rel: "noopener",
+      route = el("a", { target: "_blank", rel: "noopener",
         href: "https://www.google.com/maps/dir/?api=1&destination=" + dest
           + (wp ? "&waypoints=" + encodeURIComponent(wp) : ""),
-        style: "font-size:13px" }, t("خط السير ›")));
-    }
-    sec.append(head);
-    if (i === 0) sec.append(el("div.det", {}, "✈︎ " + tt("يوم الوصول")));
-    if (i === days.length - 1 && days.length > 1)
-      sec.append(el("div.det", {}, "✈︎ " + tt("يوم العودة")));
-    for (const [v, ar] of SLOTS){
-      const slotPlaces = dayPlaces.filter(p => p.slot === v);
-      sec.append(el("div", { style: "margin-top:8px" },
-        el("div", { style: "font-size:12px;font-weight:700;color:var(--accent)" }, tt(ar)),
-        slotPlaces.length
-          ? el("div", {}, slotPlaces.map(placeRow))
-          : el("div.det", { style: "opacity:.5" }, "—")));
+        style: "font-size:12.5px" }, t("خط السير ›"));
     }
     const unslotted = dayPlaces.filter(p => !p.slot);
+    const nrows = SLOTS.length + (unslotted.length ? 1 : 0);
+    const dayCell = el("td.dt-day", { rowspan: String(nrows) },
+      el("div.dd", {}, fmtDay(d)),
+      (days.length > 1 && i === 0)
+        ? el("div.dm", {}, "✈︎ " + tt("يوم الوصول")) : null,
+      (days.length > 1 && i === days.length - 1)
+        ? el("div.dm", {}, "✈︎ " + tt("يوم العودة")) : null,
+      route);
+    const body = el("tbody");
+    SLOTS.forEach(([v, ar], si) => {
+      const slotPlaces = dayPlaces.filter(p => p.slot === v);
+      body.append(el("tr", {},
+        si === 0 ? dayCell : null,
+        el("td.dt-slot", {}, tt(ar)),
+        el("td.dt-acts", {},
+          slotPlaces.length
+            ? slotPlaces.map(placeRow)
+            : el("div.det", { style: "opacity:.4" }, "—"))));
+    });
     if (unslotted.length)
-      sec.append(el("div", { style: "margin-top:8px" }, unslotted.map(placeRow)));
-    inner.append(sec);
+      body.append(el("tr", {},
+        el("td.dt-slot", {}, "—"),
+        el("td.dt-acts", {}, unslotted.map(placeRow))));
+    inner.append(el("table.daytbl", {}, body));
   });
 
   // ── خريطة الرحلة: كل الدبابيس — القرار الذي كان بالعين يُرى بنظرة ──

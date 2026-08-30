@@ -513,3 +513,16 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   -webkit-box-orient: vertical; overflow: hidden; min-height: 32px; }
 .pick .pc { font-size: 10.5px; color: var(--accent, #b8863b);
   font-weight: 700; margin-top: 4px; }
+
+/* جدول اليوم — شكل جدول طارق الأصلي: اليوم | الفترة | الفعاليات */
+.daytbl { width: 100%; border-collapse: collapse; margin-bottom: 12px;
+  background: var(--card, #fff); border-radius: 12px; overflow: hidden; }
+.daytbl td { border: 1px solid var(--line, #e5ddcf); padding: 7px 10px;
+  vertical-align: middle; }
+.dt-day { width: 116px; text-align: center; }
+.dt-day .dd { font-size: 14px; font-weight: 800; }
+.dt-day .dm { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+.dt-day a { display: inline-block; margin-top: 6px; }
+.dt-slot { width: 74px; text-align: center; font-size: 12.5px;
+  font-weight: 700; color: var(--accent, #b8863b); }
+.dt-acts { min-width: 0; }
