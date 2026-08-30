@@ -953,7 +953,9 @@ export function tripCard(ctx, t){
       city ? el("div.c", {}, countryName(city)) : null,
       el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : ""))),
     el("div.side", {},
-      el("div"),
+      el("button.view", { onclick: e => {
+        e.stopPropagation(); goto("#/plan/" + t.id);
+      } }, tt("الخطة ›")),
       el("button.out", { onclick: e => {
         e.stopPropagation(); Trips.remove(t.id); render();
       } }, tt("حذف"))));

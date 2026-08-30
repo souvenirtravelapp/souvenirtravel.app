@@ -9,6 +9,7 @@ import { TravelDocuments } from "./papers.js";
 import { NextTripFilter } from "./filter.js";
 import { el } from "./ui.js";
 import * as views from "./views.js";
+import { planner } from "/app/js/planner.js";
 import * as cloud from "./cloud.js";
 import { Trips } from "./trips-store.js";
 
@@ -220,6 +221,7 @@ export function render(){
     prefs:  () => views.prefs(ctx),
     papers: () => views.papers(ctx),
     trips:  () => views.trips(ctx),
+    plan:   () => planner(ctx, arg, render),
     fav:    () => views.favorites(ctx),
     mydata: () => views.mydata(ctx),
   }[path] || (() => views.home(ctx));

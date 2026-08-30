@@ -24,4 +24,10 @@ export const Trips = {
     return trip.id;
   },
   remove(id){ write(read().filter(t => t.id !== id)); },
+  /// تعديل رحلة في مكانها — المخطط يكتب خطته هنا فتُحفظ مع الرحلة.
+  update(id, next){
+    const list = read();
+    const i = list.findIndex(t => t.id === id);
+    if (i >= 0){ list[i] = { ...list[i], ...next }; write(list); }
+  },
 };
