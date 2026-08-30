@@ -414,10 +414,11 @@ export function planner(ctx, tripId, render){
       name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
       mark: "•", color: null });
   }
+  let mapSec = null;
   if (pins.length && window.L){
-    const mapBox = el("div.findmap", { style: "height:300px;margin-top:6px" });
-    inner.append(el("div.section", { style: "margin-bottom:14px" },
-      el("h2", {}, t("خريطة الرحلة")), mapBox));
+    const mapBox = el("div.findmap", { style: "margin-top:6px" });
+    mapSec = el("div.section.mapsec", {},
+      el("h2", {}, t("خريطة الرحلة")), mapBox);
     setTimeout(() => {
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -490,6 +491,11 @@ export function planner(ctx, tripId, render){
     return row;
   };
 
+  const layout = localStorage.getItem("sv.planlayout") || "side";
+  const lay = (mode, label) => el(mode === layout ? "button.chip.on" : "button.chip",
+    { onclick: () => { localStorage.setItem("sv.planlayout", mode); render(); } }, label);
+  const tablesBox = el("div");
+
   // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات ──
   days.forEach((d, i) => {
     const dayPlaces = trip.plan.filter(p => p.day === i);
@@ -539,8 +545,24 @@ export function planner(ctx, tripId, render){
       body.append(el("tr", {},
         el("td.dt-slot", {}, "—"),
         el("td.dt-acts", {}, unslotted.map(placeRow))));
-    inner.append(el("table.daytbl", {}, body));
+    tablesBox.append(el("table.daytbl", {}, body));
   });
+
+  // ── عرضان يختار بينهما القارئ: الخريطة جانب الجدول (الشاشة الواسعة
+  //    تسمح بالعين على الاثنين معًا)، أو الخريطة في الأخير. ──
+  if (mapSec || days.length){
+    const layToggle = el("div", { style:
+      "display:flex;gap:8px;margin:2px 0 10px;justify-content:flex-end" },
+      lay("side", t("الخريطة جانب الجدول")), lay("end", t("الخريطة في الأخير")));
+    inner.append(layToggle);
+  }
+  if (layout === "side" && mapSec){
+    inner.append(el("div.plansplit", {}, tablesBox,
+      el("div.mapside", {}, mapSec)));
+  } else {
+    inner.append(tablesBox);
+    if (mapSec) inner.append(mapSec);
+  }
 
   return root;
 }

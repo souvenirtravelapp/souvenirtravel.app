@@ -547,3 +547,16 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 /* دبوس السكن على الخريطة */
 .pmark.stay { background: #fff; color: #222; font-size: 13px;
   border: 2px solid #1F8F7C; }
+
+/* عرض جنبًا إلى جنب: الجدول يمينًا والخريطة يسارًا تلازم النظر */
+.plansplit { display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  align-items: start; }
+.plansplit .mapside { position: sticky; top: 72px; }
+.plansplit .mapside .findmap { height: min(72vh, 560px); }
+@media (max-width: 860px){
+  .plansplit { grid-template-columns: 1fr; }
+  .plansplit .mapside { position: static; }
+  .plansplit .mapside .findmap { height: 300px; }
+}
+.mapsec .findmap { height: 300px; }
+.plansplit .mapside .mapsec .findmap { height: min(72vh, 560px); }

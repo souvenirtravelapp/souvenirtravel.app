@@ -277,5 +277,7 @@ export const EN = {
  "اكتب اسم فندقك أو شقتك…": "Type your hotel or apartment…",
  "سفر": "Travel",
  "الوصول ␟": "arrives {0}",
- "الإقلاع ␟": "departs {0}"
+ "الإقلاع ␟": "departs {0}",
+ "الخريطة جانب الجدول": "Map beside the table",
+ "الخريطة في الأخير": "Map at the end"
 };
