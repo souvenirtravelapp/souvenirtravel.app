@@ -707,6 +707,30 @@ export function planner(ctx, tripId, render){
     return row;
   };
 
+  // رحلة عرفنا رقمها ولم نعرف مطار وصولها (خطط حُفظت قبل الميزة) — نسأل
+  // مرة بهدوء فيصير الحساب على مطارك الحقيقي لا أقرب مطار للمدينة.
+  (async () => {
+    for (const dir of ["out", "back"]){
+      const f = trip.flights[dir];
+      if (!f.no || f.to || f.toTried) continue;
+      f.toTried = true;
+      try {
+        const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
+          + encodeURIComponent(f.no));
+        const j = await r.json();
+        if (j.ok && j.to){
+          f.to = j.to;
+          if (!f.dep) f.dep = j.dep;
+          if (!f.arr) f.arr = j.arr;
+          for (const st of trip.stays || []) delete st.driveMin;
+          save(); render();
+          return;
+        }
+      } catch {}
+      save();
+    }
+  })();
+
   // زمن الطريق من المطار إلى السكن — قيادة فعلية لا خط هوائي، يُحفظ مرة.
   (async () => {
     const ap = arrivalAirport(trip, city, store);
