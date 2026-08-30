@@ -304,5 +304,9 @@ export const EN = {
  "يوم ␟": "Day {0}",
  "تكبير الخريطة": "Expand the map",
  "احذف هذه الرحلة": "Delete this trip",
- "تحذف هذه الرحلة وخطتها كلها؟ لا رجوع بعد الحذف.": "Delete this trip and its whole plan? There is no way back."
+ "تحذف هذه الرحلة وخطتها كلها؟ لا رجوع بعد الحذف.": "Delete this trip and its whole plan? There is no way back.",
+ "١ ابحث في الوجهات السياحية": "1 · Browse destinations",
+ "٢ رحلاتك القادمة": "2 · Your upcoming trips",
+ "٣ تاريخ رحلاتك": "3 · Your travel history",
+ "تاريخ رحلاتك": "Your travel history"
 };

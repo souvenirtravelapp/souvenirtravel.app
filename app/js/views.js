@@ -978,7 +978,7 @@ export function trips(ctx){
   const stats = cloud.user ? Memory.stats : null;
   root.append(el("div.hero2", {},
     el("div.herorow", {},
-      el("h1", {}, t("رحلاتك السابقة")),
+      el("h1", {}, t("تاريخ رحلاتك")),
       cloud.user ? el("button.btn", { onclick: () => {
         memAdding = !memAdding; render(); } },
         memAdding ? t("إغلاق") : t("أضف رحلة سابقة")) : null),

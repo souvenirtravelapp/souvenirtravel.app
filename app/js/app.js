@@ -17,9 +17,9 @@ import { Trips } from "./trips-store.js";
 // يرشّح، وقادمٌ يُخطَّط — قسم كبير قائم بذاته — وماضٍ يُحفظ.
 const TABS = [
   { hash: "#/home",     label: t("الرئيسية"),        icon: "icons/TabHome.svg"  },
-  { hash: "#/next",     label: t("ابحث عن الوجهات"), icon: "icons/TabFind.svg"  },
-  { hash: "#/upcoming", label: t("رحلاتك القادمة"),  icon: "icons/TabFav.svg"   },
-  { hash: "#/trips",    label: t("رحلاتك السابقة"),  icon: "icons/TabTrips.svg" },
+  { hash: "#/next",     label: t("١ ابحث في الوجهات السياحية"), icon: "icons/TabFind.svg"  },
+  { hash: "#/upcoming", label: t("٢ رحلاتك القادمة"),  icon: "icons/TabFav.svg"   },
+  { hash: "#/trips",    label: t("٣ تاريخ رحلاتك"),  icon: "icons/TabTrips.svg" },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -56,11 +56,11 @@ function drawTabs(){
       el("img", { src: "/icon.png", alt: "" }), t("سوفينير")),
     el("div.links", {},
       el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, t("الرئيسية")),
-      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("ابحث عن الوجهات")),
+      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("١ ابحث في الوجهات السياحية")),
       el("a", { href: "#/upcoming", class: on === "upcoming" ? "on" : "",
-        onclick: upcomingGuard }, t("رحلاتك القادمة")),
+        onclick: upcomingGuard }, t("٢ رحلاتك القادمة")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
-        onclick: tripsGuard }, t("رحلاتك السابقة"))),
+        onclick: tripsGuard }, t("٣ تاريخ رحلاتك"))),
     langPill(),
     avatarFace());
 }
