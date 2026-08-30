@@ -577,3 +577,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .daytbl .dt-day a { color: #fff; text-decoration: underline; }
 .daytbl .dt-slot, .daytbl .dt-acts {
   background: color-mix(in srgb, var(--dc) 6%, transparent); }
+
+/* بطاقة مختارة لم تدخل الجدول بعد: إطار ذهبي — تنتظر ضمّها */
+.pick.sel.pend { border-color: var(--accent, #E0A458); }
+.pick.sel.pend::after { background: var(--accent, #E0A458); }

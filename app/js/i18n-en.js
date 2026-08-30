@@ -287,5 +287,7 @@ export const EN = {
  "نقطة انطلاق المسار": "Route starting point",
  "المطاعم والمقاهي مساءً": "Restaurants and cafés take the evening",
  "بعد وصولك": "After you land",
- "قبل إقلاعك": "Before your departure"
+ "قبل إقلاعك": "Before your departure",
+ "هناك ␟ فعالية غير مضافة للجدول — اضغط للإضافة": "{0} activities not in the table yet — tap to add them",
+ "أُضيفت للأقرب من أيامها مسارًا": "Joined the day whose route is nearest"
 };

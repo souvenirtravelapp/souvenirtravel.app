@@ -182,6 +182,39 @@ function autoPlan(trip, days, city, store){
   return true;
 }
 
+// إدراج الملتحقين بعد توزيع قائم: لا نبعثر ما استقر — كل معلق ينضم
+// لليوم الأقرب لمساره وفي أول فترة حرة فيه.
+function placePending(trip, days){
+  const pending = trip.plan.filter(p => p.day < 0 || p.day >= days.length);
+  if (!pending.length) return false;
+  for (const p of pending){
+    let best = -1, bd = Infinity;
+    days.forEach((d, i) => {
+      const slots = allowedSlots(trip, i, days.length);
+      if (!slots.length) return;
+      const mine = trip.plan.filter(x => x.day === i && (x.lat || x.lon));
+      let dist = 0;
+      if (mine.length && (p.lat || p.lon)){
+        const cx = mine.reduce((a, x) => a + x.lat, 0) / mine.length;
+        const cy = mine.reduce((a, x) => a + x.lon, 0) / mine.length;
+        dist = Math.hypot(p.lat - cx, (p.lon - cy) * Math.cos(p.lat * Math.PI / 180));
+      }
+      const load = trip.plan.filter(x => x.day === i).length / slots.length;
+      const score = dist + load * 0.05;
+      if (score < bd){ bd = score; best = i; }
+    });
+    if (best < 0) continue;
+    const slots = allowedSlots(trip, best, days.length);
+    const taken = new Set(trip.plan.filter(x => x.day === best).map(x => x.slot));
+    p.day = best;
+    if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening"))
+      p.slot = "evening";
+    else p.slot = slots.find(x => !taken.has(x)) || slots[0] || "";
+    p.why = t("أُضيفت للأقرب من أيامها مسارًا");
+  }
+  return true;
+}
+
 let nominatimTimer = null;
 async function searchPlaces(q, near, bounded){
   const params = { q, format: "json", limit: "6",
@@ -353,7 +386,9 @@ export function planner(ctx, tripId, render){
   for (const a of reg){
     const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
     const chosen = planOf(a.qid);
-    regBox.append(el(chosen ? "button.pick.sel" : "button.pick", { onclick: () => {
+    regBox.append(el(chosen
+      ? (chosen.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend")
+      : "button.pick", { onclick: () => {
       if (chosen){
         trip.plan = trip.plan.filter(p => p.qid !== a.qid);
       } else {
@@ -375,7 +410,8 @@ export function planner(ctx, tripId, render){
   // ما جاء من البحث الحر بطاقة مختارة هو الآخر — والضغط عليها يلغيه.
   for (const p of trip.plan){
     if (p.qid && regQids.has(p.qid)) continue;
-    regBox.append(el("button.pick.sel", { onclick: () => {
+    regBox.append(el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
+      { onclick: () => {
       trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
     } },
       el("div.aramp.sm", {}, (p.name || "؟").trim()[0]),
@@ -466,16 +502,23 @@ export function planner(ctx, tripId, render){
 
   // ── وزّع الآن — بعد الاختيار لا قبله: يختار ثم يوزع، هذا منطق الإجراء ──
   if (trip.start){
-    const hasPlaces = trip.plan.length > 0;
+    const dd2 = daysOf(trip);
+    const pend = trip.plan.filter(p => p.day < 0 || p.day >= dd2.length).length;
+    const scheduled = trip.plan.length - pend;
     inner.append(el("div.card", { style: "margin-bottom:14px" },
       el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
       el("p.det", { style: "margin-bottom:10px" },
-        hasPlaces
+        trip.plan.length
           ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
           : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
       el("button.btn", { onclick: () => {
-        if (autoPlan(trip, daysOf(trip), city, store)){ save(); render(); }
-      } }, t("وزّع الآن"))));
+        const ok = (pend && scheduled)
+          ? placePending(trip, dd2)
+          : autoPlan(trip, dd2, city, store);
+        if (ok){ save(); render(); }
+      } }, pend
+          ? tt`هناك ${pend} فعالية غير مضافة للجدول — اضغط للإضافة`
+          : t("وزّع الآن"))));
   }
 
   const placeRow = (p) => {
