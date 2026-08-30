@@ -625,3 +625,6 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .mapfullbtn { z-index: 1001; }
 /* الزران متجاوران فوق يمين: التوسيط ثم التكبير/الإغلاق بجواره */
 .mapexp { inset-inline-end: auto; left: auto; right: 58px; }
+/* المختار يلبس خلفية خضراء فاتحة — يُفرز عن غير المختار بلمحة */
+.pick.sel { background: #E6F4EF; }
+.pick.sel.pend { background: #FBF1DF; }
