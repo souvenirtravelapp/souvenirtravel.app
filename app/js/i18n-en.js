@@ -300,5 +300,7 @@ export const EN = {
  "دخول": "Check-in",
  "خروج": "Check-out",
  "دخول ␟": "Check in: {0}",
- "خروج ␟": "Check out: {0}"
+ "خروج ␟": "Check out: {0}",
+ "يوم ␟": "Day {0}",
+ "تكبير الخريطة": "Expand the map"
 };

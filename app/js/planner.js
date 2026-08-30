@@ -505,7 +505,21 @@ export function planner(ctx, tripId, render){
   let mapSec = null;
   if (pins.length && window.L){
     const mapBox = el("div.findmap", { style: "margin-top:6px" });
-    mapSec = el("div.section.mapsec", {}, mapBox);
+    const fullBtn = el("button.mapfullbtn", { "aria-label": t("تكبير الخريطة"),
+      onclick: () => {
+        // أنماط مضمنة لا تُغلب — الشلال له قواعده اللاصقة المتشابكة.
+        const on = !mapSec.classList.contains("mapfull");
+        mapSec.classList.toggle("mapfull", on);
+        mapSec.style.cssText = on
+          ? "position:fixed;inset:0;z-index:60;height:100vh;width:100vw;"
+            + "margin:0;background:var(--bg)"
+          : "";
+        mapBox.style.height = on ? "100vh" : "";
+        mapBox.style.borderRadius = on ? "0" : "";
+        document.body.style.overflow = on ? "hidden" : "";
+        fullBtn.textContent = on ? "✕" : "⤢";
+      } }, "⤢");
+    mapSec = el("div.section.mapsec", {}, fullBtn, mapBox);
     setTimeout(() => {
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -618,6 +632,7 @@ export function planner(ctx, tripId, render){
     const dstr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
       + "-" + String(d.getDate()).padStart(2, "0");
     const dayCell = el("td.dt-day", { rowspan: String(nrows) },
+      el("div.dn", {}, tt`يوم ${i + 1}`),
       el("div.dd", {}, fmtDay(d)),
       (days.length > 1 && i === 0)
         ? el("div.dm", {}, "✈︎ " + (fo.no || tt("يوم الوصول"))

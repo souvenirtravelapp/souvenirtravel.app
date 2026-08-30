@@ -954,7 +954,9 @@ export function papers(ctx){
 /* ── رحلاتك (القادمة فقط — الماضي يعيش في التطبيق) ─────────────────── */
 export function tripCard(ctx, t){
   const city = t.cityId ? ctx.store.cities.find(c => c.id === t.cityId) : null;
-  return el("div.dest-row", { ...(city ? { onclick: () => goto("#/d/" + city.id) } : {}) },
+  // في «رحلاتك القادمة» البطاقة كلها بابٌ للخطة — لا زر وسيطًا.
+  return el("div.dest-row", { style: "cursor:pointer",
+      onclick: () => goto("#/plan/" + t.id) },
     el("div.cover", { style: city ? coverStyle(city, null)
       : "background:linear-gradient(135deg,var(--band1),var(--band2))" },
       city ? flag(city.country_code) : "✈︎"),
@@ -963,9 +965,6 @@ export function tripCard(ctx, t){
       city ? el("div.c", {}, countryName(city)) : null,
       el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : ""))),
     el("div.side", {},
-      el("button.view", { onclick: e => {
-        e.stopPropagation(); goto("#/plan/" + t.id);
-      } }, tt("الخطة ›")),
       el("button.out", { onclick: e => {
         e.stopPropagation(); Trips.remove(t.id); render();
       } }, tt("حذف"))));
