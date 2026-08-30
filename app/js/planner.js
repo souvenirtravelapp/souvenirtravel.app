@@ -486,7 +486,10 @@ export function planner(ctx, tripId, render){
   //    ستُوزَّع عند «وزّع الآن». لا سلة: الاختيار كله يُرى في هذا الصف. ──
   const addBox = el("div.card", { style: "margin-bottom:14px" });
   const results = el("div");
-  const reg = city ? (store.attractions?.[city.id] || []).slice()
+  // المغلق موسميًا لا يُقترح ما دام مغلقًا — بتاريخ من مصدره الرسمي.
+  const today = new Date().toISOString().slice(0, 10);
+  const reg = city ? (store.attractions?.[city.id] || [])
+    .filter(a => !(a.closed_until && a.closed_until > (trip.start || today)))
     .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24) : [];
   const regQids = new Set(reg.map(a => a.qid));
   const regBox = el("div.pickrow", { style: "margin-top:4px" });
