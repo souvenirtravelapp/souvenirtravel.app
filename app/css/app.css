@@ -623,3 +623,5 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   display: flex; align-items: center; justify-content: center; font-size: 18px; }
 /* أزرار الخريطة فوق كل طبقات Leaflet (تصل 800) */
 .mapfullbtn { z-index: 1001; }
+/* الزران متجاوران فوق يمين: التوسيط ثم التكبير/الإغلاق بجواره */
+.mapexp { inset-inline-end: auto; left: auto; right: 58px; }

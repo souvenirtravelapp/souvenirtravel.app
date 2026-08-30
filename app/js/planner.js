@@ -542,7 +542,7 @@ export function planner(ctx, tripId, render){
   let mapSec = null;
   if (pins.length && window.L){
     const mapBox = el("div.findmap", { style: "margin-top:6px" });
-    const fullBtn = el("button.mapfullbtn", { "aria-label": t("تكبير الخريطة"),
+    const fullBtn = el("button.mapfullbtn.mapexp", { "aria-label": t("تكبير الخريطة"),
       onclick: () => {
         // أنماط مضمنة لا تُغلب — الشلال له قواعده اللاصقة المتشابكة.
         const on = !mapSec.classList.contains("mapfull");
