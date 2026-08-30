@@ -311,5 +311,8 @@ export const EN = {
  "تاريخ رحلاتك": "Your travel history",
  "إرجاع الخريطة لوضعها الأصلي": "Reset the map view",
  "تسجيل الدخول للفندق ␟": "Hotel check-in — {0}",
- "تسجيل الخروج من الفندق ␟": "Hotel check-out — {0}"
+ "تسجيل الخروج من الفندق ␟": "Hotel check-out — {0}",
+ "متاح": "Available",
+ "مختار — لم يُضف للجدول": "Picked — not in the table yet",
+ "في الجدول": "In the table"
 };

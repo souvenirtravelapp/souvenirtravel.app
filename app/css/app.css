@@ -628,3 +628,12 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* المختار يلبس خلفية خضراء فاتحة — يُفرز عن غير المختار بلمحة */
 .pick.sel { background: #E6F4EF; }
 .pick.sel.pend { background: #FBF1DF; }
+
+/* مفتاح ألوان الاقتراحات */
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11.5px;
+  color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend .sw { width: 13px; height: 13px; border-radius: 4px; display: block;
+  border: 2px solid var(--line, #e5ddcf); background: var(--card, #fff); }
+.legend .sw-pend { border-color: var(--accent, #E0A458); background: #FBF1DF; }
+.legend .sw-sel { border-color: #1F8F7C; background: #E6F4EF; }

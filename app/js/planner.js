@@ -482,7 +482,14 @@ export function planner(ctx, tripId, render){
   const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
     style: "flex:1;min-width:0" });
   addBox.append(
-    el("h2", { style: "margin-bottom:8px" }, t("معالم وفعاليات مقترحة")),
+    // مفتاح الألوان: العنوان يمينًا والدلالات يسارًا — ثلاث حالات لا تُشرح بكلام.
+    el("div", { style: "display:flex;align-items:center;flex-wrap:wrap;gap:10px;"
+      + "justify-content:space-between;margin-bottom:8px" },
+      el("h2", { style: "margin:0" }, t("معالم وفعاليات مقترحة")),
+      el("div.legend", {},
+        el("span", {}, el("i.sw.sw-free", {}), t("متاح")),
+        el("span", {}, el("i.sw.sw-pend", {}), t("مختار — لم يُضف للجدول")),
+        el("span", {}, el("i.sw.sw-sel", {}), t("في الجدول")))),
     regBox,
     el("div", { style: "display:flex;align-items:center;gap:10px;margin-top:12px" },
       input,
