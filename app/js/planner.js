@@ -547,18 +547,12 @@ export function planner(ctx, tripId, render){
       mark: "•", color: null });
   }
   let mapSec = null;
-  // خط سير كل يوم يُرسم على الخريطة بلون يومه — بين معالم اليوم نفسها
-  // بترتيب فتراتها، لا من موقع القارئ أينما كان.
-  const dayLines = days.map((d, i) => {
-    const dp = trip.plan.filter(p => p.day === i);
-    const ordered = SLOTS.flatMap(([v]) => dp.filter(p => p.slot === v))
-      .concat(dp.filter(p => !p.slot))
-      .filter(p => p.lat || p.lon);
-    return { color: dayColor(i), pts: ordered.map(p => [p.lat, p.lon]) };
-  }).filter(l => l.pts.length > 1);
+  // مقبض الخريطة يعيش خارج كتلتها — روابط الأيام تحته ترسم وتكبّر.
+  const mapRef = { m: null, route: null, home: null };
+  let mapBox = null;
 
   if (pins.length && window.L){
-    const mapBox = el("div.findmap", { style: "margin-top:6px" });
+    mapBox = el("div.findmap", { style: "margin-top:6px" });
     const fullBtn = el("button.mapfullbtn.mapexp", { "aria-label": t("تكبير الخريطة"),
       onclick: () => {
         // أنماط مضمنة لا تُغلب — الشلال له قواعده اللاصقة المتشابكة.
@@ -580,8 +574,6 @@ export function planner(ctx, tripId, render){
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         { attribution: "© OpenStreetMap" }).addTo(m);
-      dayLines.forEach(l => L.polyline(l.pts,
-        { color: l.color, weight: 3, opacity: .75, dashArray: "6 7" }).addTo(m));
       const g = L.featureGroup(pins.map(p =>
         L.marker([p.lat, p.lon], { icon: L.divIcon({ className: "pmark-wrap",
           html: p.stay
@@ -590,8 +582,12 @@ export function planner(ctx, tripId, render){
           iconSize: [26, 26], iconAnchor: [13, 13] }) })
           .bindTooltip(p.name))).addTo(m);
       const home = g.getBounds().pad(0.25);
+      mapRef.m = m; mapRef.home = home;
       m.fitBounds(home);
-      homeBtn.onclick = () => m.fitBounds(home);
+      homeBtn.onclick = () => {
+        if (mapRef.route){ m.removeLayer(mapRef.route); mapRef.route = null; }
+        m.fitBounds(home);
+      };
       // الجدول يطول ويقصر (أيام تزيد، أدوات تنفتح) — الخريطة تلاحقه حيًّا.
       if (window.ResizeObserver)
         new ResizeObserver(() => m.invalidateSize()).observe(mapBox);
@@ -665,6 +661,35 @@ export function planner(ctx, tripId, render){
     return row;
   };
 
+  // مسار السيارة الحقيقي بين أماكن اليوم — من OSRM (بيانات OpenStreetMap).
+  // نرسم المستقيم فورًا ثم نستبدله بالطريق حين يصل، ولا نخفي بقية الدبابيس.
+  async function showDayRoute(i, pts){
+    const m = mapRef.m;
+    if (!m) return;
+    if (mapRef.route){ m.removeLayer(mapRef.route); mapRef.route = null; }
+    const color = dayColor(i);
+    let line = L.polyline(pts, { color, weight: 4, opacity: .5,
+      dashArray: "6 7" }).addTo(m);
+    mapRef.route = line;
+    m.fitBounds(L.latLngBounds(pts).pad(0.3));
+    if (window.innerWidth < 860 && mapBox)
+      mapBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (pts.length < 2) return;
+    try {
+      const q = pts.map(p => p[1] + "," + p[0]).join(";");
+      const r = await fetch("https://router.project-osrm.org/route/v1/driving/"
+        + q + "?overview=full&geometries=geojson");
+      const j = await r.json();
+      const g = j?.routes?.[0]?.geometry?.coordinates;
+      if (!g || !g.length || mapRef.route !== line) return;
+      m.removeLayer(line);
+      const real = L.polyline(g.map(c => [c[1], c[0]]),
+        { color, weight: 5, opacity: .9 }).addTo(m);
+      mapRef.route = real;
+      m.fitBounds(real.getBounds().pad(0.2));
+    } catch {}
+  }
+
   const tablesBox = el("div");
 
   // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات ──
@@ -677,14 +702,20 @@ export function planner(ctx, tripId, render){
     if (withPos.length){
       // المسار من أول مكان في اليوم — لا من موقع القارئ الحالي أينما كان.
       const coords = withPos.map(p => p.lat + "," + p.lon);
-      route = el("a", { target: "_blank", rel: "noopener",
-        href: coords.length > 1
-          ? "https://www.google.com/maps/dir/?api=1&origin=" + coords[0]
-            + "&destination=" + coords[coords.length - 1]
-            + (coords.length > 2
-                ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
-          : "https://www.google.com/maps/search/?api=1&query=" + coords[0],
-        style: "font-size:12.5px" }, t("خط السير ›"));
+      const pts = withPos.map(p => [p.lat, p.lon]);
+      route = el("div", { style: "display:flex;gap:8px;align-items:center;"
+        + "justify-content:center;flex-wrap:wrap;margin-top:4px" },
+        el("a", { href: "#", style: "font-size:12.5px", onclick: (e) => {
+          e.preventDefault(); showDayRoute(i, pts);
+        } }, t("خط السير ›")),
+        el("a", { target: "_blank", rel: "noopener", title: t("افتح في خرائط جوجل"),
+          style: "font-size:12.5px",
+          href: coords.length > 1
+            ? "https://www.google.com/maps/dir/?api=1&origin=" + coords[0]
+              + "&destination=" + coords[coords.length - 1]
+              + (coords.length > 2
+                  ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
+            : "https://www.google.com/maps/search/?api=1&query=" + coords[0] }, "↗"));
     }
     const unslotted = dayPlaces.filter(p => !p.slot);
     const nrows = SLOTS.length + (unslotted.length ? 1 : 0);

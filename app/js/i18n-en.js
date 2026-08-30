@@ -314,5 +314,6 @@ export const EN = {
  "تسجيل الخروج من الفندق ␟": "Hotel check-out — {0}",
  "متاح": "Available",
  "مختار — لم يُضف للجدول": "Picked — not in the table yet",
- "في الجدول": "In the table"
+ "في الجدول": "In the table",
+ "افتح في خرائط جوجل": "Open in Google Maps"
 };
