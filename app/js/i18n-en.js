@@ -279,5 +279,6 @@ export const EN = {
  "الوصول ␟": "arrives {0}",
  "الإقلاع ␟": "departs {0}",
  "الخريطة جانب الجدول": "Map beside the table",
- "الخريطة في الأخير": "Map at the end"
+ "الخريطة في الأخير": "Map at the end",
+ "بيانات رحلتك": "Your trip details"
 };

@@ -560,3 +560,6 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 }
 .mapsec .findmap { height: 300px; }
 .plansplit .mapside .mapsec .findmap { height: min(72vh, 560px); }
+
+/* بيانات رحلتك: المحتوى يلزم اليمين — لا توزيع على العرض */
+.factrows .row { justify-content: flex-start; }

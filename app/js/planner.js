@@ -161,9 +161,16 @@ function autoPlan(trip, days, city, store){
 }
 
 let nominatimTimer = null;
-async function searchPlaces(q){
-  const url = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams({
-    q, format: "json", limit: "6", "accept-language": isEN ? "en" : "ar" });
+async function searchPlaces(q, near, bounded){
+  const params = { q, format: "json", limit: "6",
+    "accept-language": isEN ? "en" : "ar" };
+  if (near && near.lat != null){
+    // صندوق ~40كم حول المدينة: انحياز دائمًا، وحصر صارم عند bounded (الفنادق).
+    const d = 0.35;
+    params.viewbox = [near.lon - d, near.lat + d, near.lon + d, near.lat - d].join(",");
+    if (bounded) params.bounded = "1";
+  }
+  const url = "https://nominatim.openstreetmap.org/search?" + new URLSearchParams(params);
   const r = await fetch(url, { headers: { "Accept": "application/json" } });
   return r.ok ? r.json() : [];
 }
@@ -193,7 +200,7 @@ export function planner(ctx, tripId, render){
   // ── بطاقة الصدق: ما لا يضمنه أي ذكاء مولِّد — تأشيرة مراجَعة من مصدر
   //    رسمي، طقس أرقام حقيقية، طيران متحقق منه. تركب أعلى كل خطة. ──
   if (city){
-    const facts = el("div.rows");
+    const facts = el("div.rows.factrows");
 
     // التواريخ — انتقلت من رأس الصفحة إلى هنا، وتُعدَّل في مكانها.
     const ds = el("input", { type: "date", value: trip.start || "" });
@@ -233,8 +240,7 @@ export function planner(ctx, tripId, render){
       const q = stayIn.value.trim(); stayRes.replaceChildren();
       if (q.length < 3) return;
       stayTimer = setTimeout(async () => {
-        const hits = await searchPlaces(q + (city ? " " + cityName(city) : ""))
-          .catch(() => []);
+        const hits = await searchPlaces(q, city, true).catch(() => []);
         stayRes.replaceChildren();
         for (const h of hits.slice(0, 5)){
           stayRes.append(el("button.srow", { style: "width:100%;text-align:start",
@@ -292,7 +298,7 @@ export function planner(ctx, tripId, render){
       }
     }
     inner.append(el("div.card", { style: "margin-bottom:14px" },
-      el("h2", { style: "margin-bottom:6px" }, t("حقائق رحلتك")),
+      el("h2", { style: "margin-bottom:6px" }, t("بيانات رحلتك")),
       facts,
       el("div.det", { style: "margin-top:6px" },
         t("من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر."))));
@@ -370,7 +376,7 @@ export function planner(ctx, tripId, render){
     if (q.length < 3) return;
     nominatimTimer = setTimeout(async () => {
       results.replaceChildren(el("div.det", {}, "…"));
-      const hits = await searchPlaces(q).catch(() => []);
+      const hits = await searchPlaces(q, city).catch(() => []);
       results.replaceChildren();
       for (const h of hits.slice(0, 6)){
         results.append(el("button.srow", { style: "width:100%;text-align:start",
