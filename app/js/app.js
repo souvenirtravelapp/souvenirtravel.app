@@ -240,7 +240,10 @@ export function render(){
 }
 
 async function boot(){
-  await cloud.restore();
+  // السحابة رفاهية لا شريان: تعثر استرجاع الحساب (مانع إضافات، تقطع شبكة،
+  // خوادم جوجل) يجب ألا يُسقط الموقع — نواصل ضيفًا والمزامنة تلحق.
+  try { await cloud.restore(); }
+  catch (e) { console.warn("cloud restore failed — continuing offline:", e); }
   const v = new URL(import.meta.url).searchParams.get("v");
   const bundle = await (await fetch("data/bundle.json" + (v ? "?v=" + v : ""))).json();
   const store = new TravelDataStore(bundle);
