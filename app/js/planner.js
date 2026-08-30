@@ -138,7 +138,8 @@ function autoPlan(trip, days, city, store){
       trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
         name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
         qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
-        kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
+        kind: a.kind || "", count: a.added_count || 0,
+        roadM: a.road_m || 0, day: -1, slot: "" });
       tallyPick(a.qid);
     }
     pool = trip.plan.slice();
@@ -504,7 +505,8 @@ export function planner(ctx, tripId, render){
       } else {
         trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
           name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
-          kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
+          kind: a.kind || "", count: a.added_count || 0,
+          roadM: a.road_m || 0, day: -1, slot: "" });
         tallyPick(a.qid);
       }
       save(); render();
@@ -787,9 +789,11 @@ export function planner(ctx, tripId, render){
   // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات ──
   days.forEach((d, i) => {
     const dayPlaces = trip.plan.filter(p => p.day === i);
+    // مكان لا يصله طريق سيارات (جزيرة، بحيرة تُبلغ بقارب) يبقى دبوسًا
+    // على الخريطة ولا يدخل مسار القيادة — وإلا صار المسار خيالًا.
     const withPos = SLOTS.flatMap(([v]) => dayPlaces.filter(p => p.slot === v))
       .concat(dayPlaces.filter(p => !p.slot))
-      .filter(p => p.lat || p.lon);
+      .filter(p => (p.lat || p.lon) && !(p.roadM >= 800));
     let route = null;
     if (withPos.length){
       // المسار من أول مكان في اليوم — لا من موقع القارئ الحالي أينما كان.
