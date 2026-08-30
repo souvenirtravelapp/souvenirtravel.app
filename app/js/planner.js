@@ -463,19 +463,31 @@ export function planner(ctx, tripId, render){
       ? el("img.rowthumb", { src: "attractions/" + p.qid + ".jpg", alt: "",
           loading: "lazy" })
       : el("div.rowthumb.ar", {}, (p.name || "؟").trim()[0]);
-    return el("div", { style: "display:flex;align-items:center;gap:8px;padding:6px 0" },
-      thumb,
-      el("div", { style: "flex:1;min-width:0" },
-        el("div.t", { style: "font-weight:700;font-size:14.5px" }, p.name),
-        (p.kind || p.count)
-          ? el("div.s", { style: "font-size:11.5px;color:var(--muted)" },
-              [p.kind, p.count > 0 ? tt`اختارها ${p.count}` : null]
-                .filter(Boolean).join(" · "))
-          : null),
+    // الجدول يقول اليوم والفترة — لا داعي لتكرارهما على كل صف (طلب طارق).
+    // الأدوات تختبئ، وضغطة على الصف تكشفها لمن أراد النقل أو الحذف.
+    const tools = el("div", { style: "display:none;gap:6px;align-items:center;"
+      + "margin-top:6px" },
       daySel, slotSel,
-      el("button.out", { onclick: () => {
+      el("button.out", { onclick: (ev) => {
+        ev.stopPropagation();
         trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
       } }, "✕"));
+    const row = el("div", { style: "padding:6px 0;cursor:pointer",
+      onclick: (ev) => {
+        if (ev.target.closest("select,button")) return;
+        tools.style.display = tools.style.display === "none" ? "flex" : "none";
+      } },
+      el("div", { style: "display:flex;align-items:center;gap:8px" },
+        thumb,
+        el("div", { style: "flex:1;min-width:0" },
+          el("div.t", { style: "font-weight:700;font-size:14.5px" }, p.name),
+          (p.kind || p.count)
+            ? el("div.s", { style: "font-size:11.5px;color:var(--muted)" },
+                [p.kind, p.count > 0 ? tt`اختارها ${p.count}` : null]
+                  .filter(Boolean).join(" · "))
+            : null)),
+      tools);
+    return row;
   };
 
   // ── الأيام على هيئة جدول طارق الأصلي: اليوم | الفترة | الفعاليات ──
