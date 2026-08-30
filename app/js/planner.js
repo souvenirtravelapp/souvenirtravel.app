@@ -47,7 +47,7 @@ function autoPlan(trip, days, city, store){
       trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
         name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
         qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
-        kind: a.kind || "", day: -1, slot: "" });
+        kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
     }
     pool = trip.plan.slice();
   }
@@ -247,16 +247,23 @@ export function planner(ctx, tripId, render){
     const reg = (store.attractions?.[city.id] || []).slice(0, 12)
       .filter(a => !trip.plan.some(p => p.qid === a.qid));
     if (reg.length){
-      const regBox = el("div.chips", { style: "margin-top:10px" });
+      // بطاقات مصورة لا نصوص — العين تختار، والعدّاد الصادق يرشدها.
+      const regBox = el("div.pickrow", { style: "margin-top:10px" });
       for (const a of reg){
         const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
-        regBox.append(el("button.chip", { onclick: () => {
+        regBox.append(el("button.pick", { onclick: () => {
           trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
             name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
-            kind: a.kind || "", day: -1, slot: "" });
+            kind: a.kind || "", count: a.added_count || 0, day: -1, slot: "" });
           save(); render();
-        } }, "+ " + label
-          + (a.added_count > 0 ? " · " + a.added_count : "")));
+        } },
+          (a.source && a.source !== "wikidata")
+            ? el("div.aramp.sm", {}, (label || "؟").trim()[0])
+            : el("img", { src: "attractions/" + a.qid + ".jpg", alt: label,
+                loading: "lazy" }),
+          el("div.pn", {}, label),
+          el("div.pc", {},
+            a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+")));
       }
       addBox.append(el("div.det", { style: "margin:10px 0 6px" },
         t("من سوفينير:")), regBox);
@@ -282,7 +289,11 @@ export function planner(ctx, tripId, render){
     return el("div", { style: "display:flex;align-items:center;gap:8px;padding:6px 0" },
       el("div", { style: "flex:1;min-width:0" },
         el("div.t", { style: "font-weight:700;font-size:14.5px" }, p.name),
-        p.kind ? el("div.s", { style: "font-size:11.5px;color:var(--muted)" }, p.kind) : null),
+        (p.kind || p.count)
+          ? el("div.s", { style: "font-size:11.5px;color:var(--muted)" },
+              [p.kind, p.count > 0 ? tt`اختارها ${p.count}` : null]
+                .filter(Boolean).join(" · "))
+          : null),
       daySel, slotSel,
       el("button.out", { onclick: () => {
         trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();

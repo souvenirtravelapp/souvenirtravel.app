@@ -496,3 +496,20 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+
+/* بطاقات الانتقاء في المخطط: صورة تُقنع أسرع من اسم، وعدّاد صادق يرشد */
+.pickrow { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;
+  scrollbar-width: thin; }
+.pick { flex: 0 0 128px; width: 128px; border: 1px solid var(--line, #e5ddcf);
+  border-radius: 12px; background: var(--card, #fff); padding: 0 0 8px;
+  cursor: pointer; text-align: center; overflow: hidden; font-family: inherit; }
+.pick img { width: 100%; height: 72px; object-fit: cover; display: block; }
+.pick .aramp.sm { width: 100%; height: 72px; border-radius: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 26px;
+  background: var(--aurora); color: rgba(255,255,255,.85);
+  font-family: "Tajawal","DM Sans",Tahoma,sans-serif; font-weight: 900; }
+.pick .pn { font-size: 12px; font-weight: 700; padding: 6px 6px 0;
+  line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; min-height: 32px; }
+.pick .pc { font-size: 10.5px; color: var(--accent, #b8863b);
+  font-weight: 700; margin-top: 4px; }

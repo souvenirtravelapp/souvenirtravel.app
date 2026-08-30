@@ -259,5 +259,6 @@ export const EN = {
  "طقس ␟ هناك: ␟° نهارًا، ␟° ليلًا — ␟": "{0} weather there: {1}° by day, {2}° at night — {3}",
  "طيران مباشر من ␟ — متحقق منه لهذا الشهر": "Direct flight from {0} — verified for this month",
  "طيران مباشر من ␟ — تحقق بالبحث": "Direct flight from {0} — confirm in search",
- "من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر.": "From official sources and real numbers — no guessing. Rules change; check before you travel."
+ "من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر.": "From official sources and real numbers — no guessing. Rules change; check before you travel.",
+ "اختارها ␟": "Picked by {0}"
 };
