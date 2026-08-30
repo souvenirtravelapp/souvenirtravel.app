@@ -315,5 +315,9 @@ export const EN = {
  "متاح": "Available",
  "مختار — لم يُضف للجدول": "Picked — not in the table yet",
  "في الجدول": "In the table",
- "افتح في خرائط جوجل": "Open in Google Maps"
+ "افتح في خرائط جوجل": "Open in Google Maps",
+ "وصول ␟": "lands {0}",
+ "٣ س في المطار": "3h at the airport",
+ "␟ د طريق": "{0} min drive",
+ "تقديري": "(estimated)"
 };

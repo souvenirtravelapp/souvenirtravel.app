@@ -202,6 +202,13 @@ export class TravelDataStore {
     return { airport, distanceKm: link.distance_km };
   }
 
+  /// مطار بالرمز الدولي — المخطط يحتاجه ليعرف مطار وصولك بالضبط.
+  airportByIata(iata) {
+    if (!iata) return null;
+    const up = String(iata).toUpperCase();
+    return Object.values(this.airports).find((a) => a.iata === up) ?? null;
+  }
+
   warmthBand(tMax) {
     return warmthBand(tMax);
   }

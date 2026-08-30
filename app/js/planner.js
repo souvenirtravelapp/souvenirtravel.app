@@ -37,24 +37,37 @@ function fmtT(t){
   const mins = Math.round(t * 60), H = Math.floor(mins / 60) % 24, M = mins % 60;
   return String(H).padStart(2, "0") + ":" + String(M).padStart(2, "0");
 }
+// مطار وصولك أنت — من رقم رحلتك إن عرفناه، وإلا أقرب مطار للمدينة.
+function arrivalAirport(trip, city, store){
+  const iata = trip.flights?.out?.to;
+  if (iata && store.airportByIata){
+    const a = store.airportByIata(iata);
+    if (a && a.lat != null) return a;
+  }
+  const near = city && store.nearestAirport ? store.nearestAirport(city) : null;
+  const a = near?.airport || near;
+  return (a && a.lat != null) ? a : null;
+}
 function hotelEvents(trip, dstr, city, store){
   const evs = [];
   for (const st of trip.stays || []){
     if (st.from === dstr){
-      let time = null;
+      let time = null, parts = null;
       const arr = hm(trip.flights?.out?.arr);
       if (arr != null && trip.start === dstr){
-        let drive = 0.5;
-        const near = city && store.nearestAirport ? store.nearestAirport(city) : null;
-        const a = near?.airport || near;
-        if (a && a.lat != null && (st.lat || st.lon)){
-          const km = 111 * Math.hypot(st.lat - a.lat,
-            (st.lon - a.lon) * Math.cos(st.lat * Math.PI / 180));
-          drive = km / 60;
+        const ap = arrivalAirport(trip, city, store);
+        let driveMin = 30;
+        if (typeof st.driveMin === "number") driveMin = st.driveMin;   // زمن قيادة حقيقي
+        else if (ap && (st.lat || st.lon)){
+          const km = 111 * Math.hypot(st.lat - ap.lat,
+            (st.lon - ap.lon) * Math.cos(st.lat * Math.PI / 180));
+          driveMin = Math.round(km / 60 * 60);
         }
-        time = arr + 3 + drive;
+        time = arr + 3 + driveMin / 60;
+        parts = { arr: trip.flights.out.arr, driveMin,
+                  ap: ap ? (ap.iata || "") : "", real: typeof st.driveMin === "number" };
       }
-      evs.push({ kind: "in", name: st.name, time });
+      evs.push({ kind: "in", name: st.name, time, parts });
     }
     if (st.to === dstr) evs.push({ kind: "out", name: st.name, time: 12 });
   }
@@ -342,7 +355,13 @@ export function planner(ctx, tripId, render){
             const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
               + encodeURIComponent(v) + (date ? "&date=" + date : ""));
             const j = await r.json();
-            if (j.ok){ f.dep = j.dep; f.arr = j.arr; save(); render(); return; }
+            if (j.ok){
+              f.dep = j.dep; f.arr = j.arr;
+              if (j.to) f.to = j.to;
+              // مطار جديد ⇐ زمن الطريق يُعاد حسابه
+              for (const st of trip.stays || []) delete st.driveMin;
+              save(); render(); return;
+            }
           } catch {}
           f.manual = true; save(); render();
         } }, t("أحضر الأوقات")),
@@ -661,6 +680,25 @@ export function planner(ctx, tripId, render){
     return row;
   };
 
+  // زمن الطريق من المطار إلى السكن — قيادة فعلية لا خط هوائي، يُحفظ مرة.
+  (async () => {
+    const ap = arrivalAirport(trip, city, store);
+    if (!ap) return;
+    let changed = false;
+    for (const st of trip.stays || []){
+      if ("driveMin" in st || !(st.lat || st.lon)) continue;
+      try {
+        const r = await fetch("https://router.project-osrm.org/route/v1/driving/"
+          + ap.lon + "," + ap.lat + ";" + st.lon + "," + st.lat + "?overview=false");
+        const j = await r.json();
+        const sec = j?.routes?.[0]?.duration;
+        st.driveMin = sec ? Math.round(sec / 60) : null;
+      } catch { st.driveMin = null; }
+      changed = true;
+    }
+    if (changed){ save(); render(); }
+  })();
+
   // مسار السيارة الحقيقي بين أماكن اليوم — من OSRM (بيانات OpenStreetMap).
   // نرسم المستقيم فورًا ثم نستبدله بالطريق حين يصل، ولا نخفي بقية الدبابيس.
   async function showDayRoute(i, pts){
@@ -743,7 +781,14 @@ export function planner(ctx, tripId, render){
                            : tt`تسجيل الخروج من الفندق ${ev.name}`),
         ev.time != null ? el("div.s",
           { style: "font-size:11.5px;color:var(--muted)" }, "~ " + fmtT(ev.time))
-          : null));
+          : null,
+        // من أين جاء الرقم — الشفافية بدل الثقة العمياء.
+        ev.parts ? el("div.s", { style: "font-size:10.5px;color:var(--muted);"
+          + "opacity:.85" },
+          "↳ " + tt`وصول ${ev.parts.arr}` + " · " + tt("٣ س في المطار") + " · "
+          + tt`${ev.parts.driveMin} د طريق`
+          + (ev.parts.ap ? " (" + ev.parts.ap + ")" : "")
+          + (ev.parts.real ? "" : " " + tt("تقديري"))) : null));
     const body = el("tbody");
     SLOTS.forEach(([v, ar], si) => {
       const slotPlaces = dayPlaces.filter(p => p.slot === v);
