@@ -265,22 +265,55 @@ export function planner(ctx, tripId, render){
       trip.start = ds.value; trip.end = de.value || ds.value; save(); render();
     };
     facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
-      el("span.who", {}, "📅 " + tt("التواريخ")), ds, el("span.det", {}, "←"), de));
+      el("span.who", {}, "📅 " + tt("بداية الرحلة")), ds,
+      el("span.who", {}, tt("نهاية الرحلة")), de));
 
     // رقم الرحلة وأوقاتها — يدخلها المستخدم فتحكم يومي السفر في الجدول والتوزيع.
+    // رقم الرحلة أو الأوقات — لا كلاهما: الرقم يجلب الأوقات من الخادم،
+    // وإن تعذر الجلب انفتح الإدخال اليدوي.
     const flightRow = (dir, lbl) => {
       const f = trip.flights[dir];
+      const row = el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+        el("span.who", {}, "✈️ " + lbl));
+      if ((f.dep || f.arr) && !f.editing){
+        row.append(
+          el("span", {}, (f.no ? f.no + " — " : "")
+            + tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`),
+          el("button.chip", { onclick: () => { f.editing = true; save(); render(); } },
+            "✎"));
+        return row;
+      }
       const no = el("input", { placeholder: t("رقم الرحلة"), value: f.no || "",
         style: "width:96px" });
-      const dp = el("input", { type: "time", value: f.dep || "" });
-      const ar2 = el("input", { type: "time", value: f.arr || "" });
-      no.onchange = dp.onchange = ar2.onchange = () => {
-        f.no = no.value.trim(); f.dep = dp.value; f.arr = ar2.value; save(); render();
-      };
-      return el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
-        el("span.who", {}, "✈️ " + lbl), no,
-        el("span.det", {}, t("إقلاع")), dp,
-        el("span.det", {}, t("وصول")), ar2);
+      if (f.manual || f.editing){
+        const dp = el("input", { type: "time", value: f.dep || "" });
+        const ar2 = el("input", { type: "time", value: f.arr || "" });
+        const done = () => { f.no = no.value.trim(); f.dep = dp.value;
+          f.arr = ar2.value; f.editing = false; save(); render(); };
+        no.onchange = dp.onchange = ar2.onchange = done;
+        row.append(no, el("span.det", {}, t("إقلاع")), dp,
+                   el("span.det", {}, t("وصول")), ar2);
+        return row;
+      }
+      const st = el("span.det");
+      row.append(no,
+        el("button.chip", { onclick: async () => {
+          const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
+          if (!v) return;
+          f.no = v; st.textContent = "…";
+          try {
+            const date = dir === "out" ? trip.start : trip.end;
+            const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
+              + encodeURIComponent(v) + (date ? "&date=" + date : ""));
+            const j = await r.json();
+            if (j.ok){ f.dep = j.dep; f.arr = j.arr; save(); render(); return; }
+          } catch {}
+          f.manual = true; save(); render();
+        } }, t("أحضر الأوقات")),
+        el("a", { href: "#", style: "font-size:12px", onclick: (e) => {
+          e.preventDefault(); f.no = no.value.trim(); f.manual = true; save(); render();
+        } }, t("أو أدخل الأوقات يدويًا")), st);
+      return row;
     };
     facts.append(flightRow("out", tt("رحلة الذهاب")),
                  flightRow("back", tt("رحلة العودة")));
@@ -301,7 +334,8 @@ export function planner(ctx, tripId, render){
           stayRes.append(el("button.srow", { style: "width:100%;text-align:start",
             onclick: () => {
               trip.stays.push({ id: "s" + Date.now(), name: h.display_name.split(",")[0],
-                lat: +h.lat, lon: +h.lon });
+                lat: +h.lat, lon: +h.lon,
+                from: trip.start || "", to: trip.end || "" });
               save(); render();
             } },
             el("div", {},
@@ -312,16 +346,19 @@ export function planner(ctx, tripId, render){
     };
     facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
       el("span.who", {}, "🏨 " + tt("السكن")), stayIn), stayRes);
-    if (trip.stays.length){
-      const stayList = el("div.chips");
-      for (const st of trip.stays){
-        stayList.append(el("span.chip", {}, "🏨 " + st.name + " ",
-          el("button", { style: "border:none;background:none;cursor:pointer",
-            onclick: () => {
-              trip.stays = trip.stays.filter(x => x.id !== st.id); save(); render();
-            } }, "✕")));
-      }
-      facts.append(stayList);
+    for (const st of trip.stays){
+      const fi = el("input", { type: "date", value: st.from || "" });
+      const ti = el("input", { type: "date", value: st.to || "" });
+      fi.onchange = ti.onchange = () => {
+        st.from = fi.value; st.to = ti.value; save(); render(); };
+      facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+        el("span", {}, "🏨 " + st.name),
+        el("span.det", {}, t("دخول")), fi,
+        el("span.det", {}, t("خروج")), ti,
+        el("button", { style: "border:none;background:none;cursor:pointer",
+          onclick: () => {
+            trip.stays = trip.stays.filter(x => x.id !== st.id); save(); render();
+          } }, "✕")));
     }
 
     const vl = visaLine(ctx, city);
@@ -337,19 +374,6 @@ export function planner(ctx, tripId, render){
                      moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[ctx.store.rainLevel(w.p_mm_avg)];
         facts.append(el("div.row", {}, el("span.who", {},
           "🌤 " + tt`طقس ${MONTHS_AR[m - 1]} هناك: ${Math.round(w.t_max_avg_c)}° نهارًا، ${Math.round(w.t_min_avg_c)}° ليلًا — ${rw}`)));
-      }
-      const origin = (ctx.prefs && ctx.filter)
-        ? (ctx.prefs.departures(ctx.filter.origin).find(i => store.route(i, city.id))
-           || ctx.filter.origin || null) : null;
-      if (origin){
-        const r = store.route(origin, city.id);
-        const o = store.origin(origin);
-        const oname = o ? o.city_ar : origin;
-        facts.append(el("div.row", {}, el("span.who", {},
-          "✈️ " + (r && store.flightVerified(origin, city.id, m)
-            ? tt`طيران مباشر من ${oname} — متحقق منه لهذا الشهر`
-            : r ? tt`طيران مباشر من ${oname} — تحقق بالبحث`
-                : tt`لا رحلة مباشرة مسجلة من ${oname} — ستبدّل طائرة`))));
       }
     }
     inner.append(el("div.card", { style: "margin-bottom:14px" },
@@ -591,6 +615,8 @@ export function planner(ctx, tripId, render){
     const unslotted = dayPlaces.filter(p => !p.slot);
     const nrows = SLOTS.length + (unslotted.length ? 1 : 0);
     const fo = trip.flights.out, fb = trip.flights.back;
+    const dstr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
+      + "-" + String(d.getDate()).padStart(2, "0");
     const dayCell = el("td.dt-day", { rowspan: String(nrows) },
       el("div.dd", {}, fmtDay(d)),
       (days.length > 1 && i === 0)
@@ -599,6 +625,10 @@ export function planner(ctx, tripId, render){
       (days.length > 1 && i === days.length - 1)
         ? el("div.dm", {}, "✈︎ " + (fb.no || tt("يوم العودة"))
             + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null,
+      ...trip.stays.filter(st => st.from === dstr).map(st =>
+        el("div.dm", {}, "🏨 " + tt`دخول ${st.name}`)),
+      ...trip.stays.filter(st => st.to === dstr).map(st =>
+        el("div.dm", {}, "🏨 " + tt`خروج ${st.name}`)),
       route);
     const ok = allowedSlots(trip, i, days.length);
     const body = el("tbody");

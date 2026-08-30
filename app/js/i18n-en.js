@@ -291,5 +291,14 @@ export const EN = {
  "هناك ␟ فعالية غير مضافة للجدول — اضغط للإضافة": "{0} activities not in the table yet — tap to add them",
  "أُضيفت للأقرب من أيامها مسارًا": "Joined the day whose route is nearest",
  "تريد الخروج من حسابك؟ مفضلتك ورحلاتك تبقى محفوظة في الحساب وتعود بعودتك.": "Sign out of your account? Your favorites and trips stay saved in the account and return when you do.",
- "من حسابك على هذا الجهاز": "From your account on this device"
+ "من حسابك على هذا الجهاز": "From your account on this device",
+ "بداية الرحلة": "Trip starts",
+ "نهاية الرحلة": "Trip ends",
+ "أحضر الأوقات": "Fetch the times",
+ "أو أدخل الأوقات يدويًا": "or enter the times yourself",
+ "إقلاع ␟ · وصول ␟": "departs {0} · arrives {1}",
+ "دخول": "Check-in",
+ "خروج": "Check-out",
+ "دخول ␟": "Check in: {0}",
+ "خروج ␟": "Check out: {0}"
 };
