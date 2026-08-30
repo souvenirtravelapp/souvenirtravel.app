@@ -366,6 +366,26 @@ export function filterSection(ctx, opts = {}){
       drawMap(holder, list, city => goto("#/d/" + city.id));
       return;
     }
+    // «لم تجدها؟ اطلبها» — ما فُعل لطارق يدويًا صار زرًا لكل مسافر:
+    // الطلب يصل خط التوسعة اليومي، والمكان يظهر لكل الناس حين يُضاف.
+    if (!list.length && (filter.query || "").trim().length >= 2){
+      const q = filter.query.trim();
+      const ask = el("div.card", { style: "text-align:center;padding:26px 18px" },
+        el("p", {}, t`لم نجد «${q}» بعد — سوفينير يتوسع كل يوم.`),
+        el("button.btn", { onclick: async (e) => {
+          e.target.disabled = true;
+          try {
+            await fetch("https://mcp.souvenirtravel.app/request-place", {
+              method: "POST", headers: { "content-type": "application/json" },
+              body: JSON.stringify({ query: q, lang: document.documentElement.lang }) });
+            ask.replaceChildren(el("p", {}, t("وصل طلبك — سنضيفها قريبًا إن شاء الله.")));
+          } catch {
+            e.target.disabled = false;
+          }
+        } }, t("اطلب إضافتها")));
+      results.append(ask);
+      return;
+    }
     for (const city of list.slice(0, 80)) results.append(destRow(ctx, city, redrawResults));
     if (list.length > 80)
       results.append(el("div.empty", {}, t`و${list.length - 80} أخرى — ضيّق البحث`));
