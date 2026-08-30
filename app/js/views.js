@@ -38,7 +38,7 @@ function paperLabel(store, doc){
 
 // The entry line: the ruling for the stated passport, softened by papers —
 // mirrors the app's entryLine.
-function visaLine(ctx, city){
+export function visaLine(ctx, city){
   const { store, filter, papers } = ctx;
   if (!filter.passport) return null;
   const v = store.visa(city, filter.passport);

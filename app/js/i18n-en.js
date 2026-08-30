@@ -253,5 +253,11 @@ export const EN = {
  "خطط لي أيامي": "Plan my days for me",
  "سوفينير يوزع أماكنك على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.": "Souvenir spreads your places across the days: near things together, restaurants in the evening, light travel days. Adjust anything after.",
  "لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.": "No places picked yet? We start you with travelers' top picks and spread them across your days. Adjust anything after.",
- "وزّع الآن": "Arrange it now"
+ "وزّع الآن": "Arrange it now",
+ "حقائق رحلتك": "Your trip facts",
+ "اختر جوازك من صفحة المدينة لترى حكم التأشيرة": "Pick your passport on the city page to see the visa ruling",
+ "طقس ␟ هناك: ␟° نهارًا، ␟° ليلًا — ␟": "{0} weather there: {1}° by day, {2}° at night — {3}",
+ "طيران مباشر من ␟ — متحقق منه لهذا الشهر": "Direct flight from {0} — verified for this month",
+ "طيران مباشر من ␟ — تحقق بالبحث": "Direct flight from {0} — confirm in search",
+ "من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر.": "From official sources and real numbers — no guessing. Rules change; check before you travel."
 };

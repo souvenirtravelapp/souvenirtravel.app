@@ -2,8 +2,9 @@
 // سلة تجمع قبل التوزيع، رابط خرائط واحد لليوم، والفراغ محترم.
 // «أضف مكانًا» يقتل حلقة الاسم←الخرائط←الجدول: Nominatim يحدد ونحن نرتب.
 import { t, t as tt, isEN } from "/app/js/i18n.js";
-import { el, cityName } from "/app/js/ui.js";
+import { el, cityName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
+import { visaLine } from "/app/js/views.js";
 
 const SLOTS = [
   ["morning", "صباحًا"],
@@ -137,6 +138,45 @@ export function planner(ctx, tripId, render){
 
   const inner = el("div.section");
   root.append(inner);
+
+  // ── بطاقة الصدق: ما لا يضمنه أي ذكاء مولِّد — تأشيرة مراجَعة من مصدر
+  //    رسمي، طقس أرقام حقيقية، طيران متحقق منه. تركب أعلى كل خطة. ──
+  if (city){
+    const facts = el("div.rows");
+    const vl = visaLine(ctx, city);
+    facts.append(el("div.row", {},
+      el("span.who", {}, "🛂 " + (vl
+        ? vl
+        : t("اختر جوازك من صفحة المدينة لترى حكم التأشيرة")))));
+    if (trip.start){
+      const m = new Date(trip.start + "T00:00:00").getMonth() + 1;
+      const w = ctx.store.temps ? ctx.store.temps(city, m) : null;
+      if (w){
+        const rw = { none: RAIN_AR.r0, light: RAIN_AR.r1,
+                     moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[ctx.store.rainLevel(w.p_mm_avg)];
+        facts.append(el("div.row", {}, el("span.who", {},
+          "🌤 " + tt`طقس ${MONTHS_AR[m - 1]} هناك: ${Math.round(w.t_max_avg_c)}° نهارًا، ${Math.round(w.t_min_avg_c)}° ليلًا — ${rw}`)));
+      }
+      const origin = (ctx.prefs && ctx.filter)
+        ? (ctx.prefs.departures(ctx.filter.origin).find(i => store.route(i, city.id))
+           || ctx.filter.origin || null) : null;
+      if (origin){
+        const r = store.route(origin, city.id);
+        const o = store.origin(origin);
+        const oname = o ? o.city_ar : origin;
+        facts.append(el("div.row", {}, el("span.who", {},
+          "✈️ " + (r && store.flightVerified(origin, city.id, m)
+            ? tt`طيران مباشر من ${oname} — متحقق منه لهذا الشهر`
+            : r ? tt`طيران مباشر من ${oname} — تحقق بالبحث`
+                : tt`لا رحلة مباشرة مسجلة من ${oname} — ستبدّل طائرة`))));
+      }
+    }
+    inner.append(el("div.card", { style: "margin-bottom:14px" },
+      el("h2", { style: "margin-bottom:6px" }, t("حقائق رحلتك")),
+      facts,
+      el("div.det", { style: "margin-top:6px" },
+        t("من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر."))));
+  }
 
   // رحلة بلا تواريخ بعد (جاءت من زر الصدر) — الخانة الأولى: متى؟
   if (!trip.start){
@@ -302,8 +342,12 @@ export function planner(ctx, tripId, render){
       const m = L.map(mapBox).setView([pinned[0].lat, pinned[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         { attribution: "© OpenStreetMap" }).addTo(m);
+      // دائرة برقم اليوم بدل دبوس الصورة — التوزيع يُرى على الخريطة بنظرة.
       const g = L.featureGroup(pinned.map(p =>
-        L.marker([p.lat, p.lon]).bindTooltip(p.name))).addTo(m);
+        L.marker([p.lat, p.lon], { icon: L.divIcon({ className: "pmark-wrap",
+          html: `<div class="pmark">${p.day >= 0 ? p.day + 1 : "•"}</div>`,
+          iconSize: [26, 26], iconAnchor: [13, 13] }) })
+          .bindTooltip(p.name))).addTo(m);
       m.fitBounds(g.getBounds().pad(0.25));
     }, 0);
   }

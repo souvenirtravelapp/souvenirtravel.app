@@ -488,3 +488,11 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .attr-card .aramp{aspect-ratio:10/7;display:flex;align-items:center;justify-content:center;
   background:var(--aurora);color:rgba(255,255,255,.85);
   font-family:"Tajawal","DM Sans",Tahoma,sans-serif;font-weight:900;font-size:64px}
+
+/* دبوس المخطط: دائرة ذهبية برقم اليوم — لا صور، والتوزيع يُرى بنظرة */
+.pmark-wrap { background: none; border: none; }
+.pmark { width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent, #b8863b); color: #fff; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35); }
