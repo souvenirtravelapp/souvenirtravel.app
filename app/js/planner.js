@@ -37,6 +37,17 @@ function fmtT(t){
   const mins = Math.round(t * 60), H = Math.floor(mins / 60) % 24, M = mins % 60;
   return String(H).padStart(2, "0") + ":" + String(M).padStart(2, "0");
 }
+const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
+  + "-" + String(d.getDate()).padStart(2, "0");
+const kmAB = (a, b) => 111 * Math.hypot(a.lat - b.lat,
+  (a.lon - b.lon) * Math.cos(a.lat * Math.PI / 180));
+// سكن ذلك اليوم — من ينتقل بين مدن له فندق لكل مرحلة.
+function stayForDay(trip, dstr){
+  const stays = (trip.stays || []).filter(s => s.lat || s.lon);
+  return stays.find(s => (!s.from || s.from <= dstr) && (!s.to || s.to >= dstr))
+    || stays[0] || null;
+}
+
 // مطار وصولك أنت — من رقم رحلتك إن عرفناه، وإلا أقرب مطار للمدينة.
 function arrivalAirport(trip, city, store){
   const iata = trip.flights?.out?.to;
@@ -133,57 +144,40 @@ function autoPlan(trip, days, city, store){
     pool = trip.plan.slice();
   }
   if (!pool.length) return false;
-  // سلسلة أقرب جار (من لديه إحداثيات)، والبقية في الذيل.
+
   const located = pool.filter(p => p.lat || p.lon);
   const blind = pool.filter(p => !(p.lat || p.lon));
-  const chain = [];
-  if (located.length){
+  const depot0 = stayForDay(trip, ymd(days[0]));
+
+  // كنسٌ حول الفندق: ترتيب الأماكن بزاويتها منه، فيصير كل يوم قطاعًا
+  // متجاورًا — لا يوم يقطع الوادي ذهابًا وآخر يعود إليه.
+  let ordered;
+  if (depot0 && located.length){
+    ordered = located.slice().sort((a, b) =>
+      Math.atan2(a.lat - depot0.lat, a.lon - depot0.lon)
+      - Math.atan2(b.lat - depot0.lat, b.lon - depot0.lon));
+  } else {
+    ordered = [];
     const rest = located.slice();
-    // إن حُدد سكن، تبدأ السلسلة بأقرب مكان إليه — اليوم يبدأ من الباب.
-    let s0 = 0;
-    const st = (trip.stays || [])[0];
-    if (st){
-      let bd = Infinity;
-      rest.forEach((p, i) => {
-        const dd = (p.lat - st.lat) ** 2 + (p.lon - st.lon) ** 2;
-        if (dd < bd){ bd = dd; s0 = i; }
-      });
-    }
-    chain.push(rest.splice(s0, 1)[0]);
-    while (rest.length){
-      const last = chain[chain.length - 1];
-      let bi = 0, bd = Infinity;
-      rest.forEach((p, i) => {
-        const dd = (p.lat - last.lat) ** 2 + (p.lon - last.lon) ** 2;
-        if (dd < bd){ bd = dd; bi = i; }
-      });
-      chain.push(rest.splice(bi, 1)[0]);
+    if (rest.length){
+      ordered.push(rest.shift());
+      while (rest.length){
+        const last = ordered[ordered.length - 1];
+        let bi = 0, bd = Infinity;
+        rest.forEach((p, i) => { const dd = kmAB(p, last); if (dd < bd){ bd = dd; bi = i; } });
+        ordered.push(rest.splice(bi, 1)[0]);
+      }
     }
   }
-  chain.push(...blind);
-  // التعليل: كل مكان يحمل سبب موضعه — الشفافية تقنع أكثر من السحر.
-  chain.forEach((p, k) => {
-    if (k === 0){
-      p.why = (trip.stays || [])[0]
-        ? t("الأقرب إلى سكنك — بها يبدأ اليوم")
-        : t("نقطة انطلاق المسار");
-    } else {
-      const q = chain[k - 1];
-      if ((p.lat || p.lon) && (q.lat || q.lon)){
-        const dk = Math.round(111 * Math.hypot(p.lat - q.lat,
-          (p.lon - q.lon) * Math.cos(p.lat * Math.PI / 180)));
-        p.why = dk < 1 ? tt`قريبة جدًا من ${q.name}`
-                       : tt`قريبة من ${q.name} (~${dk} كم)`;
-      } else p.why = "";
-    }
-  });
+  ordered.push(...blind);
+
   // حصص الأيام: الأيام الكاملة أولًا، ثم يوما السفر إن فاض شيء.
   const quota = caps.map(() => 0);
   const fillOrder = [];
   for (let i = 1; i < days.length - 1; i++) fillOrder.push(i);
   if (days.length > 1){ fillOrder.push(0, days.length - 1); }
   else fillOrder.push(0);
-  let left = Math.min(chain.length, total);
+  let left = Math.min(ordered.length, total);
   while (left > 0){
     let moved = false;
     for (const i of fillOrder){
@@ -191,30 +185,64 @@ function autoPlan(trip, days, city, store){
     }
     if (!moved) break;
   }
-  // فاض الاختيار عن السعة؟ الأيام الكاملة تتسع — كما اتسع بعدُ ظهرِ جدوله لفعاليتين.
-  let over = chain.length - total;
+  let over = ordered.length - total;
   if (over > 0){
     const fulls = fillOrder.filter(i => caps[i] >= 3);
     const tgt = fulls.length ? fulls : fillOrder;
     let j = 0;
     while (over > 0){ quota[tgt[j % tgt.length]]++; j++; over--; }
   }
-  // توزيع السلسلة بترتيب الأيام الزمني — التتابع يحفظ الجغرافيا لليوم الواحد.
+
   let cursor = 0;
   days.forEach((d, i) => {
-    const group = chain.slice(cursor, cursor + quota[i]);
+    const group = ordered.slice(cursor, cursor + quota[i]);
     cursor += quota[i];
+    const depot = stayForDay(trip, ymd(d)) || depot0;
+    // ترتيب اليوم حلقةً: من باب الفندق إلى الأقرب فالأقرب، والعودة إليه.
+    let seq = group.filter(p => p.lat || p.lon);
+    const noloc = group.filter(p => !(p.lat || p.lon));
+    if (depot && seq.length){
+      const rest = seq.slice(); seq = [];
+      let cur = depot;
+      while (rest.length){
+        let bi = 0, bd = Infinity;
+        rest.forEach((p, k) => { const dd = kmAB(p, cur); if (dd < bd){ bd = dd; bi = k; } });
+        cur = rest[bi]; seq.push(rest.splice(bi, 1)[0]);
+      }
+    }
+    const dayGroup = seq.concat(noloc);
+
+    // التعليل — الشفافية تقنع أكثر من السحر.
+    dayGroup.forEach((p, k) => {
+      if (k === 0){
+        p.why = depot ? tt`من ${depot.name} — الأقرب إليه`
+                      : t("نقطة انطلاق اليوم");
+      } else {
+        const q = dayGroup[k - 1];
+        if ((p.lat || p.lon) && (q.lat || q.lon)){
+          const dk = Math.round(kmAB(p, q));
+          p.why = dk < 1 ? tt`قريبة جدًا من ${q.name}`
+                         : tt`قريبة من ${q.name} (~${dk} كم)`;
+        } else p.why = "";
+      }
+    });
+    if (depot && seq.length){
+      const last = seq[seq.length - 1];
+      const back = Math.round(kmAB(last, depot));
+      last.why = [last.why, tt`ثم العودة للفندق (~${back} كم)`]
+        .filter(Boolean).join(" · ");
+    }
+
     const slots = allowedSlots(trip, i, days.length).slice();
     const taken = new Set();
-    // المطاعم والمقاهي تحجز المساء أولًا.
-    for (const p of group){
+    for (const p of dayGroup){
       if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening")){
         p.day = i; p.slot = "evening"; taken.add("evening");
         p.why = [p.why, tt("المطاعم والمقاهي مساءً")].filter(Boolean).join(" · ");
       }
     }
     let ci = 0;
-    for (const p of group){
+    for (const p of dayGroup){
       if (p.day === i && p.slot) continue;
       const free = slots.find(x => !taken.has(x));
       p.day = i; p.slot = free || slots[ci % slots.length] || "";
@@ -222,12 +250,11 @@ function autoPlan(trip, days, city, store){
     }
     if (days.length > 1 && (i === 0 || i === days.length - 1)){
       const why = i === 0 ? tt("بعد وصولك") : tt("قبل إقلاعك");
-      for (const p of group)
+      for (const p of dayGroup)
         p.why = [p.why, why].filter(Boolean).join(" · ");
     }
   });
-  // ما فاض عن سعة الأيام يعود للسلة بوضوح.
-  chain.slice(cursor).forEach(p => { p.day = -1; p.slot = ""; });
+  ordered.slice(cursor).forEach(p => { p.day = -1; p.slot = ""; });
   return true;
 }
 
@@ -740,7 +767,9 @@ export function planner(ctx, tripId, render){
     if (withPos.length){
       // المسار من أول مكان في اليوم — لا من موقع القارئ الحالي أينما كان.
       const coords = withPos.map(p => p.lat + "," + p.lon);
+      const dstay = stayForDay(trip, ymd(d));
       const pts = withPos.map(p => [p.lat, p.lon]);
+      if (dstay) pts.unshift([dstay.lat, dstay.lon]), pts.push([dstay.lat, dstay.lon]);
       route = el("div", { style: "display:flex;gap:8px;align-items:center;"
         + "justify-content:center;flex-wrap:wrap;margin-top:4px" },
         el("a", { href: "#", style: "font-size:12.5px", onclick: (e) => {
@@ -758,8 +787,7 @@ export function planner(ctx, tripId, render){
     const unslotted = dayPlaces.filter(p => !p.slot);
     const nrows = SLOTS.length + (unslotted.length ? 1 : 0);
     const fo = trip.flights.out, fb = trip.flights.back;
-    const dstr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0")
-      + "-" + String(d.getDate()).padStart(2, "0");
+    const dstr = ymd(d);
     const dayCell = el("td.dt-day", { rowspan: String(nrows) },
       el("div.dn", {}, tt`يوم ${i + 1}`),
       el("div.dd", {}, fmtDay(d)),
