@@ -857,70 +857,89 @@ export function planner(ctx, tripId, render){
   };
   // نافذة التفاصيل: لا يضيف المرء إلى جدوله ما لم يره. نعرض ما في السجل
   // ولا نزيد — ما لم يُجمع لا يُخترع، والقرار (أضف / ألغِ) في يد صاحبه.
-  const openDetails = (a, label, onRemoveFree) => {
+  // نافذة التفاصيل: لا يضيف المرء إلى جدوله ما لم يره. نعرض ما في السجل
+  // ولا نزيد — ما لم يُجمع لا يُخترع، والقرار (أضف / أزل) في يد صاحبه.
+  // والأسهم تنقلك بين فعاليات المجموعة نفسها بلا إغلاق وفتح.
+  const openDetails = (list, idx, onRemoveFree) => {
     if (document.querySelector(".detback")) return;
     const close = () => { back.remove(); card.remove(); };
     const back = el("div.detback", { onclick: close });
-    const chosen = !!(a.qid ? planOf(a.qid) : true);
-    const rows = [];
-    const row = (k, v) => v ? rows.push(el("div.detrow", {},
-      el("span.k", {}, k), el("span.v", {}, v))) : null;
-    row(t("الأوقات"), a.hours_ar);
-    row(t("التذاكر"), a.needs_ticket ? t("تحتاج تذكرة")
-      : a.free_entry ? t("الدخول مجاني") : (a.ticket_price_note || ""));
-    row(t("الوصول"), a.access_note_ar
-      || (a.access_minutes ? tt`${a.access_minutes} د مشيًا` : ""));
-    row(t("الموسم"), a.season_note_ar);
-    row(t("يغلق"), [closedDaysText(a),
-      ...(a.closed_ranges || []).map(r => `${r.from} → ${r.to || r.from}: ${r.why_ar || ""}`)]
-      .filter(Boolean).join(" · "));
-    row(t("لمن"), a.audience_note_ar
-      || (Array.isArray(a.audiences) ? a.audiences.join("، ") : ""));
-    row(t("الشروط"), [a.min_age ? tt`العمر من ${a.min_age} سنة` : "",
-      a.min_height_cm ? tt`الطول من ${a.min_height_cm} سم` : ""].filter(Boolean).join(" · "));
-    // نفيُ الموقف واقعةٌ لا فراغ: «لا مواقف خاصة — احتسب ساعة للبحث» أنفع
-    // للمسافر من حقلٍ صامت.
-    row(t("الموقف"), [a.parking_name, a.parking_note_ar].filter(Boolean).join(" · "));
-    row(t("القيمة"), a.value_ar);
-    const blurb = isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en);
-    const card = el("div.detcard", { onclick: e => e.stopPropagation() },
-      el("div.dethead", {},
-        el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind, a.icon_id)),
-        el("div", { style: "flex:1;min-width:0" },
-          el("h3", {}, label),
-          a.name_en && a.name_en !== label ? el("div.den", {}, a.name_en) : null),
-        el("button.x", { onclick: close, "aria-label": t("إغلاق") }, "✕")),
-      a.has_image ? el("img.detimg", { src: "attractions/" + a.qid + ".jpg",
-        alt: label, loading: "lazy",
-        onerror: (e) => e.target.remove() }) : null,
-      el("div.detmeta", {},
-        a.kind ? el("span.kind", {}, a.kind) : null,
-        a.added_count > 0 ? el("span.cnt", {}, tt`اختارها ${a.added_count}`) : null),
-      blurb ? el("p.detblurb", {}, blurb) : null,
-      rows.length ? el("div.detrows", {}, rows) : null,
-      el("div.detlinks", {},
-        a.tickets_url ? el("a", { href: a.tickets_url, target: "_blank",
-          rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
-        a.official_url ? el("a", { href: a.official_url, target: "_blank",
-          rel: "noopener nofollow" }, t("الموقع الرسمي ↗")) : null),
-      (a.hours_ar || a.tickets_url || a.official_url)
-        ? el("div.detdisc", {}, t("معلومات استرشادية — تأكد من المصدر")) : null,
-      el("div.detbtns", {},
-        el("button.detadd", { onclick: () => {
-          close();
-          if (onRemoveFree) onRemoveFree();
-          else togglePick(a, label);
-        } }, chosen ? t("أزل من الجدول") : t("أضف للجدول")),
-        el("button.detno", { onclick: close }, t("ألغِ"))));
+    const card = el("div.detcard", { onclick: e => e.stopPropagation() });
+    let i = Math.max(0, Math.min(idx, list.length - 1));
+
+    const paint = () => {
+      const { a, label, city } = list[i];
+      const chosen = onRemoveFree ? true : !!(a.qid && planOf(a.qid));
+      const rows = [];
+      const row = (k, v) => v ? rows.push(el("div.detrow", {},
+        el("span.k", {}, k), el("span.v", {}, v))) : null;
+      row(t("الأوقات"), a.hours_ar);
+      row(t("التذاكر"), a.needs_ticket ? t("تحتاج تذكرة")
+        : a.free_entry ? t("الدخول مجاني") : (a.ticket_price_note || ""));
+      row(t("الوصول"), a.access_note_ar
+        || (a.access_minutes ? tt`${a.access_minutes} د مشيًا` : ""));
+      row(t("الموسم"), a.season_note_ar);
+      row(t("يغلق"), [closedDaysText(a),
+        ...(a.closed_ranges || []).map(r => `${r.from} → ${r.to || r.from}: ${r.why_ar || ""}`)]
+        .filter(Boolean).join(" · "));
+      row(t("لمن"), a.audience_note_ar
+        || (Array.isArray(a.audiences) ? a.audiences.join("، ") : ""));
+      row(t("الشروط"), [a.min_age ? tt`العمر من ${a.min_age} سنة` : "",
+        a.min_height_cm ? tt`الطول من ${a.min_height_cm} سم` : ""].filter(Boolean).join(" · "));
+      row(t("الموقف"), [a.parking_name, a.parking_note_ar].filter(Boolean).join(" · "));
+      row(t("القيمة"), a.value_ar);
+      const blurb = isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en);
+      const nav = (d) => { i = (i + d + list.length) % list.length; paint(); };
+      card.replaceChildren(
+        el("div.dethead", {},
+          el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind, a.icon_id)),
+          el("div", { style: "flex:1;min-width:0" },
+            el("h3", {}, label),
+            // المدينة أولًا وبوضوح: «هالشتات» تقول لك أين أنت قبل كل تفصيل.
+            city ? el("div.detcity", {}, "◉ " + city) : null,
+            a.name_en && a.name_en !== label ? el("div.den", {}, a.name_en) : null),
+          el("button.x", { onclick: close, "aria-label": t("إغلاق") }, "✕")),
+        a.has_image ? el("img.detimg", { src: "attractions/" + a.qid + ".jpg",
+          alt: label, loading: "lazy", onerror: (e) => e.target.remove() }) : null,
+        el("div.detmeta", {},
+          a.kind ? el("span.kind", {}, a.kind) : null,
+          a.added_count > 0 ? el("span.cnt", {}, tt`اختارها ${a.added_count}`) : null),
+        blurb ? el("p.detblurb", {}, blurb) : null,
+        rows.length ? el("div.detrows", {}, rows) : null,
+        el("div.detlinks", {},
+          a.tickets_url ? el("a", { href: a.tickets_url, target: "_blank",
+            rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
+          a.official_url ? el("a", { href: a.official_url, target: "_blank",
+            rel: "noopener nofollow" }, t("الموقع الرسمي ↗")) : null),
+        (a.hours_ar || a.tickets_url || a.official_url)
+          ? el("div.detdisc", {}, t("معلومات استرشادية — تأكد من المصدر")) : null,
+        el("div.detbtns", {},
+          // التنقل بين فعاليات المجموعة: في العربية السهم الأيمن للسابق.
+          list.length > 1 ? el("button.detnav", { "aria-label": t("السابق"),
+            title: t("السابق"), onclick: () => nav(-1) }, "›") : null,
+          el("button" + (chosen ? ".detrm" : ".detadd"), { onclick: () => {
+            if (onRemoveFree){ close(); onRemoveFree(); return; }
+            togglePick(a, label);
+          } }, chosen ? t("أزل من الجدول") : t("أضف للجدول")),
+          list.length > 1 ? el("button.detnav", { "aria-label": t("التالي"),
+            title: t("التالي"), onclick: () => nav(1) }, "‹") : null,
+          el("button.detno", { onclick: close }, t("أغلق"))));
+    };
+    paint();
     document.body.append(back, card);
   };
   // البطاقة: جسدها يفتح التفاصيل، و«+» في زاويتها يضم مباشرة بلا نافذة.
-  const pickCard = (a) => {
+  const pickCard = (a, ctx) => {
     const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
     const chosen = planOf(a.qid);
     const body = el(chosen
       ? (chosen.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend")
-      : "button.pick", { onclick: () => openDetails(a, label) },
+      : "button.pick", { onclick: () => {
+        const list = (ctx?.items || [a]).map(x => ({
+          a: x, city: ctx?.city || "",
+          label: (isEN ? (x.name_en || x.name_ar) : (x.name_ar || x.name_en)) }));
+        openDetails(list, Math.max(0, (ctx?.items || []).indexOf(a)));
+      } },
       // أيقونة الفعالية نفسها التي في الجدول — لغة واحدة في الشاشتين.
       el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind, a.icon_id)),
       el("div.pn", {}, label),
@@ -940,16 +959,65 @@ export function planner(ctx, tripId, render){
       regBox.append(el("div.legname", {},
         (g.city ? cityName(g.city) : "") +
         (g.leg.from ? " · " + g.leg.from.slice(5) + " → " + (g.leg.to || "").slice(5) : "")));
-    regBox.append(el("div.pickrow", {}, g.items.map(pickCard)));
+    const gctx = { items: g.items, city: g.city ? cityName(g.city) : "" };
+    regBox.append(el("div.pickrow", {}, g.items.map(a => pickCard(a, gctx))));
   }
+  // ── أماكن قريبة من مكان إقامتك ──
+  // من ينزل في شلادمينغ يزور هالشتات وسالزبورغ في يومٍ منها ولا ينقل حقائبه.
+  // فهذه ليست مراحل — لا فندق لها ولا تواريخ — بل مدن على مرمى قيادة من
+  // سكنك، تدخل فعالياتها جدولك كأي فعالية أخرى.
+  const NEAR_KM = 110;
+  const legCityIds = new Set(legsOf(trip).map(l => l.cityId));
+  const bases = legsOf(trip)
+    .map(l => store.cities.find(c => c.id === l.cityId)).filter(c => c && c.lat != null);
+  const nearby = [];
+  if (bases.length){
+    for (const c of store.cities){
+      if (legCityIds.has(c.id) || c.lat == null) continue;
+      const items = (store.attractions?.[c.id] || [])
+        .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 12);
+      if (!items.length) continue;
+      let km = Infinity;
+      for (const b of bases) km = Math.min(km, kmAB(c, b));
+      if (km <= NEAR_KM) nearby.push({ city: c, km: Math.round(km), items });
+    }
+    // الترتيب بزمن القيادة متى قِيس: سالزبورغ أبعد هوائيًا من باد غاشتاين
+    // وأقرب بالطريق — والمسافر يقود ولا يطير.
+    const drvOf = (n) => trip.dayStats?.["near:" + n.city.id]?.min ?? null;
+    nearby.sort((a2, b2) => {
+      const d1 = drvOf(a2), d2 = drvOf(b2);
+      if (d1 != null && d2 != null) return d1 - d2;
+      if (d1 != null) return -1;
+      if (d2 != null) return 1;
+      return a2.km - b2.km;
+    });
+  }
+  // ثلاث لكل مرحلة لا أربع للرحلة كلها: من ينزل مدينتين له جيرانٌ في كلٍّ.
+  const nearShow = [];
+  for (const base of bases){
+    const mine = nearby.filter(n => bases.reduce((acc, b) =>
+      kmAB(n.city, b) < kmAB(n.city, acc) ? b : acc, bases[0]) === base);
+    nearShow.push(...mine.slice(0, 3));
+  }
+  if (nearShow.length){
+    regBox.append(el("div.nearhead", {}, t("أماكن قريبة من مكان إقامتك")));
+    for (const n of nearShow){
+      const drv = trip.dayStats?.["near:" + n.city.id]?.min;
+      regBox.append(el("div.legname", {},
+        cityName(n.city) + " · " + (drv ? tt`${drv} د قيادة` : tt`~${n.km} كم`)));
+      const nctx = { items: n.items, city: cityName(n.city) };
+      regBox.append(el("div.pickrow", {}, n.items.map(a => pickCard(a, nctx))));
+    }
+  }
+
   // ما جاء من البحث الحر بطاقة مختارة هو الآخر — والضغط عليها يلغيه.
   const freeBox = el("div.pickrow", {});
   for (const p of trip.plan){
     if (p.qid && regQids.has(p.qid)) continue;
     const rm = () => { trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render(); };
     const body = el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
-      { onclick: () => openDetails({ name_en: p.en || "", kind: p.kind || "",
-          blurb: p.detail || "", added_count: 0 }, p.name, rm) },
+      { onclick: () => openDetails([{ a: { name_en: p.en || "", kind: p.kind || "",
+          blurb: p.detail || "", added_count: 0 }, label: p.name, city: "" }], 0, rm) },
       el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
       el("div.pc", {}, p.kind || "‏"));
@@ -1277,6 +1345,17 @@ export function planner(ctx, tripId, render){
       p.driveFromStayMin = r ? r.min : 0;
       p.driveFrom = st.id;
       changed = true;
+    }
+    // زمن القيادة إلى المدن القريبة — يُقاس مرة ويُحفظ، فيصير العنوان
+    // «هالشتات · ٧٤ د قيادة» بدل مسافة هوائية.
+    for (const n of nearby.slice(0, 8)){
+      const k = "near:" + n.city.id;
+      if (trip.dayStats[k]) continue;
+      const b0 = bases.reduce((acc, b) =>
+        (acc && kmAB(n.city, acc) <= kmAB(n.city, b)) ? acc : b, null);
+      if (!b0) continue;
+      const r = await osrm([[b0.lat, b0.lon], [n.city.lat, n.city.lon]]).catch(() => null);
+      if (r){ trip.dayStats[k] = { km: Math.round(r.km), min: r.min }; changed = true; }
     }
     // زمن الانتقال بين مرحلتين — يُقاس مرة ويُحفظ كحلقة اليوم.
     const lg = legsOf(trip);

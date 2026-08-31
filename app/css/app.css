@@ -766,6 +766,19 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .detadd { flex: 1; padding: 11px; border-radius: 12px; border: 0;
   background: #1F8F7C; color: #fff; font: inherit; font-weight: 800;
   font-size: 14px; cursor: pointer; }
+/* الإزالة فعلٌ معاكس فلها لونها: برتقالي الشفق لا أخضره */
+.detrm { flex: 1; padding: 11px; border-radius: 12px; border: 0;
+  background: var(--accent, #E0A458); color: #3B2A16; font: inherit;
+  font-weight: 800; font-size: 14px; cursor: pointer; }
+.detrm:hover { background: #D6963F; }
+/* سهما التنقل بين فعاليات المجموعة */
+.detnav { width: 40px; padding: 11px 0; border-radius: 12px; font: inherit;
+  font-size: 17px; font-weight: 800; line-height: 1; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--text); }
+.detnav:hover { background: #F3EFE6; }
+/* المدينة تحت الاسم مباشرة — أين أنت قبل كل تفصيل */
+.dethead .detcity { font-size: 12px; font-weight: 800; margin-top: 3px;
+  color: var(--deep, #B4622E); }
 .detno { padding: 11px 18px; border-radius: 12px; font: inherit; font-weight: 700;
   border: 1px solid var(--line); background: var(--card); cursor: pointer; }
 
@@ -781,3 +794,8 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .facth { margin: 0 0 5px; font-size: 12px; font-weight: 800; letter-spacing: .02em;
   color: var(--deep, #B4622E); }
 .factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
+
+/* أماكن قريبة من مكان الإقامة — قسم تحت اقتراحات المراحل */
+.nearhead { margin: 16px 2px 2px; font-size: 13px; font-weight: 800;
+  color: var(--text, #28241E); border-top: 1px solid var(--line, #e5ddcf);
+  padding-top: 12px; }
