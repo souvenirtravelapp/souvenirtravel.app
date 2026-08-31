@@ -321,6 +321,22 @@ export function planner(ctx, tripId, render){
   const save = () => Trips.update(tripId, trip);
 
   const city = trip.cityId ? store.cities.find(c => c.id === trip.cityId) : null;
+
+  // الخطة تحمل نسخة من إحداثيات كل مكان يوم أُضيف — فإن صححنا السجل بعدها
+  // (دبوس انتقل من قمة الجبل إلى محطة الوادي) وجب أن تلحق الخطة به.
+  if (city){
+    const byQid = {};
+    for (const a of (store.attractions?.[city.id] || [])) byQid[a.qid] = a;
+    let moved = 0;
+    for (const p of trip.plan){
+      const a = p.qid && byQid[p.qid];
+      if (!a || !(a.lat || a.lon)) continue;
+      if (Math.abs(a.lat - p.lat) > 1e-5 || Math.abs(a.lon - p.lon) > 1e-5){
+        p.lat = a.lat; p.lon = a.lon; p.roadM = a.road_m || 0; moved++;
+      }
+    }
+    if (moved) save();
+  }
   root.append(el("div.hero3", {},
     el("div.herorow", {},
       el("h1", {}, t`خطة رحلتك${city ? tt(" إلى ") + cityName(city) : ""}`),
