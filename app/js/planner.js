@@ -878,7 +878,9 @@ export function planner(ctx, tripId, render){
       || (Array.isArray(a.audiences) ? a.audiences.join("، ") : ""));
     row(t("الشروط"), [a.min_age ? tt`العمر من ${a.min_age} سنة` : "",
       a.min_height_cm ? tt`الطول من ${a.min_height_cm} سم` : ""].filter(Boolean).join(" · "));
-    row(t("الموقف"), a.parking_name);
+    // نفيُ الموقف واقعةٌ لا فراغ: «لا مواقف خاصة — احتسب ساعة للبحث» أنفع
+    // للمسافر من حقلٍ صامت.
+    row(t("الموقف"), [a.parking_name, a.parking_note_ar].filter(Boolean).join(" · "));
     row(t("القيمة"), a.value_ar);
     const blurb = isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en);
     const card = el("div.detcard", { onclick: e => e.stopPropagation() },
