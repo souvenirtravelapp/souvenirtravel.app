@@ -125,6 +125,10 @@ function tallyPick(qid){
 // «وزّع لي»: القرار الذي كان على المستخدم — القريب مع القريب، والمطاعم مساءً،
 // ويوما السفر خفيفان. سلسلة أقرب-جار تحفظ التماسك الجغرافي بلا عناقيد معقدة.
 const FOOD_KINDS = ["طعام", "مقهى"];
+// مكانٌ يبعد عن الفندق أكثر من هذا (بالدقائق قيادةً) يوم كامل لا فترة:
+// بحيرة جبلية على بعد ٤٥ دقيقة تحتاج صباحًا وساعات مشي، لا عصرًا مزدحمًا.
+const FAR_MIN = 40;
+const isFar = (p) => (p.driveFromStayMin || 0) >= FAR_MIN;
 function autoPlan(trip, days, city, store){
   let pool = trip.plan.slice();
   const caps = days.map((d, i) => allowedSlots(trip, i, days.length).length);
@@ -196,8 +200,12 @@ function autoPlan(trip, days, city, store){
 
   let cursor = 0;
   days.forEach((d, i) => {
-    const group = ordered.slice(cursor, cursor + quota[i]);
-    cursor += quota[i];
+    // اليوم الذي فيه مكان بعيد يُخفَّف إلى محطتين — الطريق نفسه نصف اليوم.
+    let cap = quota[i];
+    const peek = ordered.slice(cursor, cursor + cap);
+    if (peek.some(isFar)) cap = Math.min(cap, 2);
+    const group = ordered.slice(cursor, cursor + cap);
+    cursor += cap;
     const depot = stayForDay(trip, ymd(d)) || depot0;
     // ترتيب اليوم حلقةً: من باب الفندق إلى الأقرب فالأقرب، والعودة إليه.
     let seq = group.filter(p => p.lat || p.lon);
@@ -236,6 +244,14 @@ function autoPlan(trip, days, city, store){
 
     const slots = allowedSlots(trip, i, days.length).slice();
     const taken = new Set();
+    // البعيد يحجز الصباح أولًا — الطريق طويل واليوم يبدأ مبكرًا.
+    for (const p of dayGroup){
+      if (isFar(p) && slots.includes("morning") && !taken.has("morning")){
+        p.day = i; p.slot = "morning"; taken.add("morning");
+        p.why = [p.why, tt`الطريق إليها ${p.driveFromStayMin} د — انطلاق مبكر`]
+          .filter(Boolean).join(" · ");
+      }
+    }
     for (const p of dayGroup){
       if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening")){
         p.day = i; p.slot = "evening"; taken.add("evening");
@@ -752,6 +768,44 @@ export function planner(ctx, tripId, render){
     }
   })();
 
+  // القياس الحقيقي الذي يبني عليه سوفينير قراره: زمن القيادة من الفندق
+  // إلى كل مكان، وحلقة كل يوم كاملة. يُحسب مرة ويُحفظ، ويُعرض للمستخدم.
+  trip.dayStats = trip.dayStats || {};
+  const osrm = async (pts) => {
+    const q = pts.map(p => p[1] + "," + p[0]).join(";");
+    const r = await fetch("https://router.project-osrm.org/route/v1/driving/"
+      + q + "?overview=false");
+    const j = await r.json();
+    const rt = j?.routes?.[0];
+    return rt ? { km: rt.distance / 1000, min: Math.round(rt.duration / 60) } : null;
+  };
+  (async () => {
+    const st0 = stayForDay(trip, trip.start || "");
+    if (!st0) return;
+    let changed = false;
+    for (const p of trip.plan){
+      if (p.driveFromStayMin != null || !(p.lat || p.lon) || p.roadM >= 800) continue;
+      const r = await osrm([[st0.lat, st0.lon], [p.lat, p.lon]]).catch(() => null);
+      p.driveFromStayMin = r ? r.min : 0;
+      changed = true;
+    }
+    // حلقة اليوم: من الفندق مرورًا بمحطاته وعودةً إليه.
+    const dd = daysOf(trip);
+    for (let i = 0; i < dd.length; i++){
+      const st = stayForDay(trip, ymd(dd[i])) || st0;
+      const stops = SLOTS.flatMap(([v]) => trip.plan.filter(p => p.day === i && p.slot === v))
+        .concat(trip.plan.filter(p => p.day === i && !p.slot))
+        .filter(p => (p.lat || p.lon) && !(p.roadM >= 800));
+      if (!stops.length || !st) continue;
+      const sig = i + ":" + stops.map(p => p.id).join(",");
+      if (trip.dayStats[sig]) continue;
+      const pts = [[st.lat, st.lon], ...stops.map(p => [p.lat, p.lon]), [st.lat, st.lon]];
+      const r = await osrm(pts).catch(() => null);
+      if (r){ trip.dayStats[sig] = { km: Math.round(r.km * 10) / 10, min: r.min }; changed = true; }
+    }
+    if (changed){ save(); render(); }
+  })();
+
   // زمن الطريق من المطار إلى السكن — قيادة فعلية لا خط هوائي، يُحفظ مرة.
   (async () => {
     const ap = arrivalAirport(trip, city, store);
@@ -882,7 +936,19 @@ export function planner(ctx, tripId, render){
       body.append(el("tr", {},
         el("td.dt-slot", {}, "—"),
         el("td.dt-acts", {}, unslotted.map(placeRow))));
+    // فكرة اليوم مرئية: أرقام حقيقية وسببٌ مكتوب — لا صندوق أسود.
+    const stops = withPos;
+    const sig = i + ":" + stops.map(p => p.id).join(",");
+    const stat = trip.dayStats[sig];
+    const bits = [];
+    if (stat) bits.push(tt`حلقة اليوم ${stat.km} كم · ${stat.min} د من الفندق وإليه`);
+    const far = dayPlaces.filter(isFar);
+    if (far.length) bits.push(tt`محطة بعيدة (${far[0].driveFromStayMin} د) — يوم مخفَّف بانطلاق مبكر`);
+    else if (stops.length > 1) bits.push(t("محطات متجاورة في جهة واحدة — طريق واحد لا طريقان"));
     tablesBox.append(el("table.daytbl", { style: "--dc:" + dayColor(i) }, body));
+    if (bits.length)
+      tablesBox.append(el("div.daywhy", { style: "border-inline-start:5px solid "
+        + dayColor(i) }, "◷ " + bits.join(" · ")));
   });
 
   // ── الجدول يمينًا والخريطة يسارًا — وعلى الجوال تنطوي الخريطة تحت الجدول ──

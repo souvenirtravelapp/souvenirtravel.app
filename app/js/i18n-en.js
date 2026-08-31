@@ -322,5 +322,9 @@ export const EN = {
  "تقديري": "(estimated)",
  "من ␟ — الأقرب إليه": "From {0} — the nearest stop",
  "نقطة انطلاق اليوم": "The day's starting point",
- "ثم العودة للفندق (~␟ كم)": "then back to the hotel (~{0} km)"
+ "ثم العودة للفندق (~␟ كم)": "then back to the hotel (~{0} km)",
+ "الطريق إليها ␟ د — انطلاق مبكر": "{0} min drive — an early start",
+ "حلقة اليوم ␟ كم · ␟ د من الفندق وإليه": "Day loop {0} km · {1} min, hotel to hotel",
+ "محطة بعيدة (␟ د) — يوم مخفَّف بانطلاق مبكر": "A far stop ({0} min) — a lighter day, starting early",
+ "محطات متجاورة في جهة واحدة — طريق واحد لا طريقان": "Neighboring stops in one direction — one road, not two"
 };
