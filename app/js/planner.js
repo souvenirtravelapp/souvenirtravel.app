@@ -407,6 +407,20 @@ export function planner(ctx, tripId, render){
     return root;
   }
   trip.plan = trip.plan || [];
+  // تعليلٌ قديم بلا رقم يبقى محفوظًا في خطط وُزّعت قبل حذفه — يُمحى عند
+  // القراءة، فلا يرى المستخدم سطرًا قررنا أنه لا يفيده.
+  const DEAD_WHY = ["أُضيفت للأقرب من أيامها مسارًا",
+                    "Joined the day whose route is nearest"];
+  {
+    let cleaned = 0;
+    for (const p of trip.plan)
+      if (p.why && DEAD_WHY.some(d => p.why.includes(d))){
+        p.why = p.why.split(" · ").filter(x => !DEAD_WHY.some(d => x.includes(d)))
+          .join(" · ");
+        cleaned++;
+      }
+    if (cleaned) Trips.update(tripId, trip);
+  }
   trip.flights = trip.flights || { out: {}, back: {} };
   trip.stays = trip.stays || [];
   const save = () => Trips.update(tripId, trip);
