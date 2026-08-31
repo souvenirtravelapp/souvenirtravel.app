@@ -330,7 +330,6 @@ function autoPlan(trip, days, city, store){
 
     // التعليل — الشفافية تقنع أكثر من السحر.
     dayGroup.forEach((p, k) => {
-      p.why = "";   // قرار طارق: لا سطر تعليل تحت المكان — حساب اليوم يكفي
     });
 
     const slots = allowedSlots(trip, i, days.length).slice();
@@ -392,7 +391,6 @@ function placePending(trip, days){
     if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening"))
       p.slot = "evening";
     else p.slot = slots.find(x => !taken.has(x)) || slots[0] || "";
-    p.why = "";   // لا تعليل بلا رقم — سطرٌ لا يفيد القارئ لا يُكتب
   }
   return true;
 }
@@ -426,12 +424,12 @@ export function planner(ctx, tripId, render){
   // تعليلٌ بلا رقم لا يفيد القارئ: «الأقرب إليه»، «قريبة جدًا»، «أُضيفت
   // للأقرب» — كلها بقيت محفوظة في خطط وُزّعت قبل هذه القاعدة، فتُمحى عند
   // القراءة. ويبقى ما فيه قياس: كيلومترات، دقائق، أمتار.
-  // قرار طارق: لا تعليل تحت المكان. ما حُفظ في خطط سابقة يُمحى عند فتحها،
-  // والحساب يبقى في سطر اليوم — «حلقة اليوم ٢٣ كم · ٣٢ د».
+  // قرار طارق: لا تعليل تحت المكان. الحقل خرج من النموذج فلا يكتبه أحد،
+  // وهذا الكنس لِما حُفظ في خطط سابقة وحده — بلا مصدرٍ يعيد ملأه.
   {
     let cleaned = 0;
     for (const p of trip.plan)
-      if (p.why){ delete p.why; cleaned++; }
+      if ("why" in p){ delete p.why; cleaned++; }   // ولو كان فارغًا — مفتاحٌ ميت يبقى بابًا
     if (cleaned) Trips.update(tripId, trip);
   }
   trip.flights = trip.flights || { out: {}, back: {} };
@@ -1107,8 +1105,8 @@ export function planner(ctx, tripId, render){
       el("option", { value: "" }, "—"),
       SLOTS.map(([v, ar]) => el("option", { value: v,
         ...(p.slot === v ? { selected: true } : {}) }, tt(ar))));
-    daySel.onchange = () => { p.day = +daySel.value; p.why = ""; save(); render(); };
-    slotSel.onchange = () => { p.slot = slotSel.value; p.why = ""; save(); render(); };
+    daySel.onchange = () => { p.day = +daySel.value; save(); render(); };
+    slotSel.onchange = () => { p.slot = slotSel.value; save(); render(); };
     // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
     const thumb = el("div.rowthumb.kindth", {},
@@ -1201,13 +1199,32 @@ export function planner(ctx, tripId, render){
     return rt ? { km: rt.distance / 1000, min: Math.round(rt.duration / 60) } : null;
   };
   (async () => {
-    const st0 = stayForDay(trip, trip.start || "");
-    if (!st0) return;
+    // زمن القيادة يُقاس من فندق **مرحلة المكان**، لا من فندق أول يوم: مكانٌ
+    // في فيينا قيس من فندق شلادمينغ يأخذ مئتي دقيقة، فيُحسب «بعيدًا»، فيُخفَّف
+    // يومه، ويُطبع للمستخدم رقمٌ دقيق المظهر مقيسٌ من فندقٍ غادره. والقياس
+    // يُحفظ مع معرّف فندقه، فإن تغيّر السكن أو المراحل أُعيد الحساب.
+    const stayForPlace = (p) => {
+      const legs = legsOf(trip);
+      if (!legs.length) return stayForDay(trip, trip.start || "");
+      let best = null, bd = Infinity;
+      for (const l of legs){
+        const c = store.cities.find(x => x.id === l.cityId);
+        if (!c || c.lat == null) continue;
+        const d = (p.lat || p.lon) ? kmAB(p, c) : Infinity;
+        if (d < bd){ bd = d; best = l; }
+      }
+      const day = best?.from || trip.start || "";
+      return stayForDay(trip, day);
+    };
     let changed = false;
     for (const p of trip.plan){
-      if (p.driveFromStayMin != null || !(p.lat || p.lon) || p.roadM >= 800) continue;
-      const r = await osrm([[st0.lat, st0.lon], [p.lat, p.lon]]).catch(() => null);
+      if (!(p.lat || p.lon) || p.roadM >= 800) continue;
+      const st = stayForPlace(p);
+      if (!st) continue;
+      if (p.driveFromStayMin != null && p.driveFrom === st.id) continue;
+      const r = await osrm([[st.lat, st.lon], [p.lat, p.lon]]).catch(() => null);
       p.driveFromStayMin = r ? r.min : 0;
+      p.driveFrom = st.id;
       changed = true;
     }
     // زمن الانتقال بين مرحلتين — يُقاس مرة ويُحفظ كحلقة اليوم.
