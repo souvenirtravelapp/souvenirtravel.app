@@ -1418,6 +1418,9 @@ export function planner(ctx, tripId, render){
           ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
               "↳ " + tt`المغادرة ١٠:٠٠ من ${ev.move.from}` + " · "
               + tt`${ev.move.driveMin} د طريق`) : null,
+        // قرار طارق ٢٠٢٦-٠٨-٣١: بيان حساب الساعة **يبقى** تحت أحداث
+        // الفندق والمطار. سطور التعليل تحت الأماكن حُذفت لأنها تشرح قرارًا،
+        // وهذا يشرح رقمًا يظهر على الشاشة لم يكتبه المستخدم ولا الفندق.
         ev.kind === "toair"
           ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
               tt`٣ س إجراءات · ${ev.driveMin} د طريق`)
