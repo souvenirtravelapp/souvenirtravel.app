@@ -19,15 +19,23 @@ function hm(x){ const m = /^(\d{1,2}):(\d{2})$/.exec(x || ""); return m ? +m[1] 
 function allowedSlots(trip, i, nDays){
   const all = SLOTS.map(([v]) => v);
   if (nDays <= 1) return all;
+  // الانتقال من المطار وإليه جزء من اليوم لا هامش: الفعالية لا تبدأ قبل
+  // أن تصل فندقك فعلًا، ولا تُحشر بعد أن تكون قد غادرت إلى المطار.
+  const stay = (trip.stays || []).find(s => s.lat || s.lon);
+  const drive = (typeof stay?.driveMin === "number" ? stay.driveMin : 30) / 60;
   if (i === 0){
     const arr = hm(trip.flights?.out?.arr);
     if (arr == null) return ["evening"];
-    return all.filter(v => arr + 1 <= SLOT_WIN[v][1] - 1);
+    const ready = arr + 3 + drive;              // وصول + إجراءات + طريق
+    // الفترة يجب أن تبدأ بعد استقرارك، لا أن ينتهي طرفها بعده: من يصل
+    // فندقه التاسعة مساءً لا «مساء» له مهما بقي من الساعة.
+    return all.filter(v => SLOT_WIN[v][0] >= ready);
   }
   if (i === nDays - 1){
     const dep = hm(trip.flights?.back?.dep);
     if (dep == null) return ["morning"];
-    return all.filter(v => SLOT_WIN[v][1] <= dep - 2);
+    const mustLeave = dep - 3 - drive;          // موعد التوجه للمطار
+    return all.filter(v => SLOT_WIN[v][1] <= mustLeave);
   }
   return all;
 }
@@ -84,6 +92,26 @@ function hotelEvents(trip, dstr, city, store){
   }
   return evs;
 }
+/// أحداث اليوم الموقوتة: وصول الطائرة، دخول الفندق، خروجه، والتوجه للمطار.
+/// وقتٌ يُكتب فقط حين يكون معلومًا حقًا — لا تخمين على الشبكة.
+function timedEvents(trip, dstr, city, store, days){
+  const evs = hotelEvents(trip, dstr, city, store);
+  const last = days.length ? ymd(days[days.length - 1]) : "";
+  const first = days.length ? ymd(days[0]) : "";
+  const fo = trip.flights?.out || {}, fb = trip.flights?.back || {};
+  if (dstr === first && hm(fo.arr) != null)
+    evs.unshift({ kind: "land", name: fo.no || "", time: hm(fo.arr) });
+  if (dstr === last && hm(fb.dep) != null){
+    const st = stayForDay(trip, dstr);
+    const drive = (typeof st?.driveMin === "number" ? st.driveMin : 30) / 60;
+    // المغادرة للمطار: ٣ ساعات إجراءات + زمن الطريق قبل الإقلاع.
+    evs.push({ kind: "toair", name: "", time: hm(fb.dep) - 3 - drive,
+               driveMin: Math.round(drive * 60) });
+    evs.push({ kind: "fly", name: fb.no || "", time: hm(fb.dep) });
+  }
+  return evs;
+}
+
 function eventSlot(ev, allowed){
   if (ev.time == null) return allowed[0] || "morning";
   if (ev.time <= 12.5) return "morning";
@@ -244,23 +272,26 @@ function autoPlan(trip, days, city, store){
 
     const slots = allowedSlots(trip, i, days.length).slice();
     const taken = new Set();
+    // مَن أُسند في هذه الجولة وحده يُتخطى لاحقًا. الشرط القديم كان يتخطى
+    // كل مكان صادف أنه في هذا اليوم من توزيع سابق، فيبقى بفترة لم تعد تصلح.
+    const done = new Set();
     // البعيد يحجز الصباح أولًا — الطريق طويل واليوم يبدأ مبكرًا.
     for (const p of dayGroup){
       if (isFar(p) && slots.includes("morning") && !taken.has("morning")){
-        p.day = i; p.slot = "morning"; taken.add("morning");
+        p.day = i; p.slot = "morning"; taken.add("morning"); done.add(p.id);
         p.why = [p.why, tt`الطريق إليها ${p.driveFromStayMin} د — انطلاق مبكر`]
           .filter(Boolean).join(" · ");
       }
     }
     for (const p of dayGroup){
       if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening")){
-        p.day = i; p.slot = "evening"; taken.add("evening");
+        p.day = i; p.slot = "evening"; taken.add("evening"); done.add(p.id);
         p.why = [p.why, tt("المطاعم والمقاهي مساءً")].filter(Boolean).join(" · ");
       }
     }
     let ci = 0;
     for (const p of dayGroup){
-      if (p.day === i && p.slot) continue;
+      if (done.has(p.id)) continue;
       const free = slots.find(x => !taken.has(x));
       p.day = i; p.slot = free || slots[ci % slots.length] || "";
       if (free) taken.add(free); ci++;
@@ -888,11 +919,9 @@ export function planner(ctx, tripId, render){
             e.preventDefault(); showDayRoute(i, pts);
           } }, "⌗"));
     }
-    const unslotted = dayPlaces.filter(p => !p.slot);
-    const nrows = SLOTS.length + (unslotted.length ? 1 : 0);
     const fo = trip.flights.out, fb = trip.flights.back;
     const dstr = ymd(d);
-    const dayCell = el("td.dt-day", { rowspan: String(nrows) },
+    const dayCell = el("td.dt-day", {},
       el("div.dn", {}, tt`يوم ${i + 1}`),
       el("div.dd", {}, fmtDay(d)),
       (days.length > 1 && i === 0)
@@ -903,43 +932,47 @@ export function planner(ctx, tripId, render){
             + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null,
       route);
     const ok = allowedSlots(trip, i, days.length);
-    const hev = hotelEvents(trip, dstr, city, store);
-    const evRow = (ev) => el("div",
-      { style: "display:flex;align-items:center;gap:8px;padding:6px 0" },
-      el("div.rowthumb.stayth", {}, "🏨"),
-      el("div", {},
+    const hev = timedEvents(trip, dstr, city, store, days);
+    const evRow = (ev) => el("div.trow", {},
+      el("div.tstamp", {}, ev.time != null ? fmtT(ev.time) : ""),
+      el("div.rowthumb.stayth", {},
+        ev.kind === "land" || ev.kind === "fly" ? "✈︎"
+          : ev.kind === "toair" ? "🚗" : "🏨"),
+      el("div", { style: "flex:1;min-width:0" },
         el("div.t", { style: "font-weight:700;font-size:14px" },
           ev.kind === "in" ? tt`تسجيل الدخول للفندق ${ev.name}`
-                           : tt`تسجيل الخروج من الفندق ${ev.name}`),
-        ev.time != null ? el("div.s",
-          { style: "font-size:11.5px;color:var(--muted)" }, "~ " + fmtT(ev.time))
-          : null,
-        // من أين جاء الرقم — الشفافية بدل الثقة العمياء.
-        ev.parts ? el("div.s", { style: "font-size:10.5px;color:var(--muted);"
-          + "opacity:.85" },
-          "↳ " + tt`وصول ${ev.parts.arr}` + " · " + tt("٣ س في المطار") + " · "
-          + tt`${ev.parts.driveMin} د طريق`
-          + (ev.parts.ap ? " (" + ev.parts.ap + ")" : "")
-          + (ev.parts.real ? "" : " " + tt("تقديري"))) : null));
-    const body = el("tbody");
-    SLOTS.forEach(([v, ar], si) => {
-      const slotPlaces = dayPlaces.filter(p => p.slot === v);
-      body.append(el("tr", {},
-        si === 0 ? dayCell : null,
-        el("td.dt-slot", {}, tt(ar)),
-        el("td.dt-acts", {},
-          hev.filter(ev => eventSlot(ev, ok) === v).map(evRow),
-          slotPlaces.length
-            ? slotPlaces.map(placeRow)
-            : (hev.some(ev => eventSlot(ev, ok) === v) ? null
-               : el("div.det", { style: "opacity:.4" },
-                   ok.includes(v) ? "—" : "✈︎ " + tt("سفر"))))));
+          : ev.kind === "out" ? tt`تسجيل الخروج من الفندق ${ev.name}`
+          : ev.kind === "land" ? (ev.name ? tt`وصول الرحلة ${ev.name}` : t("وصول الرحلة"))
+          : ev.kind === "fly" ? (ev.name ? tt`إقلاع الرحلة ${ev.name}` : t("إقلاع الرحلة"))
+          : t("التوجه للمطار")),
+        ev.kind === "toair"
+          ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
+              tt`٣ س إجراءات · ${ev.driveMin} د طريق`)
+          : (ev.parts ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
+              "↳ " + tt`وصول ${ev.parts.arr}` + " · " + tt("٣ س في المطار") + " · "
+              + tt`${ev.parts.driveMin} د طريق`
+              + (ev.parts.ap ? " (" + ev.parts.ap + ")" : "")) : null)));
+
+    // ترتيب اليوم: الموقوت بوقته، والفعاليات بترتيب فتراتها بينها.
+    const SLOT_T = { morning: 10, afternoon: 14.5, evening: 19 };
+    const items = [];
+    for (const ev of hev) items.push({ at: ev.time ?? 12, node: evRow(ev) });
+    SLOTS.forEach(([v]) => {
+      dayPlaces.filter(p => p.slot === v)
+        .forEach((p, k) => items.push({ at: SLOT_T[v] + k * 0.1, node: placeRow(p) }));
     });
-    if (unslotted.length)
-      body.append(el("tr", {},
-        el("td.dt-slot", {}, "—"),
-        el("td.dt-acts", {}, unslotted.map(placeRow))));
-    // فكرة اليوم مرئية: أرقام حقيقية وسببٌ مكتوب — لا صندوق أسود.
+    dayPlaces.filter(p => !p.slot)
+      .forEach((p, k) => items.push({ at: 21 + k * 0.1, node: placeRow(p) }));
+    items.sort((x, y) => x.at - y.at);
+
+    const body = el("tbody", {},
+      el("tr", {}, dayCell,
+        el("td.dt-acts", {},
+          items.length ? items.map(x => x.node)
+            : el("div.det", { style: "opacity:.4" },
+                ok.length ? t("يوم فارغ — وهذا خيار أيضًا") : "✈︎ " + tt("سفر")))));
+    tablesBox.append(el("table.daytbl", { style: "--dc:" + dayColor(i) }, body));
+    // فكرة اليوم بأرقامها — أعيد بناؤها بعد أن صار اليوم قائمة مرتبة.
     const stops = withPos;
     const sig = i + ":" + stops.map(p => p.id).join(",");
     const stat = trip.dayStats[sig];
@@ -948,7 +981,6 @@ export function planner(ctx, tripId, render){
     const far = dayPlaces.filter(isFar);
     if (far.length) bits.push(tt`محطة بعيدة (${far[0].driveFromStayMin} د) — يوم مخفَّف بانطلاق مبكر`);
     else if (stops.length > 1) bits.push(t("محطات متجاورة في جهة واحدة — طريق واحد لا طريقان"));
-    tablesBox.append(el("table.daytbl", { style: "--dc:" + dayColor(i) }, body));
     if (bits.length)
       tablesBox.append(el("div.daywhy", { style: "border-inline-start:5px solid "
         + dayColor(i) }, "◷ " + bits.join(" · ")));
