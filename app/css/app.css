@@ -706,3 +706,18 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* اسم مدينة المرحلة فوق اقتراحاتها */
 .legname { font-size: 12px; font-weight: 800; color: var(--deep, #B4622E);
   margin: 12px 2px 4px; }
+
+/* بطاقات مدن الرحلة داخل الخريطة، بجوار زر التوسيط */
+.mapcities { position: absolute; top: 14px; right: 102px; z-index: 1001;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  max-width: calc(100% - 120px); }
+.mapcity { height: 38px; padding: 0 13px; border-radius: 999px;
+  border: 1px solid var(--line); background: rgba(253,250,243,.95);
+  font: inherit; font-size: 13px; font-weight: 700; color: var(--ink, #2C2A26);
+  cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.18); white-space: nowrap; }
+.mapcity:hover { background: #fff; }
+.mapcity.on { background: #1F8F7C; border-color: #1F8F7C; color: #fff; }
+@media (max-width: 560px){
+  .mapcities { right: 8px; top: 58px; max-width: calc(100% - 16px); }
+  .mapcity { height: 32px; font-size: 12px; padding: 0 10px; }
+}

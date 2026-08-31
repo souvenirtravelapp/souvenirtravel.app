@@ -844,7 +844,36 @@ export function planner(ctx, tripId, render){
       } }, "⤢");
     const homeBtn = el("button.mapfullbtn.maphome", {
       "aria-label": t("إرجاع الخريطة لوضعها الأصلي") }, "⌖");
-    mapSec = el("div.section.mapsec", {}, fullBtn, homeBtn, mapBox);
+    // بطاقات مدن الرحلة داخل الخريطة: ضغطة تنقل التركيز إلى المدينة
+    // بحدود ما حولها من دبابيس — الرحلة إلى مدينتين خريطتها واسعة،
+    // فليكن الوصول لكل مدينة بلمسة لا بتقريب يدوي.
+    const legCities = legsOf(trip)
+      .map(l => store.cities.find(c => c.id === l.cityId))
+      .filter(c => c && c.lat != null);
+    let chips = null;
+    if (legCities.length > 1){
+      const btns = [];
+      const focus = (c, btn) => {
+        const m = mapRef.m; if (!m) return;
+        if (mapRef.route){ m.removeLayer(mapRef.route); mapRef.route = null; }
+        const near = pins.filter(p => kmAB(p, c) < 80);
+        m.invalidateSize();
+        // بلا حركة متحركة: انتقالٌ يُقطع بآخر يترك ليفلت عالقًا لا يستجيب.
+        if (near.length)
+          m.fitBounds(L.latLngBounds(near.map(p => [p.lat, p.lon])).pad(0.25),
+            { animate: false });
+        else m.setView([c.lat, c.lon], 11, { animate: false });
+        btns.forEach(b2 => b2.classList.toggle("on", b2 === btn));
+      };
+      for (const c of legCities){
+        const btn = el("button.mapcity", { onclick: () => focus(c, btn) }, cityName(c));
+        btns.push(btn);
+      }
+      chips = el("div.mapcities", {}, ...btns);
+      // العودة للوضع الأصلي تُطفئ التمييز — لا مدينة مختارة حينها.
+      homeBtn.addEventListener("click", () => btns.forEach(b2 => b2.classList.remove("on")));
+    }
+    mapSec = el("div.section.mapsec", {}, fullBtn, homeBtn, chips, mapBox);
     setTimeout(() => {
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -861,7 +890,8 @@ export function planner(ctx, tripId, render){
       m.fitBounds(home);
       homeBtn.onclick = () => {
         if (mapRef.route){ m.removeLayer(mapRef.route); mapRef.route = null; }
-        m.fitBounds(home);
+        m.invalidateSize();
+        m.fitBounds(home, { animate: false });
       };
       // الجدول يطول ويقصر (أيام تزيد، أدوات تنفتح) — الخريطة تلاحقه حيًّا.
       if (window.ResizeObserver)
@@ -1061,7 +1091,7 @@ export function planner(ctx, tripId, render){
     let line = L.polyline(pts, { color, weight: 4, opacity: .5,
       dashArray: "6 7" }).addTo(m);
     mapRef.route = line;
-    m.fitBounds(L.latLngBounds(pts).pad(0.3));
+    m.fitBounds(L.latLngBounds(pts).pad(0.3), { animate: false });
     if (window.innerWidth < 860 && mapBox)
       mapBox.scrollIntoView({ behavior: "smooth", block: "center" });
     if (pts.length < 2) return;
@@ -1076,7 +1106,7 @@ export function planner(ctx, tripId, render){
       const real = L.polyline(g.map(c => [c[1], c[0]]),
         { color, weight: 5, opacity: .9 }).addTo(m);
       mapRef.route = real;
-      m.fitBounds(real.getBounds().pad(0.2));
+      m.fitBounds(real.getBounds().pad(0.2), { animate: false });
     } catch {}
   }
 
