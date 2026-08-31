@@ -378,7 +378,7 @@ function placePending(trip, days){
     if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening"))
       p.slot = "evening";
     else p.slot = slots.find(x => !taken.has(x)) || slots[0] || "";
-    p.why = t("أُضيفت للأقرب من أيامها مسارًا");
+    p.why = "";   // لا تعليل بلا رقم — سطرٌ لا يفيد القارئ لا يُكتب
   }
   return true;
 }
@@ -1024,6 +1024,23 @@ export function planner(ctx, tripId, render){
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
     const thumb = el("div.rowthumb.kindth", {},
       activityIcon(p.name + " " + (p.en || ""), p.kind));
+    // تحت الاسم: مدينة المكان — في رحلة بمدينتين هذا ما يحتاجه القارئ،
+    // ونوع الفعالية تقوله الأيقونة. المدينة تُعرف بالجغرافيا أولًا:
+    // مكانٌ في شلادمينغ يبقى شلادمينغ ولو وُضع في يوم فيينا.
+    const placeCity = (() => {
+      let cid = null, bd = Infinity;
+      if (p.lat || p.lon)
+        for (const l of legsOf(trip)){
+          const c = store.cities.find(x => x.id === l.cityId);
+          if (!c || c.lat == null) continue;
+          const d = kmAB(p, c);
+          if (d < bd){ bd = d; cid = l.cityId; }
+        }
+      if (!cid && p.day >= 0 && days[p.day])
+        cid = legForDay(trip, ymd(days[p.day]))?.cityId;
+      const c = cid && store.cities.find(x => x.id === cid);
+      return c ? cityName(c) : "";
+    })();
     // الجدول يقول اليوم والفترة — لا داعي لتكرارهما على كل صف (طلب طارق).
     // الأدوات تختبئ، وضغطة على الصف تكشفها لمن أراد النقل أو الحذف.
     const tools = el("div", { style: "display:none;gap:6px;align-items:center;"
@@ -1044,9 +1061,9 @@ export function planner(ctx, tripId, render){
         thumb,
         el("div", { style: "flex:1;min-width:0" },
           el("div.t", { style: "font-weight:700;font-size:14.5px" }, p.name),
-          (p.kind || p.count)
+          (placeCity || p.count)
             ? el("div.s", { style: "font-size:11.5px;color:var(--muted)" },
-                [p.kind, p.count > 0 ? tt`اختارها ${p.count}` : null]
+                [placeCity, p.count > 0 ? tt`اختارها ${p.count}` : null]
                   .filter(Boolean).join(" · "))
             : null,
           p.why ? el("div.s", { style:
