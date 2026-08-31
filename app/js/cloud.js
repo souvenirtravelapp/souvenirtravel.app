@@ -14,7 +14,7 @@ import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
 import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
-const KEYS = ["sv.prefs", "sv.shortlist", "sv.papers", "sv.trips"];
+const KEYS = ["sv.prefs", "sv.shortlist", "sv.papers", "sv.trips", "sv.tripsDel"];
 const STAMP = "sv.cloud.stamp";     // آخر لحظة تصالح فيها الجهاز مع السحابة
 const STATEIDS = "sv.cloud.stateids";    // آخر هويات معلومة وقت آخر مزامنة
 const STATETOMBS = "sv.cloud.statetombs"; // شواهد حذف القلوب والأوراق
@@ -116,12 +116,25 @@ function union(cloudData, localData){
     for (const d of [...(sd ?? []), ...(ld ?? [])]) if (!seen.has(paperKey(d))) seen.set(paperKey(d), d);
     merged["sv.papers"] = JSON.stringify([...seen.values()]);
   }
+  // الرحلات: اتحادٌ ثم الأحدث يفوز، وشواهد الحذف تمنع عودة المحذوف.
+  // الأول-يفوز كان يبتلع خطة كتبتها على جهاز إن حملت السحابة نسخة أقدم.
   const st = parse(cloudData["sv.trips"]), lt = parse(localData["sv.trips"]);
+  const sdel = parse(cloudData["sv.tripsDel"]) ?? {};
+  const ldel = parse(localData["sv.tripsDel"]) ?? {};
+  const del = { ...sdel };
+  for (const [id, at] of Object.entries(ldel))
+    if (!del[id] || at > del[id]) del[id] = at;
   if (st || lt){
     const seen = new Map();
-    for (const t of [...(st ?? []), ...(lt ?? [])]) if (!seen.has(t.id)) seen.set(t.id, t);
-    merged["sv.trips"] = JSON.stringify([...seen.values()]);
+    for (const t of [...(st ?? []), ...(lt ?? [])]){
+      const cur = seen.get(t.id);
+      if (!cur || (t.updatedAt || "") > (cur.updatedAt || "")) seen.set(t.id, t);
+    }
+    const kept = [...seen.values()]
+      .filter(t => !(del[t.id] && del[t.id] > (t.updatedAt || "")));
+    merged["sv.trips"] = JSON.stringify(kept);
   }
+  if (Object.keys(del).length) merged["sv.tripsDel"] = JSON.stringify(del);
 
   merged.passport = cloudData.passport ?? localData.passport ?? null;
   if (!merged.passport) delete merged.passport;
