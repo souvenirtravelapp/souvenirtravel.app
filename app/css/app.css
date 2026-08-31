@@ -673,12 +673,17 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* مربعات الأيقونات على خط واحد: صف المكان صار كصف الحدث تمامًا */
 .trow.prow { padding: 6px 0; }
 .dt-acts > div:not(.trow) { padding-inline-start: 0; }
-/* بلا إطارات: الأيقونة وحدها تكفي، والمربع يبقى قياسًا لا حدًّا */
-.rowthumb.evth, .rowthumb.kindth { background: transparent; border: 0;
+/* مربع أبيض بإطار خفيف — يُرى ولا يثقل */
+.rowthumb.evth, .rowthumb.kindth, .rowthumb.stayth {
+  background: #fff; border: 1px solid var(--line, #e5ddcf);
   display: flex; align-items: center; justify-content: center; }
-.rowthumb.evth { color: #1F8F7C; }
+.rowthumb.evth, .rowthumb.stayth { color: #1F8F7C; }
 .rowthumb.kindth { color: var(--deep, #B4622E); }
-.rowthumb.stayth { background: transparent; border: 0; color: #1F8F7C; }
+/* أيقونة بطاقة الاقتراح — نفس المربع بمقاس البطاقة */
+.pickicon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 9px;
+  background: #fff; border: 1px solid var(--line, #e5ddcf);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--deep, #B4622E); }
 /* كل يوم جدول مستقل، فبلا تثبيت يحسب كلٌّ عرض عموده بمحتواه وتتعرج
    المربعات. التثبيت يجعل الأيام على شبكة واحدة. */
 .daytbl { table-layout: fixed; }

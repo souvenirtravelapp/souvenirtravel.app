@@ -582,10 +582,8 @@ export function planner(ctx, tripId, render){
       }
       save(); render();
     } },
-      (a.has_image || (a.source || "wikidata") === "wikidata")
-        ? el("img", { src: "attractions/" + a.qid + ".jpg", alt: label,
-            loading: "lazy" })
-        : el("div.aramp.sm", {}, (label || "؟").trim()[0]),
+      // أيقونة الفعالية نفسها التي في الجدول — لغة واحدة في الشاشتين.
+      el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
       el("div.pn", {}, label),
       el("div.pc", {},
         a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+")));
