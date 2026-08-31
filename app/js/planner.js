@@ -153,6 +153,12 @@ function tallyPick(qid){
 // «وزّع لي»: القرار الذي كان على المستخدم — القريب مع القريب، والمطاعم مساءً،
 // ويوما السفر خفيفان. سلسلة أقرب-جار تحفظ التماسك الجغرافي بلا عناقيد معقدة.
 const FOOD_KINDS = ["طعام", "مقهى"];
+/// أيقونة نوع المكان — رمز واحد يقول ما هو قبل قراءة اسمه.
+const KIND_ICON = {
+  "طعام": "🍽", "مقهى": "☕", "طبيعة": "🌿", "نشاط": "🎯", "تجربة": "✨",
+  "معلم": "🏛", "سوق": "🛍", "ترفيه": "🎡", "حي قديم": "🏘",
+};
+const kindIcon = (k) => KIND_ICON[k] || "📍";
 // مكانٌ يبعد عن الفندق أكثر من هذا (بالدقائق قيادةً) يوم كامل لا فترة:
 // بحيرة جبلية على بعد ٤٥ دقيقة تحتاج صباحًا وساعات مشي، لا عصرًا مزدحمًا.
 const FAR_MIN = 40;
@@ -574,10 +580,10 @@ export function planner(ctx, tripId, render){
       }
       save(); render();
     } },
-      (a.source && a.source !== "wikidata")
-        ? el("div.aramp.sm", {}, (label || "؟").trim()[0])
-        : el("img", { src: "attractions/" + a.qid + ".jpg", alt: label,
-            loading: "lazy" }),
+      (a.has_image || (a.source || "wikidata") === "wikidata")
+        ? el("img", { src: "attractions/" + a.qid + ".jpg", alt: label,
+            loading: "lazy" })
+        : el("div.aramp.sm", {}, (label || "؟").trim()[0]),
       el("div.pn", {}, label),
       el("div.pc", {},
         a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+")));
@@ -741,10 +747,9 @@ export function planner(ctx, tripId, render){
         ...(p.slot === v ? { selected: true } : {}) }, tt(ar))));
     daySel.onchange = () => { p.day = +daySel.value; p.why = ""; save(); render(); };
     slotSel.onchange = () => { p.slot = slotSel.value; p.why = ""; save(); render(); };
-    const thumb = (p.qid && /^Q/.test(p.qid))
-      ? el("img.rowthumb", { src: "attractions/" + p.qid + ".jpg", alt: "",
-          loading: "lazy" })
-      : el("div.rowthumb.ar", {}, (p.name || "؟").trim()[0]);
+    // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
+    // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
+    const thumb = el("div.rowthumb.kindth", {}, kindIcon(p.kind));
     // الجدول يقول اليوم والفترة — لا داعي لتكرارهما على كل صف (طلب طارق).
     // الأدوات تختبئ، وضغطة على الصف تكشفها لمن أراد النقل أو الحذف.
     const tools = el("div", { style: "display:none;gap:6px;align-items:center;"
