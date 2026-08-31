@@ -757,6 +757,7 @@ export function planner(ctx, tripId, render){
         kind: a.kind || "", count: a.added_count || 0,
         roadM: a.road_m || 0, en: a.name_en || "", day: -1, slot: "",
         // أيام إغلاقه ترافقه في الخطة، فيُحسب بها التوزيع ويُنبَّه المستخدم
+        ...(a.icon_id ? { icon: a.icon_id } : {}),
         ...(a.closed_weekdays ? { cw: a.closed_weekdays } : {}),
         ...(a.open_daily_months ? { odm: a.open_daily_months } : {}) });
       tallyPick(a.qid);
@@ -789,7 +790,7 @@ export function planner(ctx, tripId, render){
     const blurb = isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en);
     const card = el("div.detcard", { onclick: e => e.stopPropagation() },
       el("div.dethead", {},
-        el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
+        el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind, a.icon_id)),
         el("div", { style: "flex:1;min-width:0" },
           el("h3", {}, label),
           a.name_en && a.name_en !== label ? el("div.den", {}, a.name_en) : null),
@@ -826,7 +827,7 @@ export function planner(ctx, tripId, render){
       ? (chosen.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend")
       : "button.pick", { onclick: () => openDetails(a, label) },
       // أيقونة الفعالية نفسها التي في الجدول — لغة واحدة في الشاشتين.
-      el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
+      el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind, a.icon_id)),
       el("div.pn", {}, label),
       el("div.pc", {},
         a.added_count > 0 ? tt`اختارها ${a.added_count}` : "‏"));
@@ -1065,7 +1066,7 @@ export function planner(ctx, tripId, render){
     // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
     const thumb = el("div.rowthumb.kindth", {},
-      activityIcon(p.name + " " + (p.en || ""), p.kind));
+      activityIcon(p.name + " " + (p.en || ""), p.kind, p.icon));
     // تحت الاسم: مدينة المكان — في رحلة بمدينتين هذا ما يحتاجه القارئ،
     // ونوع الفعالية تقوله الأيقونة. المدينة تُعرف بالجغرافيا أولًا:
     // مكانٌ في شلادمينغ يبقى شلادمينغ ولو وُضع في يوم فيينا.

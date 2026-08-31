@@ -33,6 +33,22 @@ const P = {
   playground: "M2.5 20.5h19M19 5.5v15M15.5 5.5v15M15.5 5.5h3.5M15.5 9h3.5M15.5 12.5h3.5M15.5 16h3.5M15.5 9.5L5 20.5M5 20.5h3",
   // حمّام حراري: بركة وبخار
   spa: "M4 15.5c0 3 3.6 5 8 5s8-2 8-5H4zM9 12c0-1.6 1.4-2 1.4-3.6M15 12c0-1.6 1.4-2 1.4-3.6M12 12V8",
+  // دار أوبرا: قوس مسرح وستارة مسدلة
+  opera: "M2.5 4.5h19M2.5 20.5h19M5 4.5v16M19 4.5v16M5 13.5c2.4-.4 3.8-3.5 3.8-9M19 13.5c-2.4-.4-3.8-3.5-3.8-9M8.8 4.5c0 3.9 1.4 6.2 3.2 6.2s3.2-2.3 3.2-6.2",
+  // ملعب رياضي: مدرّج بيضوي وأرضية وخط منتصف
+  stadium: "M3 20.5h18M4 20.5V16M20 20.5V16M4 16c0-3.6 3.6-6.5 8-6.5s8 2.9 8 6.5M7 16c0-2 2.2-3.6 5-3.6s5 1.6 5 3.6M6.5 13.4V6.6M17.5 13.4V6.6M5 4.4h3v2.2H5zM16 4.4h3v2.2h-3z",
+  // مدينة ألعاب: عجلة دوّارة بقائمتين
+  funfair: "M19 10.5a7 7 0 10-14 0 7 7 0 1014 0zM13.6 10.5a1.6 1.6 0 10-3.2 0 1.6 1.6 0 103.2 0zM12 3.5v5.4M12 12.1v5.4M5 10.5h5.4M13.6 10.5H19M11 11.9L8.5 20.5M13 11.9l2.5 8.6M6 20.5h12",
+  // قطار: قاطرة بمدخنة وعجلتين على سكة
+  train: "M5 17V8.5h5.5V11H18v6zM6.7 10.4h2.4v2.6H6.7zM14.6 11V9.2h1.9V11M8 19.6a1.6 1.6 0 100-3.2 1.6 1.6 0 000 3.2zM15 19.6a1.6 1.6 0 100-3.2 1.6 1.6 0 000 3.2zM2.5 21h19",
+  // رحلة نهرية: بدن قارب وكابينة على موج
+  boat: "M2.5 14h19l-2.6 4.5H5.1zM6.5 14V9.5h11V14M9 11.7h1.7M13.3 11.7h1.7M12 9.5V7M3 20.5c2-1.2 4-1.2 6 0s4 1.2 6 0 4-1.2 6 0",
+  // جزيرة: يابسة بشجرة يحيط بها الماء
+  island: "M2.5 18.6c2-1.2 4-1.2 6 0s4 1.2 6 0 4-1.2 6 0M3 21.4c2-1.2 4-1.2 6 0s4 1.2 6 0 4-1.2 6 0M5.8 17.6c.9-3 3.2-4.5 6.2-4.5s5.3 1.5 6.2 4.5M12 13.2V8.4M12 10.8L10.1 8.9M12 10l1.9-1.9M12 8.4a3 3 0 100-6 3 3 0 000 6z",
+  // برج إطلالة: ساق وشرفة مراقبة وهوائي
+  tower: "M4 21h16M9.6 21L11 9M14.4 21L13 9M7.4 9h9.2l-1.6-3.3H9zM9.2 7.3h5.6M12 5.7V2.6",
+  // مشاهدة حيوان: أثر مخلب — حديقة حيوان أو محمية
+  zoo: "M7.4 12a1.45 1.45 0 100-2.9 1.45 1.45 0 000 2.9zM10.9 9.9a1.6 1.6 0 100-3.2 1.6 1.6 0 000 3.2zM14.4 9.9a1.6 1.6 0 100-3.2 1.6 1.6 0 000 3.2zM17.9 12a1.45 1.45 0 100-2.9 1.45 1.45 0 000 2.9zM16.6 17a4.6 3.6 0 10-9.2 0 4.6 3.6 0 109.2 0z",
   // دبوس مكان — الافتراضي
   place: "M12 21.5s7-6.4 7-11.3A7 7 0 105 10.2c0 4.9 7 11.3 7 11.3zM12 12.7a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z",
 };
@@ -47,27 +63,43 @@ const RULES = [
   [/klamm|gorge|canyon|مضيق|وادٍ ضيق/i, "gorge"],
   [/\bsee\b|see$|lake|بحيرة/i, "lake"],
   [/wasserfall|waterfall|شلال/i, "waterfall"],
-  [/bahn|cable|gondola|funicular|skyway|تلفريك|جندول|قطار جبلي|مصعد/i, "cable"],
+  // «bahn» وحدها تبتلع السكك: Liliputbahn قطارٌ لا تلفريك. التلفريك يُسمّى
+  // seilbahn/gondelbahn لا غير.
+  [/seilbahn|gondelbahn|cable ?car|gondola|funicular|skyway|تلفريك|جندول|مصعد جبلي/i, "cable"],
+  [/liliput|dampf|eisenbahn|\btrain\b|bahnhof|قطار(?! جبلي)/i, "train"],
   [/berg|gipfel|peak|mountain|alm\b|جبل|قمة|هضبة/i, "mountain"],
   [/beach|strand|شاطئ/i, "beach"],
-  [/museum|palace|castle|tower|fortress|متحف|قصر|قلعة|برج|حصن/i, "museum"],
+  [/museum|palace|castle|fortress|schloss|متحف|قصر|قلعة|حصن/i, "museum"],
   [/restaurant|gasthof|stube|مطعم|مطاعم/i, "food"],
   [/caf|kaffee|konditorei|مقهى|قهوة/i, "cafe"],
   [/markt|market|bazaar|سوق/i, "market"],
-  [/spielplatz|playground|erlebnis|ملعب|ملاهي|حديقة ألعاب/i, "playground"],
+  // «ملعب» ملتبسة: ملعب كرة قدم ليس زحليقة أطفال — الرياضي أولًا بنصه.
+  [/stadion|stadium|arena|ملعب رياضي|ستاد/i, "stadium"],
+  [/spielplatz|playground|ملعب أطفال|حديقة ألعاب/i, "playground"],
+  [/prater|wurstel|funfair|amusement park|vergnügungspark|ملاهي|مدينة ألعاب/i, "funfair"],
+  [/opera|oper\b|staatsoper|theater|أوبرا|مسرح/i, "opera"],
+  [/zoo|tiergarten|tierpark|wildpark|حديقة حيوان|محمية|حياة برية/i, "zoo"],
+  [/insel|island|جزيرة/i, "island"],
+  [/turm\b|donauturm|observation tower|برج (?:الدانوب|إطلالة|مراقبة)/i, "tower"],
+  [/cruise|schifffahrt|schiffs|رحلة نهرية|رحلة بحرية|قارب|سفينة/i, "boat"],
   [/therme|spa|bad\b|حمام|حمّام|منتجع/i, "spa"],
   [/sky ?walk|suspension|ممشى زجاجي|جسر معلق/i, "cable"],
 ];
 const BY_KIND = {
-  "طعام": "food", "مقهى": "cafe", "طبيعة": "mountain", "نشاط": "playground",
-  "تجربة": "cable", "معلم": "museum", "سوق": "market", "ترفيه": "coaster",
-  "حي قديم": "museum",
+  "طعام": "food", "مقهى": "cafe", "طبيعة": "mountain", "سوق": "market",
+  "معلم": "museum", "حي قديم": "museum", "متحف": "museum", "قصر تاريخي": "museum",
+  "مطعم": "food", "ملاهٍ": "funfair", "حديقة حيوان": "zoo", "إطلالة": "tower",
+  "فنون وعروض": "opera", "ملعب رياضي": "stadium",
+  // النوع العام لا يُسمّي شكلًا بعينه: الدبوس أصدق من أيقونة تكذب.
+  "نشاط": "place", "تجربة": "place", "ترفيه": "place",
 };
 
 /// أيقونة الفعالية: من اسمها إن دلّ، وإلا من نوعها، وإلا دبوس مكان.
-export function activityIcon(name = "", kind = ""){
-  let key = null;
-  for (const [re, k] of RULES) if (re.test(name)) { key = k; break; }
+export function activityIcon(name = "", kind = "", id = ""){
+  // أيقونةٌ اختارها وكيل الأيقونات للمكان بعينه تسبق كل مطابقة بالاسم —
+  // القرار المنصوص عليه أصدق من القاعدة العامة، وهو موحّد بين اللغتين.
+  let key = (id && P[id]) ? id : null;
+  if (!key) for (const [re, k] of RULES) if (re.test(name)) { key = k; break; }
   if (!key) key = BY_KIND[kind] || "place";
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
