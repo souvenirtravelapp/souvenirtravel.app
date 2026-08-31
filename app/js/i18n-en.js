@@ -316,6 +316,7 @@ export const EN = {
  "مختار — لم يُضف للجدول": "Picked — not in the table yet",
  "في الجدول": "In the table",
  "افتح في خرائط جوجل": "Open in Google Maps",
+ "ارسمه على خريطة الرحلة": "Draw it on the trip map",
  "وصول ␟": "lands {0}",
  "٣ س في المطار": "3h at the airport",
  "␟ د طريق": "{0} min drive",

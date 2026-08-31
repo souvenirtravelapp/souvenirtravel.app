@@ -871,19 +871,22 @@ export function planner(ctx, tripId, render){
       const dstay = stayForDay(trip, ymd(d));
       const pts = withPos.map(p => [p.lat, p.lon]);
       if (dstay) pts.unshift([dstay.lat, dstay.lon]), pts.push([dstay.lat, dstay.lon]);
+      // «خط السير» يفتح خرائط جوجل — أسماؤها عربية وملاحتها هي التي يقودها
+      // المسافر فعلًا. وخريطتنا تبقى للنظرة الشاملة، ورسم اليوم عليها بأيقونة.
+      const gmaps = coords.length > 1
+        ? "https://www.google.com/maps/dir/?api=1&origin=" + coords[0]
+          + "&destination=" + coords[coords.length - 1]
+          + (coords.length > 2
+              ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
+        : "https://www.google.com/maps/search/?api=1&query=" + coords[0];
       route = el("div", { style: "display:flex;gap:8px;align-items:center;"
         + "justify-content:center;flex-wrap:wrap;margin-top:4px" },
-        el("a", { href: "#", style: "font-size:12.5px", onclick: (e) => {
-          e.preventDefault(); showDayRoute(i, pts);
-        } }, t("خط السير ›")),
-        el("a", { target: "_blank", rel: "noopener", title: t("افتح في خرائط جوجل"),
-          style: "font-size:12.5px",
-          href: coords.length > 1
-            ? "https://www.google.com/maps/dir/?api=1&origin=" + coords[0]
-              + "&destination=" + coords[coords.length - 1]
-              + (coords.length > 2
-                  ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
-            : "https://www.google.com/maps/search/?api=1&query=" + coords[0] }, "↗"));
+        el("a", { target: "_blank", rel: "noopener", href: gmaps,
+          style: "font-size:12.5px" }, t("خط السير ›")),
+        el("a", { href: "#", style: "font-size:12.5px",
+          title: t("ارسمه على خريطة الرحلة"), onclick: (e) => {
+            e.preventDefault(); showDayRoute(i, pts);
+          } }, "⌗"));
     }
     const unslotted = dayPlaces.filter(p => !p.slot);
     const nrows = SLOTS.length + (unslotted.length ? 1 : 0);
