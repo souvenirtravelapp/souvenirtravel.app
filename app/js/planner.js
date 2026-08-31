@@ -118,11 +118,15 @@ function timedEvents(trip, dstr, city, store, days){
                   from: pc ? cityName(pc) : "", time: 10, driveMin: mins });
     // دخول فندق المرحلة الجديدة موقوت بالانتقال نفسه: خرجت العاشرة، فتصل
     // بعد زمن القيادة — لا نتركه بلا ساعة كأنه حدث بلا مكان في اليوم.
-    for (const ev of evs)
+    for (const ev of evs){
       if (ev.kind === "in" && ev.time == null && mins){
         ev.time = 10 + mins / 60;
         ev.move = { from: pc ? cityName(pc) : "", driveMin: mins };
       }
+      // لا تُسلّم مفتاح فندقٍ بعد أن غادرت مدينته: يوم الانتقال يبدأ
+      // بالخروج، ثم الطريق، ثم الدخول في المدينة الجديدة.
+      if (ev.kind === "out" && ev.time >= 10) ev.time = 9.5;
+    }
   }
   if (dstr === last && hm(fb.dep) != null){
     const st = stayForDay(trip, dstr);
@@ -428,7 +432,7 @@ export function planner(ctx, tripId, render){
   }
   const titleCities = legsOf(trip)
     .map(l => store.cities.find(c => c.id === l.cityId))
-    .filter(Boolean).map(cityName).join(" · ");
+    .filter(Boolean).map(cityName).join(" + ");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
       el("h1", {}, t`خطة رحلتك${titleCities ? tt(" إلى ") + titleCities : ""}`),
