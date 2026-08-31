@@ -677,7 +677,10 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .rowthumb.evth, .rowthumb.kindth, .rowthumb.stayth {
   background: #fff; border: 1px solid var(--line, #e5ddcf);
   display: flex; align-items: center; justify-content: center; }
-.rowthumb.evth, .rowthumb.stayth { color: #1F8F7C; }
+/* أحداث اليوم (الفندق والطيران والتوجه للمطار) مقلوبة: خلفية داكنة
+   وأيقونة بيضاء — فتُفرز عن الفعاليات بنظرة واحدة. */
+.rowthumb.evth, .rowthumb.stayth { background: #1F8F7C; border-color: #1F8F7C;
+  color: #fff; }
 .rowthumb.kindth { color: var(--deep, #B4622E); }
 /* أيقونة بطاقة الاقتراح — نفس المربع بمقاس البطاقة */
 .pickicon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 9px;

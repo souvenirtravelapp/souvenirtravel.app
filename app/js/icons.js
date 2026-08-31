@@ -38,22 +38,25 @@ const P = {
 };
 
 // المطابقة بالاسم أولًا — النشاط يُعرف من اسمه لا من تصنيفه العام.
+// المطابقة بالعربية والإنجليزية والألمانية معًا — الجدول يعرض الاسم العربي
+// والبطاقة الإنجليزي، فلو طابقنا لغةً واحدة اختلفت أيقونة المكان الواحد.
 const RULES = [
-  [/gokart|go-kart|kart|بreak/i, "kart"],
-  [/zipline|zip line|flying fox|زيبلاين/i, "zipline"],
-  [/coaster|rodelbahn|toboggan|مزلقة/i, "coaster"],
-  [/klamm|gorge|canyon|مضيق/i, "gorge"],
-  [/see$|see\b|lake|بحيرة/i, "lake"],
-  [/fall|wasserfall|waterfall|شلال/i, "waterfall"],
-  [/bahn|cable|gondola|funicular|تلفريك|قطار/i, "cable"],
-  [/berg|gipfel|peak|mountain|جبل|قمة/i, "mountain"],
+  [/gokart|go-?kart|kart|كارتينج|كارت\b/i, "kart"],
+  [/zipline|zip[- ]?line|flying fox|زيبلاين|انزلاق هوائي/i, "zipline"],
+  [/coaster|rodelbahn|toboggan|مزلقة|زحليقة/i, "coaster"],
+  [/klamm|gorge|canyon|مضيق|وادٍ ضيق/i, "gorge"],
+  [/\bsee\b|see$|lake|بحيرة/i, "lake"],
+  [/wasserfall|waterfall|شلال/i, "waterfall"],
+  [/bahn|cable|gondola|funicular|skyway|تلفريك|جندول|قطار جبلي|مصعد/i, "cable"],
+  [/berg|gipfel|peak|mountain|alm\b|جبل|قمة|هضبة/i, "mountain"],
   [/beach|strand|شاطئ/i, "beach"],
-  [/museum|palace|castle|tower|متحف|قصر|قلعة|برج/i, "museum"],
-  [/restaurant|stube|hof$|مطعم/i, "food"],
-  [/caf|kaffee|مقهى/i, "cafe"],
+  [/museum|palace|castle|tower|fortress|متحف|قصر|قلعة|برج|حصن/i, "museum"],
+  [/restaurant|gasthof|stube|مطعم|مطاعم/i, "food"],
+  [/caf|kaffee|konditorei|مقهى|قهوة/i, "cafe"],
   [/markt|market|bazaar|سوق/i, "market"],
-  [/park|spiel|playground|حديقة|ملعب/i, "playground"],
-  [/therme|spa|bad\b|حمام/i, "spa"],
+  [/spielplatz|playground|erlebnis|ملعب|ملاهي|حديقة ألعاب/i, "playground"],
+  [/therme|spa|bad\b|حمام|حمّام|منتجع/i, "spa"],
+  [/sky ?walk|suspension|ممشى زجاجي|جسر معلق/i, "cable"],
 ];
 const BY_KIND = {
   "طعام": "food", "مقهى": "cafe", "طبيعة": "mountain", "نشاط": "playground",

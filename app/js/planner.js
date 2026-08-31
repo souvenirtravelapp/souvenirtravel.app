@@ -383,6 +383,8 @@ export function planner(ctx, tripId, render){
       if (Math.abs(a.lat - p.lat) > 1e-5 || Math.abs(a.lon - p.lon) > 1e-5){
         p.lat = a.lat; p.lon = a.lon; p.roadM = a.road_m || 0; moved++;
       }
+      if (!p.en && a.name_en){ p.en = a.name_en; moved++;
+      }
     }
     if (moved) save();
   }
@@ -577,7 +579,7 @@ export function planner(ctx, tripId, render){
         trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
           name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
           kind: a.kind || "", count: a.added_count || 0,
-          roadM: a.road_m || 0, day: -1, slot: "" });
+          roadM: a.road_m || 0, en: a.name_en || "", day: -1, slot: "" });
         tallyPick(a.qid);
       }
       save(); render();
@@ -749,7 +751,8 @@ export function planner(ctx, tripId, render){
     slotSel.onchange = () => { p.slot = slotSel.value; p.why = ""; save(); render(); };
     // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
-    const thumb = el("div.rowthumb.kindth", {}, activityIcon(p.name, p.kind));
+    const thumb = el("div.rowthumb.kindth", {},
+      activityIcon(p.name + " " + (p.en || ""), p.kind));
     // الجدول يقول اليوم والفترة — لا داعي لتكرارهما على كل صف (طلب طارق).
     // الأدوات تختبئ، وضغطة على الصف تكشفها لمن أراد النقل أو الحذف.
     const tools = el("div", { style: "display:none;gap:6px;align-items:center;"
@@ -1001,9 +1004,14 @@ export function planner(ctx, tripId, render){
 
   // الحذف قرار ثقيل: في آخر الصفحة، وبتأكيد — لا زر عابر على بطاقة.
   inner.append(el("div", { style: "margin:26px 0 10px;text-align:center" },
+    // تأكيدان كحذف الفريق: الأول يسمّي ما يضيع، والثاني يُكتب بخط اليد.
     el("button.out", { style: "color:var(--deep)", onclick: () => {
-      if (confirm(t("تحذف هذه الرحلة وخطتها كلها؟ لا رجوع بعد الحذف.")))
-        { Trips.remove(tripId); location.hash = "#/upcoming"; }
+      const n = (trip.plan || []).length;
+      if (!confirm(tt`تحذف رحلتك ${trip.title || ""} ومعها ${n} مكانًا في خطتها؟`))
+        return;
+      const ans = prompt(t("تأكيد أخير — اكتب: احذف"));
+      if ((ans || "").trim() !== "احذف"){ alert(t("لم يُحذف شيء.")); return; }
+      Trips.remove(tripId); location.hash = "#/upcoming";
     } }, t("احذف هذه الرحلة"))));
 
   return root;
