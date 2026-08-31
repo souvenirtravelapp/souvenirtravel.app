@@ -315,22 +315,8 @@ function autoPlan(trip, days, city, store){
 
     // التعليل — الشفافية تقنع أكثر من السحر.
     dayGroup.forEach((p, k) => {
-      // كل تعليل يحمل رقمًا أو لا يُكتب: «الأقرب إليه» كلامٌ لا يقيس شيئًا،
-      // والمسافة تقيس. وما دون الكيلومتر يُقال بالأمتار لا بوصف مبهم.
-      const near = (q) => {
-        if (!q || !(p.lat || p.lon) || !(q.lat || q.lon)) return "";
-        const km = kmAB(p, q);
-        return km < 1 ? tt`${Math.max(50, Math.round(km * 1000 / 50) * 50)} م من ${q.name}`
-                      : tt`~${Math.round(km)} كم من ${q.name}`;
-      };
-      p.why = k === 0 ? near(depot) : near(dayGroup[k - 1]);
+      p.why = "";   // قرار طارق: لا سطر تعليل تحت المكان — حساب اليوم يكفي
     });
-    if (depot && seq.length){
-      const last = seq[seq.length - 1];
-      const back = Math.round(kmAB(last, depot));
-      last.why = [last.why, tt`ثم العودة للفندق (~${back} كم)`]
-        .filter(Boolean).join(" · ");
-    }
 
     const slots = allowedSlots(trip, i, days.length).slice();
     const taken = new Set();
@@ -341,8 +327,6 @@ function autoPlan(trip, days, city, store){
     for (const p of dayGroup){
       if (isFar(p) && slots.includes("morning") && !taken.has("morning")){
         p.day = i; p.slot = "morning"; taken.add("morning"); done.add(p.id);
-        p.why = [p.why, tt`الطريق إليها ${p.driveFromStayMin} د — انطلاق مبكر`]
-          .filter(Boolean).join(" · ");
       }
     }
     for (const p of dayGroup){
@@ -358,11 +342,6 @@ function autoPlan(trip, days, city, store){
       const free = slots.find(x => !taken.has(x));
       p.day = i; p.slot = free || slots[ci % slots.length] || "";
       if (free) taken.add(free); ci++;
-    }
-    if (days.length > 1 && (i === 0 || i === days.length - 1)){
-      const why = i === 0 ? tt("بعد وصولك") : tt("قبل إقلاعك");
-      for (const p of dayGroup)
-        p.why = [p.why, why].filter(Boolean).join(" · ");
     }
   });
   ordered.slice(cursor).forEach(p => { p.day = -1; p.slot = ""; });
@@ -432,17 +411,12 @@ export function planner(ctx, tripId, render){
   // تعليلٌ بلا رقم لا يفيد القارئ: «الأقرب إليه»، «قريبة جدًا»، «أُضيفت
   // للأقرب» — كلها بقيت محفوظة في خطط وُزّعت قبل هذه القاعدة، فتُمحى عند
   // القراءة. ويبقى ما فيه قياس: كيلومترات، دقائق، أمتار.
-  // القاعدة واحدة تُغني عن ملاحقة العبارات: تعليلٌ بلا رقم لا يُعرض. ما لا
-  // يقيس شيئًا («الأقرب إليه»، «قريبة جدًا»، «المطاعم مساءً») يسقط عند فتح
-  // الخطة، ويبقى ما فيه كيلومتر أو متر أو دقيقة.
+  // قرار طارق: لا تعليل تحت المكان. ما حُفظ في خطط سابقة يُمحى عند فتحها،
+  // والحساب يبقى في سطر اليوم — «حلقة اليوم ٢٣ كم · ٣٢ د».
   {
     let cleaned = 0;
-    for (const p of trip.plan){
-      if (!p.why) continue;
-      const kept = p.why.split(" · ").filter(x => /\d|٠|١|٢|٣|٤|٥|٦|٧|٨|٩/.test(x));
-      const next = kept.join(" · ");
-      if (next !== p.why){ p.why = next; cleaned++; }
-    }
+    for (const p of trip.plan)
+      if (p.why){ delete p.why; cleaned++; }
     if (cleaned) Trips.update(tripId, trip);
   }
   trip.flights = trip.flights || { out: {}, back: {} };
@@ -1109,9 +1083,6 @@ export function planner(ctx, tripId, render){
                 [placeCity, p.count > 0 ? tt`اختارها ${p.count}` : null]
                   .filter(Boolean).join(" · "))
             : null,
-          p.why ? el("div.s", { style:
-              "font-size:11px;color:var(--muted);opacity:.85;margin-top:1px" },
-              "↳ " + p.why) : null,
           // إغلاق أسبوعي وقع في يومه: تنبيه ظاهر لا سطر رمادي — زيارةٌ
           // مغلقة تُفسد اليوم كله، فالأولى أن تُرى قبل السفر لا عنده.
           (p.day >= 0 && days[p.day] && closedWeekly(p, days[p.day]))
