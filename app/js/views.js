@@ -575,9 +575,27 @@ export function destination(ctx, cityId){
             start: null, end: null });
         return;
       }
-      const existing = Trips.upcoming().find(x => x.cityId === city.id);
-      const id = existing ? existing.id
-        : Trips.add({ title: cityName(city), cityId: city.id, start: null, end: null });
+      // مدينة في رحلة قائمة؟ افتحها. وإلا فاسأل: رحلة جديدة أم مرحلة فيها؟
+      const ups = Trips.upcoming();
+      const already = ups.find(x => x.cityId === city.id
+        || (x.legs || []).some(l => l.cityId === city.id));
+      if (already){ goto("#/plan/" + already.id); return; }
+      const host = ups[0];
+      if (host){
+        const hostName = host.title || tt("رحلتك القادمة");
+        if (confirm(tt`عندك رحلة إلى ${hostName}. أتضم ${cityName(city)} إليها كمرحلة؟`)){
+          const legs = (host.legs && host.legs.length) ? host.legs.slice()
+            : (host.cityId ? [{ cityId: host.cityId, from: host.start || "",
+                                to: host.end || host.start || "" }] : []);
+          const last = legs[legs.length - 1];
+          const from = last?.to || host.start || "";
+          legs.push({ cityId: city.id, from, to: host.end && host.end > from ? host.end : from });
+          Trips.update(host.id, { legs });
+          goto("#/plan/" + host.id);
+          return;
+        }
+      }
+      const id = Trips.add({ title: cityName(city), cityId: city.id, start: null, end: null });
       goto("#/plan/" + id);
     } },
     t("لدي رحلة قادمة لهذه المدينة — ابدأ التخطيط لها")));

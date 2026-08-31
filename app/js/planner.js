@@ -2,7 +2,7 @@
 // سلة تجمع قبل التوزيع، رابط خرائط واحد لليوم، والفراغ محترم.
 // «أضف مكانًا» يقتل حلقة الاسم←الخرائط←الجدول: Nominatim يحدد ونحن نرتب.
 import { t, t as tt, isEN } from "/app/js/i18n.js";
-import { el, cityName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
+import { el, cityName, countryName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
 import { visaLine } from "/app/js/views.js";
 import { activityIcon, eventIcon } from "/app/js/icons.js";
@@ -102,6 +102,18 @@ function timedEvents(trip, dstr, city, store, days){
   const fo = trip.flights?.out || {}, fb = trip.flights?.back || {};
   if (dstr === first && hm(fo.arr) != null)
     evs.unshift({ kind: "land", name: fo.no || "", time: hm(fo.arr) });
+  // أول يوم في مرحلة جديدة = يوم انتقال: نقول إلى أين، ونحسب زمنه إن أمكن.
+  const legs = legsOf(trip);
+  const li = legs.findIndex(l => l.from === dstr);
+  if (li > 0){
+    const prev = legs[li - 1], now = legs[li];
+    const pc = store.cities.find(c => c.id === prev.cityId);
+    const nc = store.cities.find(c => c.id === now.cityId);
+    const key = "leg:" + prev.cityId + ">" + now.cityId;
+    const mins = trip.dayStats?.[key]?.min;
+    evs.unshift({ kind: "move", name: nc ? cityName(nc) : "",
+                  from: pc ? cityName(pc) : "", time: 10, driveMin: mins });
+  }
   if (dstr === last && hm(fb.dep) != null){
     const st = stayForDay(trip, dstr);
     const drive = (typeof st?.driveMin === "number" ? st.driveMin : 30) / 60;
@@ -124,6 +136,22 @@ function eventSlot(ev, allowed){
 const DAYC = ["#B4622E", "#1F8F7C", "#3A6EA5", "#8E5BA6", "#C2903B",
               "#4C8A4C", "#A5486B", "#556B2F", "#20808D", "#7A5C3E"];
 const dayColor = (i) => DAYC[i % DAYC.length];
+
+/// مراحل الرحلة — «في الغالب الشخص لا يسافر لمدينة واحدة» (طارق 2026-08-31):
+/// شلادمينغ أربع ليالٍ ثم فيينا ثلاثًا. المرحلة = مدينة + مدى تواريخ، والرحلة
+/// القديمة (مدينة واحدة) تُرقّى إلى مرحلة واحدة فلا يضيع شيء.
+function legsOf(trip){
+  if (Array.isArray(trip.legs) && trip.legs.length) return trip.legs;
+  return trip.cityId
+    ? [{ cityId: trip.cityId, from: trip.start || "", to: trip.end || trip.start || "" }]
+    : [];
+}
+/// مرحلة ذلك اليوم — عليها تُبنى اقتراحاته وحلقته.
+function legForDay(trip, dstr){
+  const legs = legsOf(trip);
+  return legs.find(l => (!l.from || l.from <= dstr) && (!l.to || l.to >= dstr))
+    || legs[0] || null;
+}
 
 function daysOf(trip){
   const out = [];
@@ -388,10 +416,59 @@ export function planner(ctx, tripId, render){
     }
     if (moved) save();
   }
+  const titleCities = legsOf(trip)
+    .map(l => store.cities.find(c => c.id === l.cityId))
+    .filter(Boolean).map(cityName).join(" · ");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
-      el("h1", {}, t`خطة رحلتك${city ? tt(" إلى ") + cityName(city) : ""}`),
-      el("a.circle", { href: "#/trips" }, "‹"))));
+      el("h1", {}, t`خطة رحلتك${titleCities ? tt(" إلى ") + titleCities : ""}`),
+      el("a.circle", { href: "#/trips" }, "‹")),
+    // «أضف مدينة أخرى لهذه الرحلة» — المدخل الأول لتعدد المدن (طارق).
+    el("div.addcity", { onclick: () => openAddCity() },
+      el("span.plus", {}, "+"),
+      el("span", {}, t("أضف مدينة أخرى لهذه الرحلة")))));
+
+  /// لوحة اختيار المدينة الثانية: بحث في مدننا، ثم مدى تواريخها داخل الرحلة.
+  function openAddCity(){
+    const box = el("div.card", { style: "margin-bottom:14px" });
+    const input = el("input", { placeholder: t("اسم المدينة…"), style: "width:100%" });
+    const hits = el("div");
+    input.oninput = () => {
+      const q = input.value.trim().toLowerCase();
+      hits.replaceChildren();
+      if (q.length < 2) return;
+      const found = store.cities.filter(c =>
+        (c.name_ar || "").includes(q) || (c.name_en || "").toLowerCase().includes(q))
+        .filter(c => !legsOf(trip).some(l => l.cityId === c.id)).slice(0, 6);
+      for (const c of found){
+        hits.append(el("button.srow", { style: "width:100%;text-align:start",
+          onclick: () => {
+            const legs = legsOf(trip).slice();
+            const last = legs[legs.length - 1];
+            // قسمة أولى معقولة: المدينة الجديدة تأخذ آخر ثلث الرحلة، والسابقة
+            // تنتهي عندها. والتواريخ تُعدَّل بعدها من «مراحل الرحلة».
+            const all = daysOf(trip);
+            let from = last?.to || trip.start || "";
+            let to = trip.end || from;
+            if (all.length >= 3){
+              const cut = all[Math.max(1, all.length - Math.max(1, Math.round(all.length / 3)))];
+              from = ymd(cut); to = ymd(all[all.length - 1]);
+              if (last) last.to = from;
+            }
+            legs.push({ cityId: c.id, from, to });
+            trip.legs = legs;
+            if (!trip.end || trip.end < to) trip.end = to;
+            save(); render();
+          } },
+          el("div", {}, el("div.t", {}, cityName(c)),
+            el("div.s", {}, countryName(c)))));
+      }
+    };
+    box.append(el("h2", { style: "margin-bottom:8px" }, t("أضف مدينة أخرى لهذه الرحلة")),
+      input, hits);
+    inner.prepend(box);
+    input.focus();
+  }
 
   const inner = el("div.section");
   root.append(inner);
@@ -411,6 +488,30 @@ export function planner(ctx, tripId, render){
     facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
       el("span.who", {}, "📅 " + tt("بداية الرحلة")), ds,
       el("span.who", {}, tt("نهاية الرحلة")), de));
+
+    // مراحل الرحلة: مدينة لكل مدى تواريخ — تُعدَّل هنا في مكانها.
+    const legs0 = legsOf(trip);
+    if (legs0.length > 1){
+      legs0.forEach((l, i) => {
+        const c = store.cities.find(x => x.id === l.cityId);
+        const lf = el("input", { type: "date", value: l.from || "" });
+        const lt = el("input", { type: "date", value: l.to || "" });
+        lf.onchange = lt.onchange = () => {
+          l.from = lf.value; l.to = lt.value;
+          trip.legs = legs0;
+          if (trip.end && l.to > trip.end) trip.end = l.to;
+          if (trip.start && l.from < trip.start) trip.start = l.from;
+          save(); render();
+        };
+        facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+          el("span.who", {}, "📍 " + (c ? cityName(c) : "")), lf, lt,
+          legs0.length > 1 ? el("button", { style: "border:none;background:none;"
+            + "cursor:pointer;color:var(--deep)", onclick: () => {
+              trip.legs = legs0.filter((_, k) => k !== i);
+              save(); render();
+            } }, "✕") : null));
+      });
+    }
 
     // رقم الرحلة وأوقاتها — يدخلها المستخدم فتحكم يومي السفر في الجدول والتوزيع.
     // رقم الرحلة أو الأوقات — لا كلاهما: الرقم يجلب الأوقات من الخادم،
@@ -561,16 +662,24 @@ export function planner(ctx, tripId, render){
   const tFrom = trip.start || today, tTo = trip.end || tFrom;
   const closedDuringTrip = (a) => (a.closed_ranges || []).some(
     r => r.from <= tTo && (r.to || r.from) >= tFrom);
-  const reg = city ? (store.attractions?.[city.id] || [])
-    .filter(a => !(a.closed_until && a.closed_until > tFrom))
-    .filter(a => !closedDuringTrip(a))
-    .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24) : [];
+  // اقتراحات كل مرحلة من مدينتها هي — لا معالم فيينا في أيام شلادمينغ.
+  const legs = legsOf(trip);
+  const legReg = legs.map(l => {
+    const c = store.cities.find(x => x.id === l.cityId);
+    const from = l.from || tFrom, to = l.to || from;
+    const items = (store.attractions?.[l.cityId] || [])
+      .filter(a => !(a.closed_until && a.closed_until > from))
+      .filter(a => !(a.closed_ranges || []).some(r => r.from <= to && (r.to || r.from) >= from))
+      .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24);
+    return { leg: l, city: c, items };
+  }).filter(g => g.items.length);
+  const reg = legReg.flatMap(g => g.items);
   const regQids = new Set(reg.map(a => a.qid));
-  const regBox = el("div.pickrow", { style: "margin-top:4px" });
-  for (const a of reg){
+  const regBox = el("div");
+  const pickCard = (a) => {
     const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
     const chosen = planOf(a.qid);
-    regBox.append(el(chosen
+    return el(chosen
       ? (chosen.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend")
       : "button.pick", { onclick: () => {
       if (chosen){
@@ -588,19 +697,29 @@ export function planner(ctx, tripId, render){
       el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
       el("div.pn", {}, label),
       el("div.pc", {},
-        a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+")));
+        a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+"));
+  };
+  // مجموعة لكل مرحلة بعنوان مدينتها — تُعرض العناوين حين تتعدد المدن فقط.
+  for (const g of legReg){
+    if (legReg.length > 1)
+      regBox.append(el("div.legname", {},
+        (g.city ? cityName(g.city) : "") +
+        (g.leg.from ? " · " + g.leg.from.slice(5) + " → " + (g.leg.to || "").slice(5) : "")));
+    regBox.append(el("div.pickrow", {}, g.items.map(pickCard)));
   }
   // ما جاء من البحث الحر بطاقة مختارة هو الآخر — والضغط عليها يلغيه.
+  const freeBox = el("div.pickrow", {});
   for (const p of trip.plan){
     if (p.qid && regQids.has(p.qid)) continue;
-    regBox.append(el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
+    freeBox.append(el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
       { onclick: () => {
       trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
     } },
-      el("div.aramp.sm", {}, (p.name || "؟").trim()[0]),
+      el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
       el("div.pc", {}, p.kind || "‏")));
   }
+  if (freeBox.children.length) regBox.append(freeBox);
   const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
     style: "flex:1;min-width:0" });
   addBox.append(
@@ -728,9 +847,30 @@ export function planner(ctx, tripId, render){
           ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
           : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
       el("button.btn", { onclick: () => {
-        const ok = (pend && scheduled)
-          ? placePending(trip, dd2)
-          : autoPlan(trip, dd2, city, store);
+        // كل مرحلة تُوزَّع وحدها: خلط مدينتين متباعدتين يُنتج أيامًا مبعثرة.
+        const legs = legsOf(trip);
+        let ok = false;
+        if (pend && scheduled){
+          ok = placePending(trip, dd2);
+        } else if (legs.length > 1){
+          for (const l of legs){
+            const sub = dd2.filter(d => (!l.from || ymd(d) >= l.from)
+                                     && (!l.to || ymd(d) <= l.to));
+            if (!sub.length) continue;
+            const off = dd2.findIndex(d => ymd(d) === ymd(sub[0]));
+            const mine = trip.plan.filter(p => {
+              const a = (store.attractions?.[l.cityId] || []).find(x => x.qid === p.qid);
+              return !!a;
+            });
+            const shadow = { ...trip, plan: mine };
+            if (autoPlan(shadow, sub, store.cities.find(c => c.id === l.cityId), store)){
+              for (const p of mine) if (p.day >= 0) p.day += off;
+              ok = true;
+            }
+          }
+        } else {
+          ok = autoPlan(trip, dd2, city, store);
+        }
         if (ok){ save(); render(); }
       } }, pend
           ? tt`هناك ${pend} فعالية غير مضافة للجدول — اضغط للإضافة`
@@ -829,6 +969,17 @@ export function planner(ctx, tripId, render){
       const r = await osrm([[st0.lat, st0.lon], [p.lat, p.lon]]).catch(() => null);
       p.driveFromStayMin = r ? r.min : 0;
       changed = true;
+    }
+    // زمن الانتقال بين مرحلتين — يُقاس مرة ويُحفظ كحلقة اليوم.
+    const lg = legsOf(trip);
+    for (let i = 1; i < lg.length; i++){
+      const key = "leg:" + lg[i - 1].cityId + ">" + lg[i].cityId;
+      if (trip.dayStats[key]) continue;
+      const a1 = store.cities.find(c => c.id === lg[i - 1].cityId);
+      const b1 = store.cities.find(c => c.id === lg[i].cityId);
+      if (!a1 || !b1) continue;
+      const r = await osrm([[a1.lat, a1.lon], [b1.lat, b1.lon]]).catch(() => null);
+      if (r){ trip.dayStats[key] = { km: Math.round(r.km * 10) / 10, min: r.min }; changed = true; }
     }
     // حلقة اليوم: من الفندق مرورًا بمحطاته وعودةً إليه.
     const dd = daysOf(trip);
@@ -945,14 +1096,18 @@ export function planner(ctx, tripId, render){
     const hev = timedEvents(trip, dstr, city, store, days);
     const evRow = (ev) => el("div.trow", {},
       el("div.tstamp", {}, ev.time != null ? fmtT(ev.time) : ""),
-      el("div.rowthumb.evth", {}, eventIcon(ev.kind)),
+      el("div.rowthumb.evth", {}, eventIcon(ev.kind === "move" ? "toair" : ev.kind)),
       el("div", { style: "flex:1;min-width:0" },
         el("div.t", { style: "font-weight:700;font-size:14px" },
           ev.kind === "in" ? tt`تسجيل الدخول للفندق ${ev.name}`
           : ev.kind === "out" ? tt`تسجيل الخروج من الفندق ${ev.name}`
           : ev.kind === "land" ? (ev.name ? tt`وصول الرحلة ${ev.name}` : t("وصول الرحلة"))
           : ev.kind === "fly" ? (ev.name ? tt`إقلاع الرحلة ${ev.name}` : t("إقلاع الرحلة"))
+          : ev.kind === "move" ? tt`الانتقال إلى ${ev.name}`
           : t("التوجه للمطار")),
+        ev.kind === "move" && ev.driveMin
+          ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
+              tt`${ev.driveMin} د قيادة من ${ev.from}`) : null,
         ev.kind === "toair"
           ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
               tt`٣ س إجراءات · ${ev.driveMin} د طريق`)

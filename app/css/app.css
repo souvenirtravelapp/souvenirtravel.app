@@ -692,3 +692,13 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .daytbl { table-layout: fixed; }
 .dt-day { width: 116px; }
 @media (max-width: 520px){ .dt-day { width: 74px; } }
+
+/* «أضف مدينة أخرى» بجوار عنوان الخطة */
+.addcity { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  margin-top: 6px; font-size: 12.5px; color: rgba(255,255,255,.92); }
+.addcity .plus { width: 22px; height: 22px; border-radius: 50%; background: #3A6EA5;
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 15px; line-height: 1; }
+/* اسم مدينة المرحلة فوق اقتراحاتها */
+.legname { font-size: 12px; font-weight: 800; color: var(--deep, #B4622E);
+  margin: 12px 2px 4px; }
