@@ -659,7 +659,8 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* صف اليوم: عمود وقت ضيق يسبق كل بند — يُملأ فقط لما له وقت حقيقي */
 .trow { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
 .tstamp { width: 42px; flex: 0 0 42px; font-size: 11.5px; font-weight: 700;
-  color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
+  color: var(--muted); font-variant-numeric: tabular-nums; text-align: center;
+  min-height: 1px; }   /* الفارغ يحجز عرضه فتصطف الأيقونات كلها */
 .dt-acts > div:not(.trow) { padding-inline-start: 50px; }
 @media (max-width: 520px){
   .tstamp { width: 36px; flex: 0 0 36px; font-size: 11px; }
@@ -672,10 +673,12 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* مربعات الأيقونات على خط واحد: صف المكان صار كصف الحدث تمامًا */
 .trow.prow { padding: 6px 0; }
 .dt-acts > div:not(.trow) { padding-inline-start: 0; }
-.rowthumb.evth, .rowthumb.kindth { background: #fff; display: flex;
-  align-items: center; justify-content: center; }
-.rowthumb.evth { border: 2px solid #1F8F7C; color: #1F8F7C; }
-.rowthumb.kindth { border: 2px solid var(--line, #e5ddcf); color: var(--deep, #B4622E); }
+/* بلا إطارات: الأيقونة وحدها تكفي، والمربع يبقى قياسًا لا حدًّا */
+.rowthumb.evth, .rowthumb.kindth { background: transparent; border: 0;
+  display: flex; align-items: center; justify-content: center; }
+.rowthumb.evth { color: #1F8F7C; }
+.rowthumb.kindth { color: var(--deep, #B4622E); }
+.rowthumb.stayth { background: transparent; border: 0; color: #1F8F7C; }
 /* كل يوم جدول مستقل، فبلا تثبيت يحسب كلٌّ عرض عموده بمحتواه وتتعرج
    المربعات. التثبيت يجعل الأيام على شبكة واحدة. */
 .daytbl { table-layout: fixed; }
