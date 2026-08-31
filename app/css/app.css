@@ -529,10 +529,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 /* البطاقة المختارة: إطار سميك بأخضر الشفق وعلامة صح — ستُوزَّع عند الضغط */
 .pick { position: relative; }
 .pick.sel { border-color: #1F8F7C; }
-.pick.sel::after { content: "✓"; position: absolute; top: -7px;
-  inset-inline-start: -7px; width: 18px; height: 18px; border-radius: 50%;
-  background: #1F8F7C; color: #fff; font-size: 12px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
+.pick.sel::after { content: none;
   box-shadow: 0 1px 3px rgba(0,0,0,.3); }
 /* دبوس دخل الجدول: أخضر الشفق برقم يومه — والبرتقالي متاح للاختيار */
 .pmark.grn { background: #1F8F7C; }
@@ -579,7 +576,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 
 /* بطاقة مختارة لم تدخل الجدول بعد: إطار ذهبي — تنتظر ضمّها */
 .pick.sel.pend { border-color: var(--accent, #E0A458); }
-.pick.sel.pend::after { background: var(--accent, #E0A458); }
+.pick.sel.pend::after { content: none; }
 
 /* الجوال المثبت كتطبيق: الصفحة تمتد تحت شريط الحالة — الهيدر يفسح له،
    والشريط السفلي يفسح لخط البيت. بدونها الشعار والصورة تحت الساعة. */
@@ -653,7 +650,8 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   .dt-slot { width: 46px; font-size: 11px; padding-inline: 2px; }
   .rowthumb { width: 34px; height: 34px; flex: 0 0 34px; }
   .dt-acts .t { font-size: 13px !important; }
-  .pick { flex: 1 1 100%; }
+  .pickwrap { flex: 1 1 100%; }
+  .pick { width: 100%; }
 }
 
 /* صف اليوم: عمود وقت ضيق يسبق كل بند — يُملأ فقط لما له وقت حقيقي */
@@ -721,3 +719,51 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   .mapcities { right: 8px; top: 58px; max-width: calc(100% - 16px); }
   .mapcity { height: 32px; font-size: 12px; padding: 0 10px; }
 }
+
+/* البطاقة ومعها زر الضم المختصر: الجسد يفتح التفاصيل، والزاوية تضم فورًا */
+.pickwrap { position: relative; display: inline-flex; }
+.pickadd { position: absolute; top: -8px; inset-inline-start: -8px;
+  width: 22px; height: 22px; border-radius: 50%; z-index: 2;
+  border: 1.5px solid var(--line, #e5ddcf); background: var(--card, #fff);
+  color: var(--accent, #b8863b); font: inherit; font-size: 14px; font-weight: 800;
+  line-height: 1; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.12); padding: 0; }
+.pickadd:hover { background: #F3F7F5; }
+.pickadd.on { background: #1F8F7C; border-color: #1F8F7C; color: #fff; font-size: 12px; }
+.pickwrap.pend .pickadd.on { background: var(--accent, #E0A458);
+  border-color: var(--accent, #E0A458); }
+
+/* نافذة تفاصيل الفعالية — تُرى قبل أن تُضم */
+.detback { position: fixed; inset: 0; background: rgba(6,22,38,.45); z-index: 70; }
+.detcard { position: fixed; z-index: 71; top: 50%; left: 50%;
+  transform: translate(-50%,-50%); width: min(460px, 94vw);
+  max-height: 88vh; overflow: auto; background: var(--bg, #FDFAF3);
+  border-radius: 16px; padding: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.dethead { display: flex; align-items: flex-start; gap: 10px; }
+.dethead h3 { margin: 0; font-size: 17px; }
+.dethead .den { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.dethead .x { background: var(--card); border: 1px solid var(--line);
+  width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.detimg { width: 100%; height: 190px; object-fit: cover; border-radius: 12px;
+  margin-top: 12px; display: block; }
+.detmeta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  font-size: 11.5px; font-weight: 700; }
+.detmeta .kind { color: var(--muted); }
+.detmeta .cnt { color: var(--accent, #b8863b); }
+.detblurb { margin: 10px 0 0; font-size: 13px; line-height: 1.65; }
+.detrows { margin-top: 12px; display: grid; gap: 6px; }
+.detrow { display: flex; gap: 8px; font-size: 12.5px; }
+.detrow .k { flex: 0 0 68px; color: var(--muted); font-weight: 700; }
+.detrow .v { flex: 1; min-width: 0; }
+.detlinks { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;
+  font-size: 12.5px; font-weight: 700; }
+.detdisc { margin-top: 8px; font-size: 10.5px; color: var(--muted); }
+.detbtns { display: flex; gap: 8px; margin-top: 16px;
+  /* القرار لا يُبحث عنه بالتمرير: الزران ملتصقان بأسفل النافذة دائمًا */
+  position: sticky; bottom: -16px; padding: 12px 0; background: var(--bg, #FDFAF3);
+  border-top: 1px solid var(--line, #e5ddcf); }
+.detadd { flex: 1; padding: 11px; border-radius: 12px; border: 0;
+  background: #1F8F7C; color: #fff; font: inherit; font-weight: 800;
+  font-size: 14px; cursor: pointer; }
+.detno { padding: 11px 18px; border-radius: 12px; font: inherit; font-weight: 700;
+  border: 1px solid var(--line); background: var(--card); cursor: pointer; }

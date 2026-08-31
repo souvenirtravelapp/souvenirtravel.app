@@ -710,28 +710,91 @@ export function planner(ctx, tripId, render){
   const reg = legReg.flatMap(g => g.items);
   const regQids = new Set(reg.map(a => a.qid));
   const regBox = el("div");
+  // ضم الفعالية أو فكّها — الفعل نفسه من الزر المختصر ومن نافذة التفاصيل.
+  const togglePick = (a, label) => {
+    if (planOf(a.qid)) trip.plan = trip.plan.filter(p => p.qid !== a.qid);
+    else {
+      trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
+        name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
+        kind: a.kind || "", count: a.added_count || 0,
+        roadM: a.road_m || 0, en: a.name_en || "", day: -1, slot: "" });
+      tallyPick(a.qid);
+    }
+    save(); render();
+  };
+  // نافذة التفاصيل: لا يضيف المرء إلى جدوله ما لم يره. نعرض ما في السجل
+  // ولا نزيد — ما لم يُجمع لا يُخترع، والقرار (أضف / ألغِ) في يد صاحبه.
+  const openDetails = (a, label, onRemoveFree) => {
+    if (document.querySelector(".detback")) return;
+    const close = () => { back.remove(); card.remove(); };
+    const back = el("div.detback", { onclick: close });
+    const chosen = !!(a.qid ? planOf(a.qid) : true);
+    const rows = [];
+    const row = (k, v) => v ? rows.push(el("div.detrow", {},
+      el("span.k", {}, k), el("span.v", {}, v))) : null;
+    row(t("الأوقات"), a.hours_ar);
+    row(t("التذاكر"), a.needs_ticket ? t("تحتاج تذكرة")
+      : a.free_entry ? t("الدخول مجاني") : (a.ticket_price_note || ""));
+    row(t("الوصول"), a.access_note_ar
+      || (a.access_minutes ? tt`${a.access_minutes} د مشيًا` : ""));
+    row(t("الموسم"), a.season_note_ar);
+    row(t("لمن"), a.audience_note_ar
+      || (Array.isArray(a.audiences) ? a.audiences.join("، ") : ""));
+    row(t("الشروط"), [a.min_age ? tt`العمر من ${a.min_age} سنة` : "",
+      a.min_height_cm ? tt`الطول من ${a.min_height_cm} سم` : ""].filter(Boolean).join(" · "));
+    row(t("الموقف"), a.parking_name);
+    row(t("القيمة"), a.value_ar);
+    const blurb = isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en);
+    const card = el("div.detcard", { onclick: e => e.stopPropagation() },
+      el("div.dethead", {},
+        el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
+        el("div", { style: "flex:1;min-width:0" },
+          el("h3", {}, label),
+          a.name_en && a.name_en !== label ? el("div.den", {}, a.name_en) : null),
+        el("button.x", { onclick: close, "aria-label": t("إغلاق") }, "✕")),
+      a.has_image ? el("img.detimg", { src: "attractions/" + a.qid + ".jpg",
+        alt: label, loading: "lazy",
+        onerror: (e) => e.target.remove() }) : null,
+      el("div.detmeta", {},
+        a.kind ? el("span.kind", {}, a.kind) : null,
+        a.added_count > 0 ? el("span.cnt", {}, tt`اختارها ${a.added_count}`) : null),
+      blurb ? el("p.detblurb", {}, blurb) : null,
+      rows.length ? el("div.detrows", {}, rows) : null,
+      el("div.detlinks", {},
+        a.tickets_url ? el("a", { href: a.tickets_url, target: "_blank",
+          rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
+        a.official_url ? el("a", { href: a.official_url, target: "_blank",
+          rel: "noopener nofollow" }, t("الموقع الرسمي ↗")) : null),
+      (a.hours_ar || a.tickets_url || a.official_url)
+        ? el("div.detdisc", {}, t("معلومات استرشادية — تأكد من المصدر")) : null,
+      el("div.detbtns", {},
+        el("button.detadd", { onclick: () => {
+          close();
+          if (onRemoveFree) onRemoveFree();
+          else togglePick(a, label);
+        } }, chosen ? t("أزل من الجدول") : t("أضف للجدول")),
+        el("button.detno", { onclick: close }, t("ألغِ"))));
+    document.body.append(back, card);
+  };
+  // البطاقة: جسدها يفتح التفاصيل، و«+» في زاويتها يضم مباشرة بلا نافذة.
   const pickCard = (a) => {
     const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
     const chosen = planOf(a.qid);
-    return el(chosen
+    const body = el(chosen
       ? (chosen.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend")
-      : "button.pick", { onclick: () => {
-      if (chosen){
-        trip.plan = trip.plan.filter(p => p.qid !== a.qid);
-      } else {
-        trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
-          name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
-          kind: a.kind || "", count: a.added_count || 0,
-          roadM: a.road_m || 0, en: a.name_en || "", day: -1, slot: "" });
-        tallyPick(a.qid);
-      }
-      save(); render();
-    } },
+      : "button.pick", { onclick: () => openDetails(a, label) },
       // أيقونة الفعالية نفسها التي في الجدول — لغة واحدة في الشاشتين.
       el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
       el("div.pn", {}, label),
       el("div.pc", {},
-        a.added_count > 0 ? tt`اختارها ${a.added_count}` : "+"));
+        a.added_count > 0 ? tt`اختارها ${a.added_count}` : t("اضغط للتفاصيل")));
+    const badge = el("button.pickadd" + (chosen ? ".on" : ""),
+      { "aria-label": chosen ? t("أزل من الجدول") : t("أضف للجدول"),
+        title: chosen ? t("أزل من الجدول") : t("أضف للجدول"),
+        onclick: (e) => { e.stopPropagation(); togglePick(a, label); } },
+      chosen ? "✓" : "+");
+    return el("div.pickwrap" + (chosen ? (chosen.day >= 0 ? "" : ".pend") : ""),
+      {}, body, badge);
   };
   // مجموعة لكل مرحلة بعنوان مدينتها — تُعرض العناوين حين تتعدد المدن فقط.
   for (const g of legReg){
@@ -745,13 +808,17 @@ export function planner(ctx, tripId, render){
   const freeBox = el("div.pickrow", {});
   for (const p of trip.plan){
     if (p.qid && regQids.has(p.qid)) continue;
-    freeBox.append(el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
-      { onclick: () => {
-      trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
-    } },
+    const rm = () => { trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render(); };
+    const body = el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
+      { onclick: () => openDetails({ name_en: p.en || "", kind: p.kind || "",
+          blurb: p.detail || "", added_count: 0 }, p.name, rm) },
       el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
-      el("div.pc", {}, p.kind || "‏")));
+      el("div.pc", {}, p.kind || t("اضغط للتفاصيل")));
+    freeBox.append(el("div.pickwrap" + (p.day >= 0 ? "" : ".pend"), {}, body,
+      el("button.pickadd.on", { "aria-label": t("أزل من الجدول"),
+        title: t("أزل من الجدول"),
+        onclick: (e) => { e.stopPropagation(); rm(); } }, "✓")));
   }
   if (freeBox.children.length) regBox.append(freeBox);
   const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
