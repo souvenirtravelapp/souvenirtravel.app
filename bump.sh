@@ -10,6 +10,11 @@ if grep -rl "live.js?token" --include="*.html" . 2>/dev/null | grep -v node_modu
   exit 1
 fi
 
+# بوابة فرق الوكلاء: لا يُنشر عملٌ غيّر سلوك وكيل ولم يظهر في صفحة المدير.
+if [ -f "$HOME/Projects/souvenir/Tools/gate_teams_sync.py" ]; then
+  python3 "$HOME/Projects/souvenir/Tools/gate_teams_sync.py" || exit 1
+fi
+
 V=$(date +%s)
 sed -i '' -E "s/\?v=[0-9]+/?v=$V/g" app/index.html
 echo "stamped v=$V"
