@@ -502,7 +502,19 @@ export function planner(ctx, tripId, render){
   // ── بطاقة الصدق: ما لا يضمنه أي ذكاء مولِّد — تأشيرة مراجَعة من مصدر
   //    رسمي، طقس أرقام حقيقية، طيران متحقق منه. تركب أعلى كل خطة. ──
   if (city){
-    const facts = el("div.rows.factrows");
+    // أقسام فرعية: القارئ يبحث عن «السكن» أو «الطيران» لا عن صفٍّ في قائمة
+    // طويلة. كل قسم صندوقه وعنوانه، وترتيب إنشائها هو ترتيب ظهورها.
+    const facts = el("div.factsecs");
+    const sec = (title) => {
+      const box = el("div.rows.factrows");
+      facts.append(el("div.factsec", {}, el("h3.facth", {}, title), box));
+      return box;
+    };
+    const secDates = sec(t("تواريخ الرحلة"));
+    const secFly = sec(t("الطيران"));
+    const secStay = sec(t("السكن"));
+    const secVisa = sec(t("التأشيرة"));
+    const secWx = sec(t("الطقس"));
 
     // التواريخ — انتقلت من رأس الصفحة إلى هنا، وتُعدَّل في مكانها.
     const ds = el("input", { type: "date", value: trip.start || "" });
@@ -511,9 +523,8 @@ export function planner(ctx, tripId, render){
       if (!ds.value) return;
       trip.start = ds.value; trip.end = de.value || ds.value; save(); render();
     };
-    facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
-      el("span.who", {}, "📅 " + tt("بداية الرحلة")), ds,
-      el("span.who", {}, tt("نهاية الرحلة")), de));
+    secDates.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+      el("span.who", {}, "📅 " + tt("كامل الرحلة")), ds, de));
 
     // مراحل الرحلة: مدينة لكل مدى تواريخ — تُعدَّل هنا في مكانها.
     const legs0 = legsOf(trip);
@@ -529,7 +540,7 @@ export function planner(ctx, tripId, render){
           if (trip.start && l.from < trip.start) trip.start = l.from;
           save(); render();
         };
-        facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+        secDates.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
           el("span.who", {}, "📍 " + (c ? cityName(c) : "")), lf, lt,
           legs0.length > 1 ? el("button", { style: "border:none;background:none;"
             + "cursor:pointer;color:var(--deep)", onclick: () => {
@@ -592,8 +603,8 @@ export function planner(ctx, tripId, render){
         } }, t("أو أدخل الأوقات يدويًا")), st);
       return row;
     };
-    facts.append(flightRow("out", tt("رحلة الذهاب")),
-                 flightRow("back", tt("رحلة العودة")));
+    secFly.append(flightRow("out", tt("رحلة الذهاب")),
+                  flightRow("back", tt("رحلة العودة")));
 
     // السكن — فندق لكل مرحلة. البحث محصور بمدينة المرحلة المختارة، وإلا
     // ما ظهر فندق فيينا أبدًا ما دامت الرحلة تبدأ من شلادمينغ.
@@ -640,15 +651,15 @@ export function planner(ctx, tripId, render){
         }
       }, 400);
     };
-    facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
-      el("span.who", {}, "🏨 " + tt("السكن")),
+    secStay.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+      el("span.who", {}, "🏨 " + tt("ابحث عن سكنك")),
       ...(legs.length > 1 ? [legPick] : []), stayIn), stayRes);
     for (const st of trip.stays){
       const fi = el("input", { type: "date", value: st.from || "" });
       const ti = el("input", { type: "date", value: st.to || "" });
       fi.onchange = ti.onchange = () => {
         st.from = fi.value; st.to = ti.value; save(); render(); };
-      facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+      secStay.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
         el("span", {}, "🏨 " + st.name),
         el("span.det", {}, t("دخول")), fi,
         el("span.det", {}, t("خروج")), ti,
@@ -658,25 +669,48 @@ export function planner(ctx, tripId, render){
           } }, "✕")));
     }
 
-    const vl = visaLine(ctx, city);
-    facts.append(el("div.row", {},
-      el("span.who", {}, "🛂 " + (vl
-        ? vl
-        : t("اختر جوازك من صفحة المدينة لترى حكم التأشيرة")))));
-    if (trip.start){
-      const m = new Date(trip.start + "T00:00:00").getMonth() + 1;
-      const w = ctx.store.temps ? ctx.store.temps(city, m) : null;
-      if (w){
-        const rw = { none: RAIN_AR.r0, light: RAIN_AR.r1,
-                     moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[ctx.store.rainLevel(w.p_mm_avg)];
-        facts.append(el("div.row", {}, el("span.who", {},
-          "🌤 " + tt`طقس ${MONTHS_AR[m - 1]} هناك: ${Math.round(w.t_max_avg_c)}° نهارًا، ${Math.round(w.t_min_avg_c)}° ليلًا — ${rw}`)));
-      }
+    // مدن الرحلة كلها: حكم التأشيرة يتبع الدولة، والطقس يتبع المدينة وشهر
+    // مرحلتها — رحلةٌ إلى مدينتين قد تعبر دولتين وطقسين.
+    const legCityList = legsOf(trip)
+      .map(l => ({ leg: l, c: store.cities.find(x => x.id === l.cityId) }))
+      .filter(x => x.c);
+    if (!legCityList.length) legCityList.push({ leg: {}, c: city });
+    const seenCountry = new Set();
+    let visaRows = 0;
+    for (const { c } of legCityList){
+      if (seenCountry.has(c.country_code)) continue;
+      seenCountry.add(c.country_code);
+      const vl = visaLine(ctx, c);
+      if (!vl) continue;
+      visaRows++;
+      secVisa.append(el("div.row", {}, el("span.who", {},
+        "🛂 " + (legCityList.length > 1 || seenCountry.size > 1
+          ? countryName(c) + ": " + vl : vl))));
     }
+    if (!visaRows)
+      secVisa.append(el("div.row", {}, el("span.who", {},
+        "🛂 " + t("اختر جوازك من صفحة المدينة لترى حكم التأشيرة"))));
+    let wxRows = 0;
+    for (const { leg, c } of legCityList){
+      const day = leg.from || trip.start;
+      if (!day) continue;
+      const m = new Date(day + "T00:00:00").getMonth() + 1;
+      const w = store.temps ? store.temps(c, m) : null;
+      if (!w) continue;
+      wxRows++;
+      const rw = { none: RAIN_AR.r0, light: RAIN_AR.r1,
+                   moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[store.rainLevel(w.p_mm_avg)];
+      secWx.append(el("div.row", {}, el("span.who", {},
+        "🌤 " + (legCityList.length > 1 ? cityName(c) + " · " : "")
+        + tt`${MONTHS_AR[m - 1]}: ${Math.round(w.t_max_avg_c)}° نهارًا، ${Math.round(w.t_min_avg_c)}° ليلًا — ${rw}`)));
+    }
+    if (!wxRows)
+      secWx.append(el("div.row", {}, el("span.who", {},
+        "🌤 " + t("حدد تواريخ رحلتك ليظهر طقس شهرها"))));
     inner.append(el("div.card", { style: "margin-bottom:14px" },
       el("h2", { style: "margin-bottom:6px" }, t("بيانات رحلتك")),
       facts,
-      el("div.det", { style: "margin-top:6px" },
+      el("div.det.factdisc", {},
         t("من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر."))));
   }
 

@@ -772,3 +772,11 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .shut { margin-top: 3px; font-size: 11px; font-weight: 700; color: #A6412C;
   background: #FBECE8; border: 1px solid #F0CFC6; border-radius: 8px;
   padding: 2px 8px; display: inline-block; }
+
+/* بيانات رحلتك — أقسام فرعية معنونة بدل قائمة صفوف واحدة */
+.factsecs { display: grid; gap: 12px; }
+.factsec { border-top: 1px solid var(--line, #e5ddcf); padding-top: 9px; }
+.factsec:first-child { border-top: 0; padding-top: 0; }
+.facth { margin: 0 0 5px; font-size: 12px; font-weight: 800; letter-spacing: .02em;
+  color: var(--deep, #B4622E); }
+.factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
