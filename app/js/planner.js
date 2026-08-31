@@ -936,8 +936,11 @@ export function planner(ctx, tripId, render){
           list.length > 1 ? el("button.detnav", { "aria-label": t("السابق"),
             title: t("السابق"), onclick: () => nav(-1) }, "›") : null,
           el("button" + (chosen ? ".detrm" : ".detadd"), { onclick: () => {
-            if (onRemoveFree){ close(); onRemoveFree(); return; }
-            togglePick(a, label);
+            // القرار يُنهي النافذة: من ضمّ أو أزال انتهى شغله بها، ولا يُترك
+            // أمام نافذة تعرض حالةً سبقت فعله.
+            close();
+            if (onRemoveFree) onRemoveFree();
+            else togglePick(a, label);
           } }, chosen ? t("أزل من الجدول") : t("أضف للجدول")),
           list.length > 1 ? el("button.detnav", { "aria-label": t("التالي"),
             title: t("التالي"), onclick: () => nav(1) }, "‹") : null,
