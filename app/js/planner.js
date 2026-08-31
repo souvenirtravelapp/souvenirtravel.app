@@ -197,6 +197,26 @@ function tallyPick(qid){
 // ويوما السفر خفيفان. سلسلة أقرب-جار تحفظ التماسك الجغرافي بلا عناقيد معقدة.
 const FOOD_KINDS = ["طعام", "مقهى"];
 
+// إغلاق أسبوعي: «مغلق كل اثنين» بيانات حقيقية لم يكن لها حقل، فكان المخطط
+// يقترح ناشماركت يوم أحد ومتحف تاريخ الفنون يوم اثنين. الترقيم ISO (١ الاثنين
+// … ٧ الأحد)، و`open_daily_months` استثناء الشهور التي يفتح فيها كل يوم.
+const ISO_DAYS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس",
+                     "الجمعة", "السبت", "الأحد"];
+function closedWeekly(a, d){
+  const cw = a && (a.closed_weekdays || a.cw);
+  if (!Array.isArray(cw) || !cw.length || !d) return false;
+  const iso = d.getDay() === 0 ? 7 : d.getDay();
+  if (!cw.includes(iso)) return false;
+  const ex = a.open_daily_months || a.odm;
+  if (Array.isArray(ex) && ex.includes(d.getMonth() + 1)) return false;
+  return true;
+}
+const closedDaysText = (a) => {
+  const cw = a && (a.closed_weekdays || a.cw);
+  return Array.isArray(cw) && cw.length
+    ? cw.map(n => ISO_DAYS_AR[n - 1]).filter(Boolean).join("، ") : "";
+};
+
 // مكانٌ يبعد عن الفندق أكثر من هذا (بالدقائق قيادةً) يوم كامل لا فترة:
 // بحيرة جبلية على بعد ٤٥ دقيقة تحتاج صباحًا وساعات مشي، لا عصرًا مزدحمًا.
 const FAR_MIN = 40;
@@ -295,17 +315,15 @@ function autoPlan(trip, days, city, store){
 
     // التعليل — الشفافية تقنع أكثر من السحر.
     dayGroup.forEach((p, k) => {
-      if (k === 0){
-        p.why = depot ? tt`من ${depot.name} — الأقرب إليه`
-                      : t("نقطة انطلاق اليوم");
-      } else {
-        const q = dayGroup[k - 1];
-        if ((p.lat || p.lon) && (q.lat || q.lon)){
-          const dk = Math.round(kmAB(p, q));
-          p.why = dk < 1 ? tt`قريبة جدًا من ${q.name}`
-                         : tt`قريبة من ${q.name} (~${dk} كم)`;
-        } else p.why = "";
-      }
+      // كل تعليل يحمل رقمًا أو لا يُكتب: «الأقرب إليه» كلامٌ لا يقيس شيئًا،
+      // والمسافة تقيس. وما دون الكيلومتر يُقال بالأمتار لا بوصف مبهم.
+      const near = (q) => {
+        if (!q || !(p.lat || p.lon) || !(q.lat || q.lon)) return "";
+        const km = kmAB(p, q);
+        return km < 1 ? tt`${Math.max(50, Math.round(km * 1000 / 50) * 50)} م من ${q.name}`
+                      : tt`~${Math.round(km)} كم من ${q.name}`;
+      };
+      p.why = k === 0 ? near(depot) : near(dayGroup[k - 1]);
     });
     if (depot && seq.length){
       const last = seq[seq.length - 1];
@@ -367,6 +385,7 @@ function placePending(trip, days){
         const cy = mine.reduce((a, x) => a + x.lon, 0) / mine.length;
         dist = Math.hypot(p.lat - cx, (p.lon - cy) * Math.cos(p.lat * Math.PI / 180));
       }
+      if (closedWeekly(p, d)) return;   // مغلق ذلك اليوم — لا يُقترح فيه
       const load = trip.plan.filter(x => x.day === i).length / slots.length;
       const score = dist + load * 0.05;
       if (score < bd){ bd = score; best = i; }
@@ -409,16 +428,21 @@ export function planner(ctx, tripId, render){
   trip.plan = trip.plan || [];
   // تعليلٌ قديم بلا رقم يبقى محفوظًا في خطط وُزّعت قبل حذفه — يُمحى عند
   // القراءة، فلا يرى المستخدم سطرًا قررنا أنه لا يفيده.
-  const DEAD_WHY = ["أُضيفت للأقرب من أيامها مسارًا",
-                    "Joined the day whose route is nearest"];
+  // تعليلٌ بلا رقم لا يفيد القارئ: «الأقرب إليه»، «قريبة جدًا»، «أُضيفت
+  // للأقرب» — كلها بقيت محفوظة في خطط وُزّعت قبل هذه القاعدة، فتُمحى عند
+  // القراءة. ويبقى ما فيه قياس: كيلومترات، دقائق، أمتار.
+  const DEAD_WHY = [/أُضيفت للأقرب/, /Joined the day whose route/,
+                    /— الأقرب إليه/, /Nearest to it/,
+                    /قريبة جدًا من/, /Very close to/,
+                    /^نقطة انطلاق اليوم$/, /^The day.s starting point$/];
   {
     let cleaned = 0;
-    for (const p of trip.plan)
-      if (p.why && DEAD_WHY.some(d => p.why.includes(d))){
-        p.why = p.why.split(" · ").filter(x => !DEAD_WHY.some(d => x.includes(d)))
-          .join(" · ");
-        cleaned++;
-      }
+    for (const p of trip.plan){
+      if (!p.why) continue;
+      const kept = p.why.split(" · ").filter(x => !DEAD_WHY.some(d => d.test(x)));
+      const next = kept.join(" · ");
+      if (next !== p.why){ p.why = next; cleaned++; }
+    }
     if (cleaned) Trips.update(tripId, trip);
   }
   trip.flights = trip.flights || { out: {}, back: {} };
@@ -731,7 +755,10 @@ export function planner(ctx, tripId, render){
       trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
         name: label, qid: a.qid, lat: a.lat || 0, lon: a.lon || 0,
         kind: a.kind || "", count: a.added_count || 0,
-        roadM: a.road_m || 0, en: a.name_en || "", day: -1, slot: "" });
+        roadM: a.road_m || 0, en: a.name_en || "", day: -1, slot: "",
+        // أيام إغلاقه ترافقه في الخطة، فيُحسب بها التوزيع ويُنبَّه المستخدم
+        ...(a.closed_weekdays ? { cw: a.closed_weekdays } : {}),
+        ...(a.open_daily_months ? { odm: a.open_daily_months } : {}) });
       tallyPick(a.qid);
     }
     save(); render();
@@ -752,6 +779,7 @@ export function planner(ctx, tripId, render){
     row(t("الوصول"), a.access_note_ar
       || (a.access_minutes ? tt`${a.access_minutes} د مشيًا` : ""));
     row(t("الموسم"), a.season_note_ar);
+    row(t("يغلق"), closedDaysText(a));
     row(t("لمن"), a.audience_note_ar
       || (Array.isArray(a.audiences) ? a.audiences.join("، ") : ""));
     row(t("الشروط"), [a.min_age ? tt`العمر من ${a.min_age} سنة` : "",
@@ -1082,7 +1110,12 @@ export function planner(ctx, tripId, render){
             : null,
           p.why ? el("div.s", { style:
               "font-size:11px;color:var(--muted);opacity:.85;margin-top:1px" },
-              "↳ " + p.why) : null)),
+              "↳ " + p.why) : null,
+          // إغلاق أسبوعي وقع في يومه: تنبيه ظاهر لا سطر رمادي — زيارةٌ
+          // مغلقة تُفسد اليوم كله، فالأولى أن تُرى قبل السفر لا عنده.
+          (p.day >= 0 && days[p.day] && closedWeekly(p, days[p.day]))
+            ? el("div.shut", {}, tt`مغلق يوم ${ISO_DAYS_AR[(days[p.day].getDay() || 7) - 1]} — انقله ليوم آخر`)
+            : null)),
       tools);
     return row;
   };

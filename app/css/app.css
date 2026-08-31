@@ -767,3 +767,8 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   font-size: 14px; cursor: pointer; }
 .detno { padding: 11px 18px; border-radius: 12px; font: inherit; font-weight: 700;
   border: 1px solid var(--line); background: var(--card); cursor: pointer; }
+
+/* إغلاق أسبوعي وقع في يومه — تنبيه يُرى، لا سطر رمادي يُتخطى */
+.shut { margin-top: 3px; font-size: 11px; font-weight: 700; color: #A6412C;
+  background: #FBECE8; border: 1px solid #F0CFC6; border-radius: 8px;
+  padding: 2px 8px; display: inline-block; }
