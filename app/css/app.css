@@ -668,3 +668,16 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* مربع نوع المكان في الجدول — كصف الفندق تمامًا */
 .rowthumb.kindth { background: #fff; border: 2px solid var(--line, #e5ddcf);
   display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+/* مربعات الأيقونات على خط واحد: صف المكان صار كصف الحدث تمامًا */
+.trow.prow { padding: 6px 0; }
+.dt-acts > div:not(.trow) { padding-inline-start: 0; }
+.rowthumb.evth, .rowthumb.kindth { background: #fff; display: flex;
+  align-items: center; justify-content: center; }
+.rowthumb.evth { border: 2px solid #1F8F7C; color: #1F8F7C; }
+.rowthumb.kindth { border: 2px solid var(--line, #e5ddcf); color: var(--deep, #B4622E); }
+/* كل يوم جدول مستقل، فبلا تثبيت يحسب كلٌّ عرض عموده بمحتواه وتتعرج
+   المربعات. التثبيت يجعل الأيام على شبكة واحدة. */
+.daytbl { table-layout: fixed; }
+.dt-day { width: 116px; }
+@media (max-width: 520px){ .dt-day { width: 74px; } }

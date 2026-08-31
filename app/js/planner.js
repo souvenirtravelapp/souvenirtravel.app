@@ -5,6 +5,7 @@ import { t, t as tt, isEN } from "/app/js/i18n.js";
 import { el, cityName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
 import { visaLine } from "/app/js/views.js";
+import { activityIcon, eventIcon } from "/app/js/icons.js";
 
 const SLOTS = [
   ["morning", "صباح"],
@@ -153,12 +154,7 @@ function tallyPick(qid){
 // «وزّع لي»: القرار الذي كان على المستخدم — القريب مع القريب، والمطاعم مساءً،
 // ويوما السفر خفيفان. سلسلة أقرب-جار تحفظ التماسك الجغرافي بلا عناقيد معقدة.
 const FOOD_KINDS = ["طعام", "مقهى"];
-/// أيقونة نوع المكان — رمز واحد يقول ما هو قبل قراءة اسمه.
-const KIND_ICON = {
-  "طعام": "🍽", "مقهى": "☕", "طبيعة": "🌿", "نشاط": "🎯", "تجربة": "✨",
-  "معلم": "🏛", "سوق": "🛍", "ترفيه": "🎡", "حي قديم": "🏘",
-};
-const kindIcon = (k) => KIND_ICON[k] || "📍";
+
 // مكانٌ يبعد عن الفندق أكثر من هذا (بالدقائق قيادةً) يوم كامل لا فترة:
 // بحيرة جبلية على بعد ٤٥ دقيقة تحتاج صباحًا وساعات مشي، لا عصرًا مزدحمًا.
 const FAR_MIN = 40;
@@ -749,7 +745,7 @@ export function planner(ctx, tripId, render){
     slotSel.onchange = () => { p.slot = slotSel.value; p.why = ""; save(); render(); };
     // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
-    const thumb = el("div.rowthumb.kindth", {}, kindIcon(p.kind));
+    const thumb = el("div.rowthumb.kindth", {}, activityIcon(p.name, p.kind));
     // الجدول يقول اليوم والفترة — لا داعي لتكرارهما على كل صف (طلب طارق).
     // الأدوات تختبئ، وضغطة على الصف تكشفها لمن أراد النقل أو الحذف.
     const tools = el("div", { style: "display:none;gap:6px;align-items:center;"
@@ -759,12 +755,14 @@ export function planner(ctx, tripId, render){
         ev.stopPropagation();
         trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
       } }, "✕"));
-    const row = el("div", { style: "padding:6px 0;cursor:pointer",
+    // نفس بنية صف الحدث (ختم وقت فارغ ثم المربع) — المربعات على خط واحد.
+    const row = el("div.trow.prow", { style: "cursor:pointer",
       onclick: (ev) => {
         if (ev.target.closest("select,button")) return;
         tools.style.display = tools.style.display === "none" ? "flex" : "none";
       } },
-      el("div", { style: "display:flex;align-items:center;gap:8px" },
+      el("div.tstamp", {}, ""),
+      el("div", { style: "display:flex;align-items:center;gap:8px;flex:1;min-width:0" },
         thumb,
         el("div", { style: "flex:1;min-width:0" },
           el("div.t", { style: "font-weight:700;font-size:14.5px" }, p.name),
@@ -940,9 +938,7 @@ export function planner(ctx, tripId, render){
     const hev = timedEvents(trip, dstr, city, store, days);
     const evRow = (ev) => el("div.trow", {},
       el("div.tstamp", {}, ev.time != null ? fmtT(ev.time) : ""),
-      el("div.rowthumb.stayth", {},
-        ev.kind === "land" || ev.kind === "fly" ? "✈︎"
-          : ev.kind === "toair" ? "🚗" : "🏨"),
+      el("div.rowthumb.evth", {}, eventIcon(ev.kind)),
       el("div", { style: "flex:1;min-width:0" },
         el("div.t", { style: "font-weight:700;font-size:14px" },
           ev.kind === "in" ? tt`تسجيل الدخول للفندق ${ev.name}`
