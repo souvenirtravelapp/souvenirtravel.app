@@ -269,48 +269,80 @@ function autoPlan(trip, days, city, store){
   const blind = pool.filter(p => !(p.lat || p.lon));
   const depot0 = stayForDay(trip, ymd(days[0]));
 
-  // كنسٌ حول الفندق: ترتيب الأماكن بزاويتها منه، فيصير كل يوم قطاعًا
-  // متجاورًا — لا يوم يقطع الوادي ذهابًا وآخر يعود إليه.
-  let ordered;
-  if (depot0 && located.length){
-    ordered = located.slice().sort((a, b) =>
-      Math.atan2(a.lat - depot0.lat, a.lon - depot0.lon)
-      - Math.atan2(b.lat - depot0.lat, b.lon - depot0.lon));
-  } else {
-    ordered = [];
-    const rest = located.slice();
+  // مكانٌ لمدينته وأيامها: رحلةٌ بمدينتين كانت تُرتَّب حول فندق أول يوم ثم
+  // تُقصّ على الأيام تباعًا، فتقع فعالية شلادمينغ في يوم فيينا وتصير حلقة
+  // اليوم ستمئة كيلومتر. كل مرحلة تُوزَّع على أيامها وحدها.
+  const legsA = legsOf(trip);
+  const legIdxOfDay = days.map(d => {
+    const l = legForDay(trip, ymd(d));
+    const k = l ? legsA.indexOf(l) : -1;
+    return k < 0 ? 0 : k;
+  });
+  const legIdxOfPlace = (p) => {
+    if (!legsA.length || !(p.lat || p.lon)) return 0;
+    let best = 0, bd = Infinity;
+    legsA.forEach((l, k) => {
+      const c = store.cities.find(x => x.id === l.cityId);
+      if (!c || c.lat == null) return;
+      const dd = kmAB(p, c);
+      if (dd < bd){ bd = dd; best = k; }
+    });
+    return best;
+  };
+  const sweep = (list, depot) => {
+    if (depot && list.length)
+      return list.slice().sort((a, b) =>
+        Math.atan2(a.lat - depot.lat, a.lon - depot.lon)
+        - Math.atan2(b.lat - depot.lat, b.lon - depot.lon));
+    const out = [], rest = list.slice();
     if (rest.length){
-      ordered.push(rest.shift());
+      out.push(rest.shift());
       while (rest.length){
-        const last = ordered[ordered.length - 1];
+        const last = out[out.length - 1];
         let bi = 0, bd = Infinity;
         rest.forEach((p, i) => { const dd = kmAB(p, last); if (dd < bd){ bd = dd; bi = i; } });
-        ordered.push(rest.splice(bi, 1)[0]);
+        out.push(rest.splice(bi, 1)[0]);
       }
     }
-  }
-  ordered.push(...blind);
+    return out;
+  };
 
-  // حصص الأيام: الأيام الكاملة أولًا، ثم يوما السفر إن فاض شيء.
   const quota = caps.map(() => 0);
-  const fillOrder = [];
-  for (let i = 1; i < days.length - 1; i++) fillOrder.push(i);
-  if (days.length > 1){ fillOrder.push(0, days.length - 1); }
-  else fillOrder.push(0);
-  let left = Math.min(ordered.length, total);
-  while (left > 0){
-    let moved = false;
-    for (const i of fillOrder){
-      if (left > 0 && quota[i] < caps[i]){ quota[i]++; left--; moved = true; }
+  const ordered = [];
+  const nLegs = Math.max(1, legsA.length);
+  for (let L = 0; L < nLegs; L++){
+    const dayIdxs = days.map((_, i) => i).filter(i => legIdxOfDay[i] === L);
+    if (!dayIdxs.length) continue;
+    const mine = located.filter(p => legIdxOfPlace(p) === L);
+    const depotL = stayForDay(trip, ymd(days[dayIdxs[0]])) || depot0;
+    const seq = sweep(mine, depotL);
+    ordered.push(...seq);
+    // حصص أيام هذه المرحلة: أيامها الكاملة أولًا، ثم يوماها الطرفيان.
+    const fill = dayIdxs.slice(1, -1);
+    if (dayIdxs.length > 1) fill.push(dayIdxs[0], dayIdxs[dayIdxs.length - 1]);
+    else fill.push(dayIdxs[0]);
+    const capL = dayIdxs.reduce((a, i) => a + caps[i], 0);
+    let left = Math.min(seq.length, capL);
+    while (left > 0){
+      let moved = false;
+      for (const i of fill)
+        if (left > 0 && quota[i] < caps[i]){ quota[i]++; left--; moved = true; }
+      if (!moved) break;
     }
-    if (!moved) break;
+    let over = seq.length - capL;
+    if (over > 0){
+      const fulls = fill.filter(i => caps[i] >= 3);
+      const tgt = fulls.length ? fulls : fill;
+      let j = 0;
+      while (over > 0){ quota[tgt[j % tgt.length]]++; j++; over--; }
+    }
   }
-  let over = ordered.length - total;
-  if (over > 0){
-    const fulls = fillOrder.filter(i => caps[i] >= 3);
-    const tgt = fulls.length ? fulls : fillOrder;
-    let j = 0;
-    while (over > 0){ quota[tgt[j % tgt.length]]++; j++; over--; }
+  // من لا موقع له يلحق بآخر الأيام المتاحة.
+  ordered.push(...blind);
+  if (blind.length){
+    let rest = blind.length;
+    for (let i = days.length - 1; i >= 0 && rest > 0; i--)
+      while (rest > 0 && quota[i] < caps[i]){ quota[i]++; rest--; }
   }
 
   let cursor = 0;
