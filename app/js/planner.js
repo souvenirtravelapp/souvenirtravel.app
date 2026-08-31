@@ -552,10 +552,16 @@ export function planner(ctx, tripId, render){
   //    ستُوزَّع عند «وزّع الآن». لا سلة: الاختيار كله يُرى في هذا الصف. ──
   const addBox = el("div.card", { style: "margin-bottom:14px" });
   const results = el("div");
-  // المغلق موسميًا لا يُقترح ما دام مغلقًا — بتاريخ من مصدره الرسمي.
+  // المغلق لا يُقترح: لا المغلق الآن (closed_until)، ولا المغلق في أيام
+  // رحلتك نفسها (closed_ranges) — كإجازة مطعم معلنة بعد أسبوعين. الثغرة
+  // التي كشفها راصد المواسم: بياناتٌ صحيحة لا يقرؤها المنطق.
   const today = new Date().toISOString().slice(0, 10);
+  const tFrom = trip.start || today, tTo = trip.end || tFrom;
+  const closedDuringTrip = (a) => (a.closed_ranges || []).some(
+    r => r.from <= tTo && (r.to || r.from) >= tFrom);
   const reg = city ? (store.attractions?.[city.id] || [])
-    .filter(a => !(a.closed_until && a.closed_until > (trip.start || today)))
+    .filter(a => !(a.closed_until && a.closed_until > tFrom))
+    .filter(a => !closedDuringTrip(a))
     .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24) : [];
   const regQids = new Set(reg.map(a => a.qid));
   const regBox = el("div.pickrow", { style: "margin-top:4px" });
