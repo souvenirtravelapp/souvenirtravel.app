@@ -336,6 +336,8 @@ export const EN = {
  "وصول ␟": "lands {0}",
  "٣ س في المطار": "3h at the airport",
  "␟ د طريق": "{0} min drive",
+ "لا نتيجة بهذا الاسم في ␟": "No place by that name in {0}",
+ "المغادرة ١٠:٠٠ من ␟": "Leaving {0} at 10:00",
  "تقديري": "(estimated)",
  "من ␟ — الأقرب إليه": "From {0} — the nearest stop",
  "نقطة انطلاق اليوم": "The day's starting point",

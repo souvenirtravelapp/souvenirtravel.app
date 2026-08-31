@@ -223,8 +223,16 @@ function openSettings(){
   document.body.append(back, sheet);
 }
 
+let lastRoute = null;
+
 export function render(){
   const { path, arg } = currentRoute();
+  // إعادة الرسم داخل الصفحة نفسها ليست انتقالًا: من يضيف فعالية وهو في
+  // منتصف القائمة يجب أن يبقى حيث هو، ولا يُقذف به إلى أعلى الصفحة.
+  const key = path + "/" + (arg ?? "");
+  const sameRoute = key === lastRoute;
+  const keepY = window.scrollY;
+  lastRoute = key;
   const view = document.getElementById("view");
   view.replaceChildren();
   const draw = {
@@ -243,7 +251,11 @@ export function render(){
   }[path] || (() => views.home(ctx));
   view.append(draw());
   drawTabs();
-  window.scrollTo(0, 0);
+  if (sameRoute){
+    window.scrollTo(0, keepY);
+    // الصور والخرائط تُطوّل الصفحة بعد الرسم، فنثبّت الموضع مرة ثانية.
+    requestAnimationFrame(() => window.scrollTo(0, keepY));
+  } else window.scrollTo(0, 0);
   cloud.schedulePush();
 }
 

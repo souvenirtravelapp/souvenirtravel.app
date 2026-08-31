@@ -53,8 +53,11 @@ const kmAB = (a, b) => 111 * Math.hypot(a.lat - b.lat,
 // سكن ذلك اليوم — من ينتقل بين مدن له فندق لكل مرحلة.
 function stayForDay(trip, dstr){
   const stays = (trip.stays || []).filter(s => s.lat || s.lon);
-  return stays.find(s => (!s.from || s.from <= dstr) && (!s.to || s.to >= dstr))
-    || stays[0] || null;
+  // قد يتداخل مدى فندقين (سكن المرحلة الأولى ممتد إلى آخر الرحلة): الفندق
+  // الذي دخلته أخيرًا هو فندق اليوم، فنرجّح الأحدث بداية لا الأول في القائمة.
+  const fit = stays.filter(s => (!s.from || s.from <= dstr) && (!s.to || s.to >= dstr));
+  if (fit.length) return fit.reduce((a, b) => (b.from || "") > (a.from || "") ? b : a);
+  return stays[0] || null;
 }
 
 // مطار وصولك أنت — من رقم رحلتك إن عرفناه، وإلا أقرب مطار للمدينة.
@@ -113,6 +116,13 @@ function timedEvents(trip, dstr, city, store, days){
     const mins = trip.dayStats?.[key]?.min;
     evs.unshift({ kind: "move", name: nc ? cityName(nc) : "",
                   from: pc ? cityName(pc) : "", time: 10, driveMin: mins });
+    // دخول فندق المرحلة الجديدة موقوت بالانتقال نفسه: خرجت العاشرة، فتصل
+    // بعد زمن القيادة — لا نتركه بلا ساعة كأنه حدث بلا مكان في اليوم.
+    for (const ev of evs)
+      if (ev.kind === "in" && ev.time == null && mins){
+        ev.time = 10 + mins / 60;
+        ev.move = { from: pc ? cityName(pc) : "", driveMin: mins };
+      }
   }
   if (dstr === last && hm(fb.dep) != null){
     const st = stayForDay(trip, dstr);
@@ -569,7 +579,12 @@ export function planner(ctx, tripId, render){
     facts.append(flightRow("out", tt("رحلة الذهاب")),
                  flightRow("back", tt("رحلة العودة")));
 
-    // السكن — فندق أو أكثر (قد يسكن في أكثر من موقع)، يُلتقط بالبحث ويظهر على الخريطة.
+    // السكن — فندق لكل مرحلة. البحث محصور بمدينة المرحلة المختارة، وإلا
+    // ما ظهر فندق فيينا أبدًا ما دامت الرحلة تبدأ من شلادمينغ.
+    const legs = legsOf(trip);
+    const legCity = i => store.cities.find(c => c.id === legs[i]?.cityId) || city;
+    const legPick = el("select", { style: "font:inherit;padding:3px 6px" },
+      ...legs.map((l, i) => el("option", { value: String(i) }, cityName(legCity(i)))));
     const stayIn = el("input", { placeholder: t("اكتب اسم فندقك أو شقتك…"),
       style: "flex:1;min-width:180px" });
     const stayRes = el("div");
@@ -579,14 +594,28 @@ export function planner(ctx, tripId, render){
       const q = stayIn.value.trim(); stayRes.replaceChildren();
       if (q.length < 3) return;
       stayTimer = setTimeout(async () => {
-        const hits = await searchPlaces(q, city, true).catch(() => []);
+        const i = +legPick.value || 0;
+        const leg = legs[i];
+        let hits = await searchPlaces(q, legCity(i), true).catch(() => []);
+        // لا نترك الباحث بلا نتيجة لضيق الصندوق: نوسّع الانحياز ثم نصفّي بالمسافة.
+        if (!hits.length){
+          const near = legCity(i);
+          hits = (await searchPlaces(q, near, false).catch(() => []))
+            .filter(h => !near?.lat || kmAB({ lat: +h.lat, lon: +h.lon }, near) < 60);
+        }
         stayRes.replaceChildren();
+        if (!hits.length){
+          stayRes.append(el("div.s", { style: "padding:4px 2px" },
+            tt`لا نتيجة بهذا الاسم في ${cityName(legCity(i))}`));
+          return;
+        }
         for (const h of hits.slice(0, 5)){
           stayRes.append(el("button.srow", { style: "width:100%;text-align:start",
             onclick: () => {
               trip.stays.push({ id: "s" + Date.now(), name: h.display_name.split(",")[0],
                 lat: +h.lat, lon: +h.lon,
-                from: trip.start || "", to: trip.end || "" });
+                from: leg?.from || trip.start || "",
+                to: leg?.to || trip.end || "" });
               save(); render();
             } },
             el("div", {},
@@ -596,7 +625,8 @@ export function planner(ctx, tripId, render){
       }, 400);
     };
     facts.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
-      el("span.who", {}, "🏨 " + tt("السكن")), stayIn), stayRes);
+      el("span.who", {}, "🏨 " + tt("السكن")),
+      ...(legs.length > 1 ? [legPick] : []), stayIn), stayRes);
     for (const st of trip.stays){
       const fi = el("input", { type: "date", value: st.from || "" });
       const ti = el("input", { type: "date", value: st.to || "" });
@@ -1108,6 +1138,10 @@ export function planner(ctx, tripId, render){
         ev.kind === "move" && ev.driveMin
           ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
               tt`${ev.driveMin} د قيادة من ${ev.from}`) : null,
+        ev.kind === "in" && ev.move
+          ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
+              "↳ " + tt`المغادرة ١٠:٠٠ من ${ev.move.from}` + " · "
+              + tt`${ev.move.driveMin} د طريق`) : null,
         ev.kind === "toair"
           ? el("div.s", { style: "font-size:10.5px;color:var(--muted)" },
               tt`٣ س إجراءات · ${ev.driveMin} د طريق`)

@@ -587,9 +587,24 @@ export function destination(ctx, cityId){
           const legs = (host.legs && host.legs.length) ? host.legs.slice()
             : (host.cityId ? [{ cityId: host.cityId, from: host.start || "",
                                 to: host.end || host.start || "" }] : []);
+          // نفس قسمة المخطط: المدينة الجديدة تأخذ آخر ثلث الرحلة، والسابقة
+          // تنتهي عندها — ثم تُعدَّل التواريخ من «مراحل الرحلة».
           const last = legs[legs.length - 1];
-          const from = last?.to || host.start || "";
-          legs.push({ cityId: city.id, from, to: host.end && host.end > from ? host.end : from });
+          let from = last?.to || host.start || "";
+          let to = host.end || from;
+          if (host.start && host.end && host.end > host.start){
+            const d0 = new Date(host.start + "T00:00:00");
+            const d1 = new Date(host.end + "T00:00:00");
+            const n = Math.round((d1 - d0) / 86400000) + 1;
+            if (n >= 3){
+              const cut = new Date(d1);
+              cut.setDate(cut.getDate() - Math.max(1, Math.round(n / 3)) + 1);
+              from = cut.toISOString().slice(0, 10);
+              to = host.end;
+              if (last) last.to = from;
+            }
+          }
+          legs.push({ cityId: city.id, from, to });
           Trips.update(host.id, { legs });
           goto("#/plan/" + host.id);
           return;
