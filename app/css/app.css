@@ -692,12 +692,13 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 @media (max-width: 520px){ .dt-day { width: 74px; } }
 
 /* «أضف مدينة أخرى» بجوار عنوان الخطة */
-/* على مدرج البطل الداكن، النص الشفاف لا يُقرأ — أبيض كامل ووزن أثقل */
+/* مدرج البطل كريميٌّ فاتح لا داكن — فالأبيض عليه أبيضُ على أبيض. النص
+   بلون النصّ نفسه على رقعة خفيفة، وهذا ما كان يجب أن يُصلَح أول مرة. */
 .addcity { display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-  margin-top: 10px; font-size: 13.5px; font-weight: 700; color: #fff;
-  background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
+  margin-top: 10px; font-size: 13.5px; font-weight: 700; color: var(--text, #28241E);
+  background: rgba(40,36,30,.05); border: 1px solid var(--line, #e5ddcf);
   border-radius: 999px; padding: 5px 12px 5px 6px; }
-.addcity:hover { background: rgba(255,255,255,.22); }
+.addcity:hover { background: rgba(40,36,30,.09); }
 .addcity .plus { width: 22px; height: 22px; border-radius: 50%; background: #3A6EA5;
   color: #fff; display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 15px; line-height: 1; }

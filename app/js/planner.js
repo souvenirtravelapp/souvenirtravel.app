@@ -123,9 +123,6 @@ function timedEvents(trip, dstr, city, store, days){
         ev.time = 10 + mins / 60;
         ev.move = { from: pc ? cityName(pc) : "", driveMin: mins };
       }
-      // لا تُسلّم مفتاح فندقٍ بعد أن غادرت مدينته: يوم الانتقال يبدأ
-      // بالخروج، ثم الطريق، ثم الدخول في المدينة الجديدة.
-      if (ev.kind === "out" && ev.time >= 10) ev.time = 9.5;
     }
   }
   if (dstr === last && hm(fb.dep) != null){
@@ -135,6 +132,17 @@ function timedEvents(trip, dstr, city, store, days){
     evs.push({ kind: "toair", name: "", time: hm(fb.dep) - 3 - drive,
                driveMin: Math.round(drive * 60) });
     evs.push({ kind: "fly", name: fb.no || "", time: hm(fb.dep) });
+  }
+  // لا تُسلّم مفتاح فندقٍ بعد أن غادرت: الخروج يسبق أول مغادرة في اليوم
+  // أيًّا كانت — انتقالًا إلى مدينة أو توجهًا إلى المطار. كانت القاعدة
+  // مقصورة على يوم الانتقال، فبقي يوم العودة يُخرجك بعد ذهابك للمطار.
+  const leave = evs.filter(e => (e.kind === "move" || e.kind === "toair")
+    && e.time != null).map(e => e.time);
+  if (leave.length){
+    const first = Math.min(...leave);
+    for (const ev of evs)
+      if (ev.kind === "out" && ev.time != null && ev.time >= first)
+        ev.time = first - 0.5;
   }
   return evs;
 }
@@ -637,8 +645,17 @@ export function planner(ctx, tripId, render){
     // ما ظهر فندق فيينا أبدًا ما دامت الرحلة تبدأ من شلادمينغ.
     const legs = legsOf(trip);
     const legCity = i => store.cities.find(c => c.id === legs[i]?.cityId) || city;
+    // تبدأ على أول مرحلة بلا سكن: من أضاف فيينا للتو يبحث في فيينا، لا في
+    // شلادمينغ فيرى «لا نتيجة» ويظنّ البحث معطوبًا.
+    const legHasStay = (i) => {
+      const l = legs[i]; if (!l) return true;
+      return (trip.stays || []).some(st => st.from && l.from
+        && st.from >= l.from && st.from <= (l.to || l.from));
+    };
+    const firstEmpty = Math.max(0, legs.findIndex((_, i) => !legHasStay(i)));
     const legPick = el("select", { style: "font:inherit;padding:3px 6px" },
       ...legs.map((l, i) => el("option", { value: String(i) }, cityName(legCity(i)))));
+    legPick.value = String(firstEmpty);
     const stayIn = el("input", { placeholder: t("اكتب اسم فندقك أو شقتك…"),
       style: "flex:1;min-width:180px" });
     const stayRes = el("div");
