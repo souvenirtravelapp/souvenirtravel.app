@@ -11417,5 +11417,61 @@
   "page": "https://commons.wikimedia.org/wiki/File:Wien_Kunsthistorisches_Museum.jpg",
   "artist": "Andrzej Otrębski",
   "license": "CC BY-SA 3.0"
+ },
+ "act-mountain-gokart-hochwurzen": {
+  "name_en": "Mountain-GoKart Hochwurzen",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:AUT_%E2%80%94_Steiermark_%E2%80%93_Bezirk_Liezen_%E2%80%94_Gemeinde_Schladming_%E2%80%94_Hochwurzen_(Abfahrtsstelle_Mountain_Gokart)_2020.JPG",
+  "artist": "User:Mateus2019",
+  "license": "CC BY 3.0 de",
+  "file": "File:AUT — Steiermark – Bezirk Liezen — Gemeinde Schladming — Hochwurzen (Abfahrtsstelle Mountain Gokart) 2020.JPG"
+ },
+ "act-dachstein-sky-walk-suspension-bridge-ice": {
+  "name_en": "Dachstein Sky Walk, Suspension Bridge & Ice Palace",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:Dachstein-S%C3%BCdwandbahn_(20200922_160120).jpg",
+  "artist": "Simon Legner ( User:simon04 )",
+  "license": "CC BY-SA 4.0",
+  "file": "File:Dachstein-Südwandbahn (20200922 160120).jpg"
+ },
+ "act-duisitzkarsee": {
+  "name_en": "Duisitzkarsee",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:Duisitzkarsee_katrin_09453_2015-10-21.JPG",
+  "artist": "Ewald Gabardi",
+  "license": "CC BY-SA 3.0",
+  "file": "File:Duisitzkarsee katrin 09453 2015-10-21.JPG"
+ },
+ "act-alpinsteig-h-ll-riesachfall-wilde-wasser": {
+  "name_en": "Alpinsteig Höll & Riesachfall (Wilde Wasser)",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:Riesachfall_201808.jpg",
+  "artist": "Andras Jozsa",
+  "license": "CC BY-SA 4.0",
+  "file": "File:Riesachfall 201808.jpg"
+ },
+ "act-spiegelsee-on-the-reiteralm": {
+  "name_en": "Spiegelsee on the Reiteralm",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:LVVK_Gymn%C3%A1zium_Kada%C5%88_2022,_Reiteralm_11.jpg",
+  "artist": "Jan Beránek",
+  "license": "CC BY-SA 3.0",
+  "file": "File:LVVK Gymnázium Kadaň 2022, Reiteralm 11.jpg"
+ },
+ "act-ramsau-beach": {
+  "name_en": "Ramsau Beach",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:Ramsau_am_Dachstein,_Austria_Sep_30,_2021_03-17-54_PM.jpeg",
+  "artist": "Robot8A",
+  "license": "CC BY-SA 4.0",
+  "file": "File:Ramsau am Dachstein, Austria Sep 30, 2021 03-17-54 PM.jpeg"
+ },
+ "act-talbachklamm": {
+  "name_en": "Talbachklamm",
+  "source": "commons",
+  "page": "https://commons.wikimedia.org/wiki/File:Talbachklamm_1.jpg",
+  "artist": "Edelmauswaldgeist",
+  "license": "CC0",
+  "file": "File:Talbachklamm 1.jpg"
  }
 }
