@@ -53,6 +53,10 @@ const P = {
   skywalk: "M2 16.5h20M7.5 16.5V5.5M16.5 16.5V5.5M2 11l5.5-5.5c2.5 6.5 6.5 6.5 9 0L22 11M4.75 8.3v8.2M12 10.4v6.1M19.25 8.3v8.2",
   // ركوب الخيل: رأس فرس بعُرفه — لا حدوة، فالحدوة رمزٌ لا صورة
   horse: "M13.4 2.4 14.6 6c1 .4 1.6.8 2.2 1.4 1.9 1.5 3.7 3 4.3 4.6.3.9.1 1.6-.7 2-1 .5-2.9.8-4.8.9-1.9.1-3.3 1.2-4.1 3-.6 1.3-.9 2.6-1 4H3.2c.1-2.6.6-5.1 1.8-7.3 1.4-2.6 3.4-4.8 5.6-6.6ZM15.6 9.6a.65.65 0 10-1.3 0 .65.65 0 101.3 0zM19.3 12.5c.3-.5 1-.4 1.1.2",
+  // منجم زيارة: فوهة نفق مقوّسة وعربة منجم محمّلة
+  mine: "M2.5 20.5h19M3.5 20.5v-7.5a4 4 0 018 0v7.5M13.4 13.2h7.8l-1.1 4h-5.6zM14.6 13.2l1.5-1.9 1.5 1.9M17.9 13.2l1.3-2.1 1.6 2.1M15.6 20.5a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zM19.2 20.5a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4z",
+  // قطار جبلي مائل: منحدر مستقيم وعربة راكبة عليه — بكابل أو بمسنن
+  incline: "M2.5 20.5h19M4 20.5L20 6.5M9.1 16l5.5-4.8-2.9-3.3-5.5 4.8zM7.7 14.4l5.4-4.8",
   // دبوس مكان — الافتراضي
   place: "M12 21.5s7-6.4 7-11.3A7 7 0 105 10.2c0 4.9 7 11.3 7 11.3zM12 12.7a2.6 2.6 0 100-5.2 2.6 2.6 0 000 5.2z",
 };
@@ -65,11 +69,14 @@ const RULES = [
   [/zipline|zip[- ]?line|flying fox|زيبلاين|انزلاق هوائي/i, "zipline"],
   [/coaster|rodelbahn|toboggan|مزلقة|زحليقة/i, "coaster"],
   [/klamm|gorge|canyon|مضيق|وادٍ ضيق/i, "gorge"],
+  [/cruise|schifffahrt|schiffs|رحلة نهرية|رحلة بحرية|قارب|سفينة/i, "boat"],
   [/\bsee\b|see$|lake|بحيرة/i, "lake"],
   [/wasserfall|waterfall|شلال/i, "waterfall"],
   // «bahn» وحدها تبتلع السكك: Liliputbahn قطارٌ لا تلفريك. التلفريك يُسمّى
   // seilbahn/gondelbahn لا غير.
-  [/seilbahn|gondelbahn|cable ?car|gondola|funicular|skyway|تلفريك|جندول|مصعد جبلي/i, "cable"],
+  [/seilbahn|gondelbahn|cable ?car|gondola|skyway|تلفريك|جندول|مصعد جبلي/i, "cable"],
+  [/funicular|standseilbahn|festungsbahn|قطار (?:جبلي )?مائل|قطار القلعة/i, "incline"],
+  [/bergwerk|salzwelten|show mine|salt mine|منجم|مناجم|عوالم الملح/i, "mine"],
   [/liliput|dampf|eisenbahn|\btrain\b|bahnhof|قطار(?! جبلي)/i, "train"],
   [/berg|gipfel|peak|mountain|alm\b|جبل|قمة|هضبة/i, "mountain"],
   [/beach|strand|شاطئ/i, "beach"],
@@ -85,7 +92,6 @@ const RULES = [
   [/zoo|tiergarten|tierpark|wildpark|حديقة حيوان|محمية|حياة برية/i, "zoo"],
   [/insel|island|جزيرة/i, "island"],
   [/turm\b|donauturm|observation tower|برج (?:الدانوب|إطلالة|مراقبة)/i, "tower"],
-  [/cruise|schifffahrt|schiffs|رحلة نهرية|رحلة بحرية|قارب|سفينة/i, "boat"],
   [/therme|spa|bad\b|حمام|حمّام|منتجع/i, "spa"],
   [/sky ?walk|suspension|ممشى زجاجي|جسر معلق/i, "skywalk"],
   [/reit|pferd|fiaker|horse|riding|خيل|خيول|فروسية|ركوب الخيل/i, "horse"],
