@@ -348,7 +348,8 @@ function autoPlan(trip, days, city, store){
     for (const p of dayGroup){
       if (FOOD_KINDS.includes(p.kind) && slots.includes("evening") && !taken.has("evening")){
         p.day = i; p.slot = "evening"; taken.add("evening"); done.add(p.id);
-        p.why = [p.why, tt("المطاعم والمقاهي مساءً")].filter(Boolean).join(" · ");
+        // «المطاعم والمقاهي مساءً» قاعدةٌ لا قياس — والقاعدة لا تُكتب تحت كل
+        // صف. ما يُكتب هنا رقمٌ يخص هذا المكان وحده.
       }
     }
     let ci = 0;
@@ -431,15 +432,14 @@ export function planner(ctx, tripId, render){
   // تعليلٌ بلا رقم لا يفيد القارئ: «الأقرب إليه»، «قريبة جدًا»، «أُضيفت
   // للأقرب» — كلها بقيت محفوظة في خطط وُزّعت قبل هذه القاعدة، فتُمحى عند
   // القراءة. ويبقى ما فيه قياس: كيلومترات، دقائق، أمتار.
-  const DEAD_WHY = [/أُضيفت للأقرب/, /Joined the day whose route/,
-                    /— الأقرب إليه/, /Nearest to it/,
-                    /قريبة جدًا من/, /Very close to/,
-                    /^نقطة انطلاق اليوم$/, /^The day.s starting point$/];
+  // القاعدة واحدة تُغني عن ملاحقة العبارات: تعليلٌ بلا رقم لا يُعرض. ما لا
+  // يقيس شيئًا («الأقرب إليه»، «قريبة جدًا»، «المطاعم مساءً») يسقط عند فتح
+  // الخطة، ويبقى ما فيه كيلومتر أو متر أو دقيقة.
   {
     let cleaned = 0;
     for (const p of trip.plan){
       if (!p.why) continue;
-      const kept = p.why.split(" · ").filter(x => !DEAD_WHY.some(d => d.test(x)));
+      const kept = p.why.split(" · ").filter(x => /\d|٠|١|٢|٣|٤|٥|٦|٧|٨|٩/.test(x));
       const next = kept.join(" · ");
       if (next !== p.why){ p.why = next; cleaned++; }
     }
