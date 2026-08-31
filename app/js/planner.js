@@ -203,13 +203,28 @@ const FOOD_KINDS = ["طعام", "مقهى"];
 const ISO_DAYS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس",
                      "الجمعة", "السبت", "الأحد"];
 function closedWeekly(a, d){
-  const cw = a && (a.closed_weekdays || a.cw);
-  if (!Array.isArray(cw) || !cw.length || !d) return false;
+  if (!a || !d) return false;
+  const day = ymd(d);
+  // مغلق بمدى معلن (توقف تلفريك، إجازة سنوية) أو مغلق حتى تاريخ
+  if (a.closed_until && a.closed_until > day) return true;
+  const cr = a.closed_ranges || a.cr;
+  if (Array.isArray(cr) && cr.some(r => r && r.from <= day && (r.to || r.from) >= day))
+    return true;
+  const cw = a.closed_weekdays || a.cw;
+  if (!Array.isArray(cw) || !cw.length) return false;
   const iso = d.getDay() === 0 ? 7 : d.getDay();
   if (!cw.includes(iso)) return false;
   const ex = a.open_daily_months || a.odm;
   if (Array.isArray(ex) && ex.includes(d.getMonth() + 1)) return false;
   return true;
+}
+// سبب إغلاق ذلك اليوم كما نشره المصدر — يُقال للمستخدم بنصّه لا بحكم عام.
+function closedWhy(a, d){
+  const day = ymd(d);
+  const cr = a && (a.closed_ranges || a.cr);
+  const hit = Array.isArray(cr)
+    ? cr.find(r => r && r.from <= day && (r.to || r.from) >= day) : null;
+  return hit?.why_ar || "";
 }
 const closedDaysText = (a) => {
   const cw = a && (a.closed_weekdays || a.cw);
@@ -428,17 +443,31 @@ export function planner(ctx, tripId, render){
   // الخطة تحمل نسخة من إحداثيات كل مكان يوم أُضيف — فإن صححنا السجل بعدها
   // (دبوس انتقل من قمة الجبل إلى محطة الوادي) وجب أن تلحق الخطة به.
   if (city){
+    // السجل يتقدّم والخطة محفوظة منذ زمن: كل فتحة تُحدِّث ما يخص كل مكان من
+    // السجل — إحداثيه، وأيقونته، وأيام إغلاقه. وكيلٌ يكتشف إغلاقًا اليوم
+    // يجب أن يبلغ خطةً أُنشئت الأسبوع الماضي.
     const byQid = {};
+    for (const l of legsOf(trip))
+      for (const a of (store.attractions?.[l.cityId] || [])) byQid[a.qid] = a;
     for (const a of (store.attractions?.[city.id] || [])) byQid[a.qid] = a;
     let moved = 0;
     for (const p of trip.plan){
       const a = p.qid && byQid[p.qid];
-      if (!a || !(a.lat || a.lon)) continue;
-      if (Math.abs(a.lat - p.lat) > 1e-5 || Math.abs(a.lon - p.lon) > 1e-5){
+      if (!a) continue;
+      if ((a.lat || a.lon)
+          && (Math.abs(a.lat - p.lat) > 1e-5 || Math.abs(a.lon - p.lon) > 1e-5)){
         p.lat = a.lat; p.lon = a.lon; p.roadM = a.road_m || 0; moved++;
       }
-      if (!p.en && a.name_en){ p.en = a.name_en; moved++;
-      }
+      if (!p.en && a.name_en){ p.en = a.name_en; moved++; }
+      if (a.icon_id && p.icon !== a.icon_id){ p.icon = a.icon_id; moved++; }
+      const sync = (k, v) => {
+        const now = JSON.stringify(v ?? null), was = JSON.stringify(p[k] ?? null);
+        if (now !== was){ if (v == null) delete p[k]; else p[k] = v; moved++; }
+      };
+      sync("cw", a.closed_weekdays);
+      sync("odm", a.open_daily_months);
+      sync("cr", a.closed_ranges);
+      sync("closed_until", a.closed_until);
     }
     if (moved) save();
   }
@@ -747,9 +776,14 @@ export function planner(ctx, tripId, render){
   const legReg = legs.map(l => {
     const c = store.cities.find(x => x.id === l.cityId);
     const from = l.from || tFrom, to = l.to || from;
+    // مغلقٌ في بعض أيام المرحلة لا يُحذف من الاقتراحات: هوبسيلاند مفتوح
+    // أربعة من أيامك ومغلق يومين — يبقى، ويُمنع من يومَي إغلاقه وحدهما.
+    // ولا يسقط إلا من أُغلق كل أيام المرحلة، فذاك لا موضع له فيها.
+    const legDays = [];
+    for (let d = new Date(from + "T00:00:00"), end = new Date((to || from) + "T00:00:00");
+         d <= end; d.setDate(d.getDate() + 1)) legDays.push(new Date(d));
     const items = (store.attractions?.[l.cityId] || [])
-      .filter(a => !(a.closed_until && a.closed_until > from))
-      .filter(a => !(a.closed_ranges || []).some(r => r.from <= to && (r.to || r.from) >= from))
+      .filter(a => !legDays.length || legDays.some(d => !closedWeekly(a, d)))
       .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24);
     return { leg: l, city: c, items };
   }).filter(g => g.items.length);
@@ -767,6 +801,8 @@ export function planner(ctx, tripId, render){
         // أيام إغلاقه ترافقه في الخطة، فيُحسب بها التوزيع ويُنبَّه المستخدم
         ...(a.icon_id ? { icon: a.icon_id } : {}),
         ...(a.closed_weekdays ? { cw: a.closed_weekdays } : {}),
+        ...(a.closed_ranges ? { cr: a.closed_ranges } : {}),
+        ...(a.closed_until ? { closed_until: a.closed_until } : {}),
         ...(a.open_daily_months ? { odm: a.open_daily_months } : {}) });
       tallyPick(a.qid);
     }
@@ -788,7 +824,9 @@ export function planner(ctx, tripId, render){
     row(t("الوصول"), a.access_note_ar
       || (a.access_minutes ? tt`${a.access_minutes} د مشيًا` : ""));
     row(t("الموسم"), a.season_note_ar);
-    row(t("يغلق"), closedDaysText(a));
+    row(t("يغلق"), [closedDaysText(a),
+      ...(a.closed_ranges || []).map(r => `${r.from} → ${r.to || r.from}: ${r.why_ar || ""}`)]
+      .filter(Boolean).join(" · "));
     row(t("لمن"), a.audience_note_ar
       || (Array.isArray(a.audiences) ? a.audiences.join("، ") : ""));
     row(t("الشروط"), [a.min_age ? tt`العمر من ${a.min_age} سنة` : "",
@@ -1120,7 +1158,8 @@ export function planner(ctx, tripId, render){
           // إغلاق أسبوعي وقع في يومه: تنبيه ظاهر لا سطر رمادي — زيارةٌ
           // مغلقة تُفسد اليوم كله، فالأولى أن تُرى قبل السفر لا عنده.
           (p.day >= 0 && days[p.day] && closedWeekly(p, days[p.day]))
-            ? el("div.shut", {}, tt`مغلق يوم ${ISO_DAYS_AR[(days[p.day].getDay() || 7) - 1]} — انقله ليوم آخر`)
+            ? el("div.shut", {}, closedWhy(p, days[p.day])
+                || tt`مغلق يوم ${ISO_DAYS_AR[(days[p.day].getDay() || 7) - 1]} — انقله ليوم آخر`)
             : null)),
       tools);
     return row;
