@@ -787,7 +787,7 @@ export function planner(ctx, tripId, render){
       el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind)),
       el("div.pn", {}, label),
       el("div.pc", {},
-        a.added_count > 0 ? tt`اختارها ${a.added_count}` : t("اضغط للتفاصيل")));
+        a.added_count > 0 ? tt`اختارها ${a.added_count}` : "‏"));
     const badge = el("button.pickadd" + (chosen ? ".on" : ""),
       { "aria-label": chosen ? t("أزل من الجدول") : t("أضف للجدول"),
         title: chosen ? t("أزل من الجدول") : t("أضف للجدول"),
@@ -814,7 +814,7 @@ export function planner(ctx, tripId, render){
           blurb: p.detail || "", added_count: 0 }, p.name, rm) },
       el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
-      el("div.pc", {}, p.kind || t("اضغط للتفاصيل")));
+      el("div.pc", {}, p.kind || "‏"));
     freeBox.append(el("div.pickwrap" + (p.day >= 0 ? "" : ".pend"), {}, body,
       el("button.pickadd.on", { "aria-label": t("أزل من الجدول"),
         title: t("أزل من الجدول"),

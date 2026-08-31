@@ -336,7 +336,6 @@ export const EN = {
  "وصول ␟": "lands {0}",
  "٣ س في المطار": "3h at the airport",
  "␟ د طريق": "{0} min drive",
- "اضغط للتفاصيل": "Tap for details",
  "أضف للجدول": "Add to plan",
  "أزل من الجدول": "Remove from plan",
  "ألغِ": "Cancel",
