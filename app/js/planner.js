@@ -208,6 +208,8 @@ const FOOD_KINDS = ["طعام", "مقهى"];
 // إغلاق أسبوعي: «مغلق كل اثنين» بيانات حقيقية لم يكن لها حقل، فكان المخطط
 // يقترح ناشماركت يوم أحد ومتحف تاريخ الفنون يوم اثنين. الترقيم ISO (١ الاثنين
 // … ٧ الأحد)، و`open_daily_months` استثناء الشهور التي يفتح فيها كل يوم.
+// التبويب المفتوح في «بيانات رحلتك» — خارج الرسم ليبقى بعد كل إعادة رسم.
+let factsTab = 0;
 const ISO_DAYS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس",
                      "الجمعة", "السبت", "الأحد"];
 function closedWeekly(a, d){
@@ -569,12 +571,27 @@ export function planner(ctx, tripId, render){
   // ── بطاقة الصدق: ما لا يضمنه أي ذكاء مولِّد — تأشيرة مراجَعة من مصدر
   //    رسمي، طقس أرقام حقيقية، طيران متحقق منه. تركب أعلى كل خطة. ──
   if (city){
-    // أقسام فرعية: القارئ يبحث عن «السكن» أو «الطيران» لا عن صفٍّ في قائمة
-    // طويلة. كل قسم صندوقه وعنوانه، وترتيب إنشائها هو ترتيب ظهورها.
-    const facts = el("div.factsecs");
+    // تبويبات: القارئ يفتح ما يريده ولا يمرّ بما لا يعنيه. والاختيار يبقى
+    // بين إعادات الرسم — من فتح «السكن» ثم أضاف فندقًا يجده أمامه لا يبحث عنه.
+    const facts = el("div.facttabs");
+    const tabbar = el("div.tabbar");
+    const panes = el("div.tabpanes");
+    facts.append(tabbar, panes);
+    const tabs = [];
+    const show = (k) => {
+      factsTab = k;
+      tabs.forEach((t2, j) => {
+        t2.btn.classList.toggle("on", j === k);
+        t2.pane.style.display = j === k ? "" : "none";
+      });
+    };
     const sec = (title) => {
       const box = el("div.rows.factrows");
-      facts.append(el("div.factsec", {}, el("h3.facth", {}, title), box));
+      const pane = el("div.tabpane", {}, box);
+      const k = tabs.length;
+      const btn = el("button.tabbtn", { onclick: () => show(k) }, title);
+      tabs.push({ btn, pane });
+      tabbar.append(btn); panes.append(pane);
       return box;
     };
     const secDates = sec(t("تواريخ الرحلة"));
@@ -783,6 +800,7 @@ export function planner(ctx, tripId, render){
     if (!wxRows)
       secWx.append(el("div.row", {}, el("span.who", {},
         "🌤 " + t("حدد تواريخ رحلتك ليظهر طقس شهرها"))));
+    show(Math.min(factsTab, tabs.length - 1));
     inner.append(el("div.card", { style: "margin-bottom:14px" },
       el("h2", { style: "margin-bottom:6px" }, t("بيانات رحلتك")),
       facts,
