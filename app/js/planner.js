@@ -1266,12 +1266,15 @@ export function planner(ctx, tripId, render){
   //    والأخضر بلون الشفق دخل الجدول ويحمل رقم يومه. ──
   const pins = [];
   const seenQ = new Set();
+  // الدبوس يفتح بطاقته، والبطاقة تُبنى بعدُ في الشيفرة — فيمرّ الفتح من هنا.
+  const mapOpen = {};
   for (const p of trip.plan){
     if (p.qid) seenQ.add(p.qid);
     if (!(p.lat || p.lon)) continue;
     pins.push({ lat: p.lat, lon: p.lon, name: p.name,
       mark: p.day >= 0 ? String(p.day + 1) : "•",
-      color: p.day >= 0 ? dayColor(p.day) : null });
+      color: p.day >= 0 ? dayColor(p.day) : null,
+      open: () => mapOpen.place && mapOpen.place(p) });
   }
   for (const st of trip.stays){
     if (st.lat || st.lon)
@@ -1279,9 +1282,10 @@ export function planner(ctx, tripId, render){
   }
   for (const a of reg){
     if (seenQ.has(a.qid) || !(a.lat || a.lon)) continue;
-    pins.push({ lat: a.lat, lon: a.lon,
-      name: (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en)),
-      mark: "•", color: null });
+    const label = (isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en));
+    pins.push({ lat: a.lat, lon: a.lon, name: label, mark: "•", color: null, reg: true,
+      open: () => openDetails([{ a, label,
+        city: mapOpen.cityOf ? mapOpen.cityOf(a) : "" }], 0) });
   }
   let mapSec = null;
   // مقبض الخريطة يعيش خارج كتلتها — روابط الأيام تحته ترسم وتكبّر.
@@ -1340,13 +1344,27 @@ export function planner(ctx, tripId, render){
       const m = L.map(mapBox).setView([pins[0].lat, pins[0].lon], 9);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         { attribution: "© OpenStreetMap" }).addTo(m);
-      const g = L.featureGroup(pins.map(p =>
-        L.marker([p.lat, p.lon], { icon: L.divIcon({ className: "pmark-wrap",
-          html: p.stay
+      // الاسم مكتوبٌ تحت الدبوس لا في تلميحٍ يظهر بالمرور: من يقرأ الخريطة
+      // على هاتفه لا يمرّ بمؤشر. ويختفي حين تتسع الرقعة فلا تزدحم القارة.
+      const esc = (x) => String(x).replace(/[&<>"]/g,
+        c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      const g = L.featureGroup(pins.map(p => {
+        const mk = L.marker([p.lat, p.lon], { icon: L.divIcon({
+          className: "pmark-wrap" + (p.reg ? " regpin" : ""),
+          html: (p.stay
             ? `<div class="pmark stay">${p.mark}</div>`
-            : `<div class="pmark"${p.color ? ` style="background:${p.color}"` : ""}>${p.mark}</div>`,
-          iconSize: [26, 26], iconAnchor: [13, 13] }) })
-          .bindTooltip(p.name))).addTo(m);
+            : `<div class="pmark"${p.color ? ` style="background:${p.color}"` : ""}>${p.mark}</div>`)
+            + `<span class="plabel">${esc(p.name)}</span>`,
+          iconSize: [26, 26], iconAnchor: [13, 13] }) });
+        // الضغط على الدبوس يفتح بطاقة مكانه — كما تفتحها بطاقة المقترحات
+        // وصفّ الجدول سواء.
+        if (p.open) mk.on("click", () => p.open());
+        return mk;
+      })).addTo(m);
+      // أماكن رحلتك وفنادقها تحمل أسماءها في كل رقعة. أما المقترحات التي
+      // لم تخترها فأسماؤها تُطوى حين تتسع الرقعة، وإلا حجب الحبرُ الخريطة.
+      const labelZoom = () => mapBox.classList.toggle("nolabels", m.getZoom() < 10);
+      m.on("zoomend", labelZoom); labelZoom();
       const home = g.getBounds().pad(0.25);
       mapRef.m = m; mapRef.home = home;
       m.fitBounds(home);
@@ -1413,7 +1431,26 @@ export function planner(ctx, tripId, render){
     }
     return (qid && regIndex[qid]) || null;
   };
-  const placeRow = (p) => {
+  // مدينة المكان تُعرف بالجغرافيا أولًا: مكانٌ في شلادمينغ يبقى شلادمينغ
+  // ولو وُضع في يوم فيينا.
+  const cityOfPlace = (p) => {
+    let cid = null, bd = Infinity;
+    if (p.lat || p.lon)
+      for (const l of legsOf(trip)){
+        const c = store.cities.find(x => x.id === l.cityId);
+        if (!c || c.lat == null) continue;
+        const d = kmAB(p, c);
+        if (d < bd){ bd = d; cid = l.cityId; }
+      }
+    if (!cid && p.day >= 0 && days[p.day])
+      cid = legForDay(trip, ymd(days[p.day]))?.cityId;
+    const c = cid && store.cities.find(x => x.id === cid);
+    return c ? cityName(c) : "";
+  };
+
+  // بطاقة المكان: من صف الجدول ومن دبوس الخريطة سواء — بابٌ واحد لا بابان،
+  // واليوم والفترة داخلها لا بجوارها.
+  const openPlaceCard = (p) => {
     const daySel = el("select.menu", {},
       el("option", { value: "-1" }, t("غير موزع")),
       days.map((d, i) => el("option", { value: String(i),
@@ -1429,47 +1466,32 @@ export function planner(ctx, tripId, render){
       document.querySelector(".detcard")?.remove(); };
     daySel.onchange = () => { p.day = +daySel.value; shut(); save(); render(); };
     slotSel.onchange = () => { p.slot = slotSel.value; shut(); save(); render(); };
+    const ctl = el("div.detctl", {},
+      el("label", {}, el("span", {}, t("اليوم")), daySel),
+      el("label", {}, el("span", {}, t("الفترة")), slotSel));
+    const rec = regOf(p.qid);
+    const a = rec || { name_en: clean(p.en), kind: clean(p.kind),
+      where: clean(p.detail), pending: !p.qid, added_count: p.count || 0 };
+    openDetails([{ a, label: p.name, city: cityOfPlace(p) }], 0, () => {
+      trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
+    }, ctl);
+  };
+  mapOpen.place = openPlaceCard;
+  mapOpen.cityOf = (a) => cityOfPlace({ lat: a.lat, lon: a.lon, day: -1 });
+
+  const placeRow = (p) => {
     // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
     const thumb = el("div.rowthumb.kindth", {},
       activityIcon(p.name + " " + (p.en || ""), p.kind, p.icon));
     // تحت الاسم: مدينة المكان — في رحلة بمدينتين هذا ما يحتاجه القارئ،
-    // ونوع الفعالية تقوله الأيقونة. المدينة تُعرف بالجغرافيا أولًا:
-    // مكانٌ في شلادمينغ يبقى شلادمينغ ولو وُضع في يوم فيينا.
-    const placeCity = (() => {
-      let cid = null, bd = Infinity;
-      if (p.lat || p.lon)
-        for (const l of legsOf(trip)){
-          const c = store.cities.find(x => x.id === l.cityId);
-          if (!c || c.lat == null) continue;
-          const d = kmAB(p, c);
-          if (d < bd){ bd = d; cid = l.cityId; }
-        }
-      if (!cid && p.day >= 0 && days[p.day])
-        cid = legForDay(trip, ymd(days[p.day]))?.cityId;
-      const c = cid && store.cities.find(x => x.id === cid);
-      return c ? cityName(c) : "";
-    })();
-    // ضغطةٌ على مكانٍ في الجدول تفتح نافذته كما تفتحها بطاقة المقترحات:
-    // نفس ما يُقرأ قبل الضم يُقرأ بعده. واليوم والفترة داخلها لا بجوارها،
-    // فلا تتمدد أدواتٌ تحت الصف لمن أراد أن يقرأ فقط (طلب طارق).
-    const ctl = el("div.detctl", {},
-      el("label", {}, el("span", {}, t("اليوم")), daySel),
-      el("label", {}, el("span", {}, t("الفترة")), slotSel));
-    const rm = () => {
-      trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
-    };
-    const openRow = () => {
-      const rec = regOf(p.qid);
-      const a = rec || { name_en: clean(p.en), kind: clean(p.kind),
-        where: clean(p.detail), pending: !p.qid, added_count: p.count || 0 };
-      openDetails([{ a, label: p.name, city: placeCity }], 0, rm, ctl);
-    };
+    // ونوع الفعالية تقوله الأيقونة.
+    const placeCity = cityOfPlace(p);
     // نفس بنية صف الحدث (ختم وقت فارغ ثم المربع) — المربعات على خط واحد.
     const row = el("div.trow.prow", { style: "cursor:pointer",
       onclick: (ev) => {
         if (ev.target.closest("select,button,a")) return;
-        openRow();
+        openPlaceCard(p);
       } },
       el("div.tstamp", {}, ""),
       el("div", { style: "display:flex;align-items:center;gap:8px;flex:1;min-width:0" },

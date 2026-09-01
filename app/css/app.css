@@ -498,6 +498,18 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; border: 2px solid #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+/* اسم المكان مكتوبٌ تحت دبوسه — الخريطة تُقرأ بلا مرور مؤشر ولا ضغطة */
+.pmark-wrap { overflow: visible; cursor: pointer; }
+.pmark-wrap .plabel { position: absolute; top: 28px; left: 50%;
+  transform: translateX(-50%); pointer-events: none;
+  max-width: 132px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 11px; font-weight: 800; line-height: 1.5;
+  padding: 1px 6px; border-radius: 7px; color: #22303A;
+  background: rgba(255,255,255,.88); box-shadow: 0 1px 3px rgba(0,0,0,.22); }
+/* رقعةٌ واسعة: أسماء المقترحات وحدها تُطوى — وأماكن رحلتك تبقى مسمّاة */
+.findmap.nolabels .regpin .plabel { display: none; }
+/* المقترح دبوسه أخفت من مكانٍ في جدولك */
+.regpin .plabel { background: rgba(255,255,255,.78); font-weight: 700; }
 
 /* بطاقات الانتقاء في المخطط: صورة تُقنع أسرع من اسم، وعدّاد صادق يرشد */
 .pickrow { display: flex; flex-wrap: wrap; gap: 8px; }
