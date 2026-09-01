@@ -111,11 +111,20 @@ export function home(ctx){
   const upcoming = Trips.upcoming();
   if (upcoming.length){
     const row = el("div.hcards");
-    for (const t of upcoming.slice(0, 6)){
-      row.append(el("div.hcard", {},
-        el("div.cover", { style: "background:linear-gradient(135deg,var(--deep),#8A4520)" }, "✈︎"),
-        el("div.body", {}, el("div.n", {}, t.title),
-          el("div.c", {}, (t.start || "") + (t.end ? " → " + t.end : "")))));
+    for (const tr of upcoming.slice(0, 6)){
+      // الرحلة تُسمّى باسم دولتها ومدنها هنا كما في «رحلاتك القادمة» — بطاقة
+      // واحدة لا اسمين لها في شاشتين.
+      const cs = tripCities(tr, ctx.store);
+      const names = tripCountries(cs).join(" + ");
+      row.append(el("div.hcard", { style: "cursor:pointer",
+          onclick: () => goto("#/plan/" + tr.id) },
+        el("div.cover", { style: cs[0] ? coverStyle(cs[0], null)
+          : "background:linear-gradient(135deg,var(--deep),#8A4520)" },
+          cs[0] ? flag(cs[0].country_code) : "✈︎"),
+        el("div.body", {}, el("div.n", {}, names || tr.title),
+          el("div.c", {}, [cs.map(cityName).join(" + "),
+            (tr.start || "") + (tr.end ? " → " + tr.end : "")]
+            .filter(Boolean).join(" · ")))));
     }
     root.append(section(t("رحلاتك القادمة"), row));
   }
@@ -985,8 +994,29 @@ export function papers(ctx){
 }
 
 /* ── رحلاتك (القادمة فقط — الماضي يعيش في التطبيق) ─────────────────── */
+// مدن الرحلة بترتيب مراحلها، ودولها بلا تكرار — البطاقة والعنوان في صفحة
+// الخطة يقولان الشيء نفسه: الدولة عنوانًا، ومدنها تحتها بينها «+».
+export function tripCities(trip, store){
+  const ids = [];
+  for (const l of (trip.legs || []))
+    if (l.cityId && !ids.includes(l.cityId)) ids.push(l.cityId);
+  if (!ids.length && trip.cityId) ids.push(trip.cityId);
+  return ids.map(id => store.cities.find(c => c.id === id)).filter(Boolean);
+}
+
+export function tripCountries(cities){
+  const out = [];
+  for (const c of cities){
+    const n = countryName(c);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
+
 export function tripCard(ctx, t){
-  const city = t.cityId ? ctx.store.cities.find(c => c.id === t.cityId) : null;
+  const cities = tripCities(t, ctx.store);
+  const city = cities[0] || null;
+  const countries = tripCountries(cities).join(" + ");
   // في «رحلاتك القادمة» البطاقة كلها بابٌ للخطة — لا زر وسيطًا.
   return el("div.dest-row", { style: "cursor:pointer",
       onclick: () => goto("#/plan/" + t.id) },
@@ -994,8 +1024,8 @@ export function tripCard(ctx, t){
       : "background:linear-gradient(135deg,var(--band1),var(--band2))" },
       city ? flag(city.country_code) : "✈︎"),
     el("div.names", {},
-      el("div.n", {}, t.title),
-      city ? el("div.c", {}, countryName(city)) : null,
+      el("div.n", {}, countries || t.title),
+      cities.length ? el("div.c", {}, cities.map(cityName).join(" + ")) : null,
       el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : ""))),
     el("div.side", {}, el("span.ch", {}, "‹")));
 }

@@ -4,7 +4,7 @@
 import { t, t as tt, isEN } from "/app/js/i18n.js";
 import { el, cityName, countryName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
-import { visaLine } from "/app/js/views.js";
+import { visaLine, tripCountries } from "/app/js/views.js";
 import { activityIcon, eventIcon } from "/app/js/icons.js";
 import { matchesLoosely, fold } from "/app/js/searchtext.js";
 
@@ -585,13 +585,18 @@ export function planner(ctx, tripId, render){
   }
   // قبل الرسم: ما أضافه من الخريطة وعندنا مثله يرث بياناته الآن لا غدًا.
   if (adoptFromRegister(trip, store)) save();
-  const titleCities = legsOf(trip)
-    .map(l => store.cities.find(c => c.id === l.cityId))
-    .filter(Boolean).map(cityName).join(" + ");
+  // الدولة عنوانًا والمدن تحتها — كما في بطاقة «رحلاتك القادمة» سواءً.
+  const tripCityList = legsOf(trip)
+    .map(l => store.cities.find(c => c.id === l.cityId)).filter(Boolean);
+  const titleCities = tripCityList.map(cityName).join(" + ");
+  const titleCountries = tripCountries(tripCityList).join(" + ");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
-      el("h1", {}, t`خطة رحلتك${titleCities ? tt(" إلى ") + titleCities : ""}`),
-      el("a.circle", { href: "#/trips" }, "‹")),
+      el("div", { style: "min-width:0" },
+        el("h1", {}, t`خطة رحلتك${titleCountries ? tt(" إلى ") + titleCountries : ""}`),
+        titleCities ? el("div.herocities", {}, titleCities) : null),
+      // الرجوع من الخطة إلى رحلاتك القادمة دائمًا — منها جئت وإليها تعود.
+      el("a.circle", { href: "#/upcoming" }, "‹")),
     // «أضف مدينة أخرى لهذه الرحلة» — المدخل الأول لتعدد المدن (طارق).
     el("div.addcity", { onclick: () => openAddCity() },
       el("span.plus", {}, "+"),

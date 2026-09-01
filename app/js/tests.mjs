@@ -643,6 +643,29 @@ assert(!store.hasRoutes('ZZZ'), 'routes: unknown airport is silent');
   }
 }
 
+// ---- كل مدينة لها غلاف، أو قرارٌ مكتوب بأن لا غلاف لها ----
+// شلادمينغ ظهرت أسابيع عَلَمًا على تدرّج لأن جالب الأغلفة لا يعمل إلا بيد
+// ولا أحد يراجعه. الآن مدينةٌ بلا غلاف تُسقِط الاختبار، إلا أن يكون رفضًا
+// مكتوبًا في credits.json — «لا صورة خير من صورة مكان آخر»، لكن بقرار.
+{
+  const here = path.dirname(new URL(import.meta.url).pathname);
+  const app = path.join(here, '..');
+  const covers = fs.readFileSync(path.join(app, 'js/covers.js'), 'utf8');
+  const listed = new Set([...covers.matchAll(/"(city-[^"]+)"/g)].map((m) => m[1]));
+  const credits = JSON.parse(fs.readFileSync(path.join(app, 'covers/credits.json'), 'utf8'));
+  const naked = citiesFile.records
+    .map((c) => c.id)
+    .filter((id) => !listed.has(id) && credits[id]?.review !== 'rejected');
+  assert(
+    naked.length === 0,
+    `covers: ${naked.length} city(ies) with no cover and no written refusal`
+      + (naked.length ? ` — ${naked.slice(0, 5).join(', ')}` : '')
+  );
+  const missing = [...listed].filter((id) => !fs.existsSync(path.join(app, `covers/${id}.jpg`)));
+  assert(missing.length === 0,
+    `covers: listed with no file — ${missing.slice(0, 5).join(', ')}`);
+}
+
 // ---- done ----
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

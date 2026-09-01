@@ -376,6 +376,8 @@ select.menu{color:var(--accent-ink)}
 /* سطر بطل الصفحة الداخلية: العنوان وزره وجهًا لوجه */
 .herorow{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .herorow h1{margin:0}
+/* المدن تحت اسم الدولة — «شلادمينغ + فيينا» سطرٌ ثانٍ لا عنوانٌ ثانٍ */
+.herocities{margin-top:4px;font-size:14px;font-weight:800;opacity:.82}
 .year-h{font-size:17px;font-weight:900;color:var(--brand);margin:16px 0 8px}
 .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
 .ccell{background:var(--card);border:1px solid var(--line);border-radius:14px;
