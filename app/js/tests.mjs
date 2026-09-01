@@ -3,6 +3,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 
 // ---- localStorage shim, before anything constructs ----
 class MemStorage {
@@ -58,7 +59,12 @@ function assertEq(actual, expected, label) {
 }
 
 // ---- load the real bundle ----
-const DATA_DIR = '/Users/tariqalmalki/Projects/souvenir/TravelMemory/NextTrip';
+// مصدر البيانات: من البيئة أولًا. كان مسارًا ثابتًا على جهاز واحد، فكانت
+// كل جلسة سحابية تسقط عنده قبل أن تفحص شيئًا.
+const DATA_DIR = process.env.SOUVENIR_DATA
+  || (process.env.SOUVENIR_REPO
+      ? path.join(process.env.SOUVENIR_REPO, 'TravelMemory/NextTrip')
+      : path.join(os.homedir(), 'Projects/souvenir/TravelMemory/NextTrip'));
 const readJSON = (name) =>
   JSON.parse(fs.readFileSync(path.join(DATA_DIR, name), 'utf8'));
 

@@ -16,5 +16,10 @@ if [ -f "$HOME/Projects/souvenir/Tools/gate_teams_sync.py" ]; then
 fi
 
 V=$(date +%s)
-sed -i '' -E "s/\?v=[0-9]+/?v=$V/g" app/index.html
+# sed -i يختلف بين BSD وGNU: صيغة الماك تفشل صامتة في لينكس (السحابة).
+if sed --version >/dev/null 2>&1; then
+  sed -i -E "s/\?v=[0-9]+/?v=$V/g" app/index.html      # GNU
+else
+  sed -i '' -E "s/\?v=[0-9]+/?v=$V/g" app/index.html   # BSD/macOS
+fi
 echo "stamped v=$V"
