@@ -6,6 +6,7 @@ import { el, cityName, countryName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
 import { visaLine } from "/app/js/views.js";
 import { activityIcon, eventIcon } from "/app/js/icons.js";
+import { matchesLoosely, fold } from "/app/js/searchtext.js";
 
 const SLOTS = [
   ["morning", "صباح"],
@@ -50,6 +51,77 @@ const ymd = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, 
   + "-" + String(d.getDate()).padStart(2, "0");
 const kmAB = (a, b) => 111 * Math.hypot(a.lat - b.lat,
   (a.lon - b.lon) * Math.cos(a.lat * Math.PI / 180));
+// قيمةٌ محفوظة قد تحمل نص «null» أو «undefined» — وما ليس بمعلومة لا يُعرض.
+// تمرّ عليه كل قيمة قبل أن تصير سطرًا في نافذة التفاصيل.
+const clean = (v) => {
+  const s = (v == null ? "" : String(v)).trim();
+  return (s === "null" || s === "undefined" || s === "NaN") ? "" : s;
+};
+
+// ما أضافه المستخدم بالبحث الحر قد يكون عندنا كاملًا: «شافبيرغ» في سجلنا
+// باسمها العربي وأوقاتها وإغلاقها، وأضافها هو صدفةً من الخريطة لأن بحثه لم
+// يمرّ بالسجل. فنتبنّاها: نقطةٌ واحدة (٤٠٠ م) تعني مكانًا واحدًا، فيرث
+// الكرتُ بياناته ويسقط الطلب عن الوكلاء.
+// الاسم هو المطابِق والمسافة شاهدة: قرب أربعمئة متر في وسط مدينة يجمع
+// الجارَ بجاره — «مسرح الدمى» صار «حديقة ميرابيل» لأنهما على شارع واحد.
+// فلا يُوحَّد مكانان ما لم يتوافق اسماهما، والمسافة تشهد أنه هو لا سميّه
+// في بلدٍ آخر.
+const REG_SAME_KM = 3;
+const nameSame = (name, a) => {
+  const n = fold(String(name || "").split(",")[0]);
+  if (n.length < 3) return false;
+  return [a.name_ar, a.name_en].some(c => {
+    const f = fold(c || "");
+    return f.length >= 3 && (f.includes(n) || n.includes(f));
+  });
+};
+function regSame(pt, name, store){
+  let best = REG_SAME_KM, hit = null;
+  for (const [cid, list] of Object.entries(store.attractions || {}))
+    for (const a of list){
+      if (a.lat == null || a.lon == null || !nameSame(name, a)) continue;
+      const d = kmAB(pt, a);
+      if (d < best){ best = d; hit = { a, cid }; }
+    }
+  return hit;
+}
+function adoptFromRegister(trip, store){
+  let n = 0;
+  for (const p of trip.plan){
+    if (p.qid || !(p.lat || p.lon)) continue;
+    const found = regSame(p, p.name, store) || regSame(p, p.en, store);
+    const hit = found && found.a;
+    if (!hit) continue;
+    p.qid = hit.qid;
+    p.name = (isEN ? (hit.name_en || hit.name_ar) : (hit.name_ar || hit.name_en)) || p.name;
+    p.en = hit.name_en || "";
+    p.kind = hit.kind || p.kind || "";
+    p.count = hit.added_count || 0;
+    p.roadM = hit.road_m || 0;
+    if (hit.icon_id) p.icon = hit.icon_id;
+    if (hit.closed_weekdays) p.cw = hit.closed_weekdays;
+    if (hit.closed_ranges) p.cr = hit.closed_ranges;
+    if (hit.closed_until) p.closed_until = hit.closed_until;
+    if (hit.open_daily_months) p.odm = hit.open_daily_months;
+    delete p.ask; delete p.detail;
+    n++;
+  }
+  return n;
+}
+
+// الطلب يخرج ساعة الإضافة لا في نهاية الشهر: ما ليس في سجلنا يُطلب فورًا،
+// وتبقى البطاقة تدور حتى تصل بياناته. والإحداثي في نصّ الطلب ليعرف الوكيل
+// أي «شافبيرغ» يقصد صاحبها.
+const asked = new Set();
+function askForPlace(p, cityLabel){
+  const q = [p.name, cityLabel,
+    (p.lat || p.lon) ? `(${(+p.lat).toFixed(4)},${(+p.lon).toFixed(4)})` : ""]
+    .filter(Boolean).join(" — ").slice(0, 120);
+  return fetch("https://mcp.souvenirtravel.app/request-place", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ query: q, lang: document.documentElement.lang }) })
+    .then(r => r.ok).catch(() => false);
+}
 // سكن ذلك اليوم — من ينتقل بين مدن له فندق لكل مرحلة.
 function stayForDay(trip, dstr){
   const stays = (trip.stays || []).filter(s => s.lat || s.lon);
@@ -511,6 +583,8 @@ export function planner(ctx, tripId, render){
     }
     if (moved) save();
   }
+  // قبل الرسم: ما أضافه من الخريطة وعندنا مثله يرث بياناته الآن لا غدًا.
+  if (adoptFromRegister(trip, store)) save();
   const titleCities = legsOf(trip)
     .map(l => store.cities.find(c => c.id === l.cityId))
     .filter(Boolean).map(cityName).join(" + ");
@@ -878,7 +952,7 @@ export function planner(ctx, tripId, render){
   // نافذة التفاصيل: لا يضيف المرء إلى جدوله ما لم يره. نعرض ما في السجل
   // ولا نزيد — ما لم يُجمع لا يُخترع، والقرار (أضف / أزل) في يد صاحبه.
   // والأسهم تنقلك بين فعاليات المجموعة نفسها بلا إغلاق وفتح.
-  const openDetails = (list, idx, onRemoveFree) => {
+  const openDetails = (list, idx, onRemoveFree, ctl) => {
     if (document.querySelector(".detback")) return;
     const close = () => { back.remove(); card.remove(); };
     const back = el("div.detback", { onclick: close });
@@ -889,8 +963,11 @@ export function planner(ctx, tripId, render){
       const { a, label, city } = list[i];
       const chosen = onRemoveFree ? true : !!(a.qid && planOf(a.qid));
       const rows = [];
-      const row = (k, v) => v ? rows.push(el("div.detrow", {},
-        el("span.k", {}, k), el("span.v", {}, v))) : null;
+      // لا يُكتب سطرٌ لقيمة ليست معلومة: «null» محفوظًا من خطة قديمة نصٌّ
+      // في العين وفراغٌ في المعنى.
+      const row = (k, v) => { const val = clean(v); return val
+        ? rows.push(el("div.detrow", {}, el("span.k", {}, k), el("span.v", {}, val)))
+        : null; };
       row(t("الأوقات"), a.hours_ar);
       row(t("التذاكر"), a.needs_ticket ? t("تحتاج تذكرة")
         : a.free_entry ? t("الدخول مجاني") : (a.ticket_price_note || ""));
@@ -906,24 +983,35 @@ export function planner(ctx, tripId, render){
         a.min_height_cm ? tt`الطول من ${a.min_height_cm} سم` : ""].filter(Boolean).join(" · "));
       row(t("الموقف"), [a.parking_name, a.parking_note_ar].filter(Boolean).join(" · "));
       row(t("القيمة"), a.value_ar);
-      const blurb = isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en);
+      // مكانٌ كتبه صاحب الرحلة بيده: عنوانه من الخريطة سطرٌ معنون، لا نصٌّ
+      // سائب في موضع التعريف.
+      row(t("العنوان"), a.where);
+      const blurb = clean(isEN ? (a.blurb_en || a.blurb) : (a.blurb || a.blurb_en));
+      const nameEn = clean(a.name_en);
       const nav = (d) => { i = (i + d + list.length) % list.length; paint(); };
-      card.replaceChildren(
+      // `replaceChildren` ليس كـ`el`: ما مرّ إليه فارغًا (بلا صورة، بلا
+      // تعريف، بلا تنبيه) صار عقدة نصّها «null» تُقرأ في وجه المستخدم.
+      // فيُنخل الفارغ قبل أن يدخل النافذة.
+      card.replaceChildren(...[
         el("div.dethead", {},
           el("div.pickicon", {}, activityIcon(label + " " + (a.name_en || ""), a.kind, a.icon_id)),
           el("div", { style: "flex:1;min-width:0" },
             el("h3", {}, label),
             // المدينة أولًا وبوضوح: «هالشتات» تقول لك أين أنت قبل كل تفصيل.
             city ? el("div.detcity", {}, "◉ " + city) : null,
-            a.name_en && a.name_en !== label ? el("div.den", {}, a.name_en) : null),
+            nameEn && nameEn !== label ? el("div.den", {}, nameEn) : null),
           el("button.x", { onclick: close, "aria-label": t("إغلاق") }, "✕")),
         a.has_image ? el("img.detimg", { src: "attractions/" + a.qid + ".jpg",
           alt: label, loading: "lazy", onerror: (e) => e.target.remove() }) : null,
         el("div.detmeta", {},
-          a.kind ? el("span.kind", {}, a.kind) : null,
+          clean(a.kind) ? el("span.kind", {}, clean(a.kind)) : null,
           a.added_count > 0 ? el("span.cnt", {}, tt`اختارها ${a.added_count}`) : null),
         blurb ? el("p.detblurb", {}, blurb) : null,
         rows.length ? el("div.detrows", {}, rows) : null,
+        // ما ليس في سجلنا بعد: نقول إن العمل جارٍ، ولا نترك نافذةً فارغة
+        // يظنّها القارئ عطلًا.
+        a.pending ? el("div.detwait", {}, el("i.spin"),
+          el("span", {}, t("جارٍ جمع بياناتها — أوقاتها وتذاكرها وما يلزم قبل الذهاب"))) : null,
         el("div.detlinks", {},
           a.tickets_url ? el("a", { href: a.tickets_url, target: "_blank",
             rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
@@ -931,6 +1019,9 @@ export function planner(ctx, tripId, render){
             rel: "noopener nofollow" }, t("الموقع الرسمي ↗")) : null),
         (a.hours_ar || a.tickets_url || a.official_url)
           ? el("div.detdisc", {}, t("معلومات استرشادية — تأكد من المصدر")) : null,
+        // مكانٌ في الجدول: يومه وفترته يُنقلان من هنا — لا من صفٍّ يتمدد
+        // تحت البطاقة بأدوات لا يطلبها من أراد أن يقرأ فقط.
+        ctl || null,
         el("div.detbtns", {},
           // التنقل بين فعاليات المجموعة: في العربية السهم الأيمن للسابق.
           list.length > 1 ? el("button.detnav", { "aria-label": t("السابق"),
@@ -944,7 +1035,7 @@ export function planner(ctx, tripId, render){
           } }, chosen ? t("أزل من الجدول") : t("أضف للجدول")),
           list.length > 1 ? el("button.detnav", { "aria-label": t("التالي"),
             title: t("التالي"), onclick: () => nav(1) }, "‹") : null,
-          el("button.detno", { onclick: close }, t("أغلق"))));
+          el("button.detno", { onclick: close }, t("أغلق")))].filter(Boolean));
     };
     paint();
     document.body.append(back, card);
@@ -1033,15 +1124,28 @@ export function planner(ctx, tripId, render){
 
   // ما جاء من البحث الحر بطاقة مختارة هو الآخر — والضغط عليها يلغيه.
   const freeBox = el("div.pickrow", {});
+  const nearestBase = (p) => (bases.length && (p.lat || p.lon))
+    ? bases.reduce((acc, b) => kmAB(p, b) < kmAB(p, acc) ? b : acc, bases[0]) : null;
   for (const p of trip.plan){
     if (p.qid && regQids.has(p.qid)) continue;
     const rm = () => { trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render(); };
+    // ليس في سجلنا بعد: طلبُه خرج للوكلاء، والبطاقة تدور حتى تصل بياناته.
+    const waiting = !p.qid;
+    const base = nearestBase(p);
+    const where = base && kmAB(p, base) < 120 ? cityName(base) : "";
+    if (waiting && !p.ask && !asked.has(p.id)){
+      asked.add(p.id);
+      askForPlace(p, where).then(ok => { if (ok){ p.ask = 1; save(); } });
+    }
     const body = el(p.day >= 0 ? "button.pick.sel" : "button.pick.sel.pend",
-      { onclick: () => openDetails([{ a: { name_en: p.en || "", kind: p.kind || "",
-          blurb: p.detail || "", added_count: 0 }, label: p.name, city: "" }], 0, rm) },
+      { onclick: () => openDetails([{ a: { name_en: clean(p.en), kind: clean(p.kind),
+          where: clean(p.detail), pending: waiting, added_count: 0 },
+          label: p.name, city: where }], 0, rm) },
       el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
-      el("div.pc", {}, p.kind || "‏"));
+      waiting
+        ? el("div.pc.wait", {}, el("i.spin"), t("جارٍ جمع بياناتها"))
+        : el("div.pc", {}, clean(p.kind) || "‏"));
     freeBox.append(el("div.pickwrap" + (p.day >= 0 ? "" : ".pend"), {}, body,
       el("button.pickadd.on", { "aria-label": t("أزل من الجدول"),
         title: t("أزل من الجدول"),
@@ -1064,27 +1168,86 @@ export function planner(ctx, tripId, render){
       input,
       el("span.det", { style: "white-space:nowrap" }, t("أضف مكانًا"))),
     results);
+  // سجلنا أولًا ثم الخريطة: من كتب «شافبيرغ» عندنا سجلها كاملةً — اسمها
+  // العربي وأوقاتها وإغلاقها وأيقونتها — فلا يُضاف صدفةٌ عارية من الخريطة
+  // ولنا أصلها. والأقرب إلى مدن رحلته أوّلًا، ثم الأكثر اختيارًا.
+  const regSearch = (q) => {
+    const out = [];
+    for (const [cid, list] of Object.entries(store.attractions || {}))
+      for (const a of list)
+        if (matchesLoosely(q, [a.name_ar || "", a.name_en || ""])) out.push({ a, cid });
+    const cityOf = (cid) => store.cities.find(c => c.id === cid);
+    return out.map(h => { const c = cityOf(h.cid);
+        return { ...h, c, km: (c && bases.length)
+          ? Math.min(...bases.map(b => kmAB(c, b))) : 9e9 }; })
+      .sort((x, y) => (x.km - y.km) || ((y.a.added_count || 0) - (x.a.added_count || 0)))
+      .slice(0, 6);
+  };
+  // ردٌّ بطيء لحرفٍ سابق لا يكتب في نتائج حرفٍ لاحق.
+  let searchSeq = 0;
+  // نتيجة خريطةٍ عندنا أصلها: اسمٌ يوافق اسمنا ونقطةٌ تشهد أنه هو.
+  const regNear = (pt, name) => {
+    const h = regSame(pt, name, store);
+    return h ? { ...h, c: store.cities.find(c => c.id === h.cid) } : null;
+  };
   input.oninput = () => {
     clearTimeout(nominatimTimer);
+    const seq = ++searchSeq;
     const q = input.value.trim();
     results.replaceChildren();
     if (q.length < 3) return;
+    const regRow = (h) => {
+      const label = (isEN ? (h.a.name_en || h.a.name_ar) : (h.a.name_ar || h.a.name_en));
+      return el("button.srow", { style: "width:100%;text-align:start",
+        onclick: () => openDetails([{ a: h.a, label,
+          city: h.c ? cityName(h.c) : "" }], 0) },
+        el("div", {},
+          el("div.t", {}, label,
+            el("span.inreg", {}, t("في سوفينير"))),
+          el("div.s", {}, [h.c ? cityName(h.c) : "", clean(h.a.kind)]
+            .filter(Boolean).join(" · "))));
+    };
+    const mine = regSearch(q);
+    for (const h of mine) results.append(regRow(h));
     nominatimTimer = setTimeout(async () => {
-      results.replaceChildren(el("div.det", {}, "…"));
+      const wait = el("div.det", {}, "…");
+      results.append(wait);
       const hits = await searchPlaces(q, city).catch(() => []);
-      results.replaceChildren();
+      if (seq !== searchSeq) return;
+      wait.remove();
+      const shown = new Set(mine.map(m => m.a.qid));
+      const seenOsm = new Set();
       for (const h of hits.slice(0, 6)){
+        // الخريطة تعيد المكان الواحد ثلاثًا (نقطة ومساحة وعلاقة) — صفٌّ واحد
+        // يكفي: الاسم نفسه على بعد خمسين مترًا هو هو.
+        const stem = h.display_name.split(",")[0] + "@"
+          + (+h.lat).toFixed(3) + "," + (+h.lon).toFixed(3);
+        if (seenOsm.has(stem)) continue;
+        seenOsm.add(stem);
+        // نتيجة الخريطة التي عندنا أصلها تُعرض بأصلها: من بحث بالألمانية
+        // «Mirabellgarten» يصل إلى «قصر ميرابيل وحدائقه» بسجله كاملًا، لا
+        // إلى صدفةٍ عارية باسم أجنبي. والمطابقة بالنقطة لا بالاسم.
+        const at = { lat: +h.lat, lon: +h.lon };
+        const same = regNear(at, h.display_name);
+        if (same){
+          if (shown.has(same.a.qid)) continue;
+          shown.add(same.a.qid);
+          results.append(regRow(same));
+          continue;
+        }
         results.append(el("button.srow", { style: "width:100%;text-align:start",
           onclick: () => {
-            trip.plan.push({ id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
+            const np = { id: "p" + Date.now() + Math.random().toString(36).slice(2, 6),
               name: h.display_name.split(",")[0], detail: h.display_name,
-              lat: +h.lat, lon: +h.lon, kind: "", day: -1, slot: "" });
+              lat: +h.lat, lon: +h.lon, kind: "", day: -1, slot: "" };
+            trip.plan.push(np);
             save(); render();
           } },
           el("div", {},
             el("div.t", {}, h.display_name.split(",")[0]),
             el("div.s", {}, h.display_name.split(",").slice(1, 4).join("،")))));
       }
+      if (mine.length && !hits.length) return;
       if (hits.length)
         results.append(el("div.det", { style: "margin-top:4px;font-size:10.5px" },
           "© OpenStreetMap"));
@@ -1235,6 +1398,16 @@ export function planner(ctx, tripId, render){
           : t("وزّع الآن"))));
   }
 
+  // السجل بالمعرّف — ليُفتَح لمكانٍ في الجدول ما يُفتح له في المقترحات.
+  let regIndex = null;
+  const regOf = (qid) => {
+    if (!regIndex){
+      regIndex = {};
+      for (const list of Object.values(store.attractions || {}))
+        for (const a of list) regIndex[a.qid] = a;
+    }
+    return (qid && regIndex[qid]) || null;
+  };
   const placeRow = (p) => {
     const daySel = el("select.menu", {},
       el("option", { value: "-1" }, t("غير موزع")),
@@ -1245,8 +1418,12 @@ export function planner(ctx, tripId, render){
       el("option", { value: "" }, "—"),
       SLOTS.map(([v, ar]) => el("option", { value: v,
         ...(p.slot === v ? { selected: true } : {}) }, tt(ar))));
-    daySel.onchange = () => { p.day = +daySel.value; save(); render(); };
-    slotSel.onchange = () => { p.slot = slotSel.value; save(); render(); };
+    // النقل يُغلق نافذته: من نقل مكانًا ليومٍ آخر انتهى شغله بها، ولا تبقى
+    // نافذةٌ معلّقة فوق جدولٍ أُعيد رسمه.
+    const shut = () => { document.querySelector(".detback")?.remove();
+      document.querySelector(".detcard")?.remove(); };
+    daySel.onchange = () => { p.day = +daySel.value; shut(); save(); render(); };
+    slotSel.onchange = () => { p.slot = slotSel.value; shut(); save(); render(); };
     // مربع بأيقونة نوعه كصف الفندق — الصورة تعيش في بطاقات الاختيار،
     // والجدول يُقرأ بالرمز فيهدأ ويتسع (طلب طارق).
     const thumb = el("div.rowthumb.kindth", {},
@@ -1268,20 +1445,26 @@ export function planner(ctx, tripId, render){
       const c = cid && store.cities.find(x => x.id === cid);
       return c ? cityName(c) : "";
     })();
-    // الجدول يقول اليوم والفترة — لا داعي لتكرارهما على كل صف (طلب طارق).
-    // الأدوات تختبئ، وضغطة على الصف تكشفها لمن أراد النقل أو الحذف.
-    const tools = el("div", { style: "display:none;gap:6px;align-items:center;"
-      + "margin-top:6px" },
-      daySel, slotSel,
-      el("button.out", { onclick: (ev) => {
-        ev.stopPropagation();
-        trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
-      } }, "✕"));
+    // ضغطةٌ على مكانٍ في الجدول تفتح نافذته كما تفتحها بطاقة المقترحات:
+    // نفس ما يُقرأ قبل الضم يُقرأ بعده. واليوم والفترة داخلها لا بجوارها،
+    // فلا تتمدد أدواتٌ تحت الصف لمن أراد أن يقرأ فقط (طلب طارق).
+    const ctl = el("div.detctl", {},
+      el("label", {}, el("span", {}, t("اليوم")), daySel),
+      el("label", {}, el("span", {}, t("الفترة")), slotSel));
+    const rm = () => {
+      trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render();
+    };
+    const openRow = () => {
+      const rec = regOf(p.qid);
+      const a = rec || { name_en: clean(p.en), kind: clean(p.kind),
+        where: clean(p.detail), pending: !p.qid, added_count: p.count || 0 };
+      openDetails([{ a, label: p.name, city: placeCity }], 0, rm, ctl);
+    };
     // نفس بنية صف الحدث (ختم وقت فارغ ثم المربع) — المربعات على خط واحد.
     const row = el("div.trow.prow", { style: "cursor:pointer",
       onclick: (ev) => {
-        if (ev.target.closest("select,button")) return;
-        tools.style.display = tools.style.display === "none" ? "flex" : "none";
+        if (ev.target.closest("select,button,a")) return;
+        openRow();
       } },
       el("div.tstamp", {}, ""),
       el("div", { style: "display:flex;align-items:center;gap:8px;flex:1;min-width:0" },
@@ -1298,8 +1481,7 @@ export function planner(ctx, tripId, render){
           (p.day >= 0 && days[p.day] && closedWeekly(p, days[p.day]))
             ? el("div.shut", {}, closedWhy(p, days[p.day])
                 || tt`مغلق يوم ${ISO_DAYS_AR[(days[p.day].getDay() || 7) - 1]} — انقله ليوم آخر`)
-            : null)),
-      tools);
+            : null)));
     return row;
   };
 
@@ -1392,7 +1574,9 @@ export function planner(ctx, tripId, render){
     // حلقة اليوم: من الفندق مرورًا بمحطاته وعودةً إليه.
     const dd = daysOf(trip);
     for (let i = 0; i < dd.length; i++){
-      const st = stayForDay(trip, ymd(dd[i])) || st0;
+      // بلا فندقٍ ليومه لا حلقة تُقاس — وكان هنا رجوعٌ إلى `st0` لا وجود له
+      // فيرمي المتصفح ويسقط القياس كله عن رحلةٍ لم يُسجَّل سكنها بعد.
+      const st = stayForDay(trip, ymd(dd[i]));
       const stops = SLOTS.flatMap(([v]) => trip.plan.filter(p => p.day === i && p.slot === v))
         .concat(trip.plan.filter(p => p.day === i && !p.slot))
         .filter(p => (p.lat || p.lon) && !(p.roadM >= 800));
