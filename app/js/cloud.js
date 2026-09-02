@@ -248,6 +248,11 @@ function signupDoc(uid){ return doc(db, "signups", uid); }
 
 async function markSignup(firstLogin){
   if (!user) return;
+  // «أول مرة» ليست لحظة كتابة هذا السطر بل لحظة إنشاء الحساب، وفايربيس
+  // يحملها منذ اليوم الأول (metadata.creationTime). نأخذها منه لا من ساعتنا،
+  // فيصحّ سطر من سجّل قبل أن يوجد هذا السجل — بمجرد عودته.
+  const ms = v => { const t = Date.parse(v ?? ""); return Number.isNaN(t) ? null : t; };
+  const created = ms(user.metadata?.creationTime);
   const card = {
     name: user.displayName ?? "", email: user.email ?? "",
     photo: user.photoURL ?? "",
@@ -255,8 +260,9 @@ async function markSignup(firstLogin){
     lang: document.documentElement.lang || "ar",
     lastSeen: serverTimestamp(),
   };
-  // أول مرة تُكتب مرة واحدة ولا تُلمس بعدها — وإلا صار «متى جاء» هو «متى عاد».
-  if (firstLogin) card.firstSeen = serverTimestamp();
+  if (created) card.createdAt = created;
+  // الطابع الخادمي يبقى للدخول الجديد وحده حين لا يعطينا فايربيس تاريخًا.
+  if (firstLogin && !created) card.firstSeen = serverTimestamp();
   try { await setDoc(signupDoc(user.uid), card, { merge: true }); }
   catch (e){ console.warn("signup:", e); }
 }

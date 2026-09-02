@@ -1370,7 +1370,7 @@ export function admin(ctx){
             el("div", {},
               el("div.t", {}, r.name || r.email || r.uid),
               el("div.s", {}, r.email || ""),
-              el("div.s", {}, t`أول مرة ${when(r.firstSeen)} · آخر مرة ${when(r.lastSeen)}`),
+              el("div.s", {}, t`أول مرة ${when(r.createdAt ?? r.firstSeen)} · آخر مرة ${when(r.lastSeen)}`),
               el("div.s", {}, (r.providers || []).join(" · "))))))
       : el("div.muted", {}, t("لا أحد بعد.")));
   }).catch(e => people.replaceChildren(
