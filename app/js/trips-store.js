@@ -19,10 +19,27 @@ function readDel(){
 const stamp = () => new Date().toISOString();
 
 export const Trips = {
-  all(){ return read().sort((a, b) => (a.start || "").localeCompare(b.start || "")); },
+  /// بالتاريخ، والرحلة بلا تاريخ في الآخر (حكم طارق 2026-09-02).
+  /// السلسلة الفارغة تسبق كل تاريخ في المقارنة، فكانت رحلة لم تُؤرَّخ بعد
+  /// تتصدّر رحلةً تسافر إليها الأسبوع القادم — والقائمة تسلسلٌ زمني، ومن لا
+  /// تاريخ له لا موضع له فيه إلا آخره.
+  all(){
+    return read().sort((a, b) => {
+      const x = a.start || "", y = b.start || "";
+      if (x && y) return x.localeCompare(y);
+      return x ? -1 : (y ? 1 : 0);
+    });
+  },
+  /// القادمة: ما لم يمضِ آخر يوم فيها — والرحلة بلا تواريخ منها.
+  /// زر «لدي رحلة قادمة لهذه المدينة» يُنشئ الرحلة بلا تاريخ، فكانت تسقط من
+  /// «رحلاتك القادمة» ومن رفّ الرئيسية ومن قائمة الضمّ معًا: رحلةٌ بدأها
+  /// صاحبها ولا يجدها إلا برابط خطتها. (حكم طارق 2026-09-02)
   upcoming(){
     const today = new Date().toISOString().slice(0, 10);
-    return this.all().filter(t => (t.end || t.start || "") >= today);
+    return this.all().filter(t => {
+      const last = t.end || t.start || "";
+      return last ? last >= today : true;
+    });
   },
   add(trip){
     const list = read();

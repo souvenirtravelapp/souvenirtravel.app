@@ -39,6 +39,7 @@ const { Shortlist } = await import('./shortlist.js');
 const { TravelDocuments, documentId, hasExpired } = await import('./papers.js');
 const { NextTripFilter, rainAdmits, nextRainWanted } = await import('./filter.js');
 const ideas = await import('./ideas.js');
+const { Trips } = await import('./trips-store.js');
 
 // ---- tiny harness ----
 let passed = 0;
@@ -664,6 +665,36 @@ assert(!store.hasRoutes('ZZZ'), 'routes: unknown airport is silent');
   const missing = [...listed].filter((id) => !fs.existsSync(path.join(app, `covers/${id}.jpg`)));
   assert(missing.length === 0,
     `covers: listed with no file — ${missing.slice(0, 5).join(', ')}`);
+}
+
+// ---- Trips: ما هو «قادم» ----
+// رحلة بلا تواريخ قادمة (حكم طارق 2026-09-02): زر «لدي رحلة قادمة لهذه
+// المدينة» يُنشئها بلا تاريخ، وكانت تسقط من رفّ الرئيسية ومن «رحلاتك
+// القادمة» ومن قائمة الضمّ معًا — فيبدأ صاحبها رحلة ثم لا يجدها.
+{
+  const day = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  localStorage.setItem('sv.trips', JSON.stringify([
+    { id: 'undated', start: null, end: null },
+    { id: 'ahead',   start: day(20), end: day(26) },
+    { id: 'past',    start: day(-40), end: day(-33) },
+    { id: 'today',   start: day(0),  end: day(0) },
+    { id: 'started', start: day(-2), end: day(2) },   // بدأت ولم تنتهِ
+  ]));
+  const ids = Trips.upcoming().map((t) => t.id);
+  assert(ids.includes('undated'), 'trips: a trip with no dates is upcoming');
+  assertEq(ids[ids.length - 1], 'undated', 'trips: an undated trip sorts last');
+  assertEq(Trips.all().map((t) => t.id).join(','), 'past,started,today,ahead,undated',
+    'trips: dated in order, undated at the end');
+  assert(ids.includes('ahead'), 'trips: a future trip is upcoming');
+  assert(ids.includes('today'), 'trips: a trip ending today is still upcoming');
+  assert(ids.includes('started'), 'trips: a trip under way is upcoming');
+  assert(!ids.includes('past'), 'trips: a finished trip is not upcoming');
+  assertEq(ids.length, 4, 'trips: upcoming count');
+  localStorage.removeItem('sv.trips');
 }
 
 // ---- done ----
