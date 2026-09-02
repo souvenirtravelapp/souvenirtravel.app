@@ -54,3 +54,30 @@ export function kiwiLink(fromIata, toIata, sub){
          "&promo_id=3791&source_type=customlink&type=click&custom_url=" +
          encodeURIComponent(deep);
 }
+
+/* ── البوابة: نافذة وسطى على المكوّن القائم `.gate` ──
+   كانت تُكتب من جديد في كل موضع (بوابة الحساب، ورقة الرأي)، وصارت تُطلب في
+   المخطط لكل ضمٍّ وحذف. تتلقى الدالّةُ `close` فتقدر الخطواتُ المتتابعة أن
+   تبدّل ما في البطاقة بلا فتح نافذة فوق نافذة. */
+export function gate(build, onClose){
+  if (document.querySelector(".sheetback")) return null;
+  const back = el("div.sheetback", { onclick: close });
+  const card = el("div.gate", {});
+  // الإغلاق واحد مهما جاء — من زرّ أو من لمسة الخلفية — فما بعده يجري مرة.
+  function close(){ back.remove(); card.remove(); if (onClose) onClose(); }
+  for (const node of [build(close)].flat())
+    if (node) card.append(node);
+  document.body.append(back, card);
+  return close;
+}
+
+/// سؤال تأكيد بلغة سوفينير — `confirm()` المتصفح لا يُترجم ولا يشبه الموقع،
+/// وحكم طارق: تأكيد عند كل إجراء. الفعل المؤكَّد يجري بعد إغلاق البطاقة.
+export function askConfirm({ title, body, yes, danger = false, onYes }){
+  gate(close => [
+    el("h3", {}, title),
+    body ? el("p", {}, body) : null,
+    el("button.btn" + (danger ? ".danger" : ""), { onclick: () => { close(); onYes(); } }, yes),
+    el("button.later", { onclick: close }, t("إلغاء")),
+  ]);
+}

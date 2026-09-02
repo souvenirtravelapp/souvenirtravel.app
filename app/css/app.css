@@ -15,6 +15,9 @@
   --night:linear-gradient(165deg,#0A1626 0%,#0E2B44 38%,#14556A 62%,#1F8F7C 82%,#35C493 100%);
   --cold:#5B84A8; --mild:#678B51; --warm:#C98A3B; --hot:#B15331;
   --visited:#678B51; --drop:#4D94EB; --sun:#E0A458;
+  /* منحنيات المرجع التصميمي — تُسمّى هنا فلا تُخترع بدائل في كل موضع. */
+  --ease-out:cubic-bezier(0.23,1,0.32,1);
+  --ease-in-out:cubic-bezier(0.77,0,0.175,1);
 }
 *{box-sizing:border-box;margin:0}
 html{height:100%}
@@ -868,3 +871,60 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .adminrow .s{color:var(--muted);font-size:12.5px;margin-top:2px}
 .fbbody{white-space:pre-wrap;margin:6px 0 2px;font-size:14.5px;color:var(--deep)}
 .muted{color:var(--muted);font-size:13.5px}
+
+/* ── البوابة حين تحمل قائمة أو تأكيدًا ──
+   نافذة وسطى، فأصلها مركزها (المرجع §7)، ودخولها من 0.96 لا من العدم.
+   وتحت «تقليل الحركة» يبقى التلاشي ويسقط الانتقال المكاني وحده. */
+@keyframes gatein{from{opacity:0;transform:translate(-50%,-50%) scale(.96)}
+                  to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes backin{from{opacity:0}to{opacity:1}}
+.gate{animation:gatein 200ms var(--ease-out) both;transform-origin:center}
+.sheetback{animation:backin 200ms var(--ease-out) both}
+@media (prefers-reduced-motion: reduce){
+  .gate{animation:backin 200ms var(--ease-out) both}
+}
+.gate .btn{display:block;width:100%;margin-top:10px}
+.gate .btn:active{transform:scale(.97)}
+.btn.danger{background:var(--card);color:var(--hot);border:1px solid var(--hot)}
+
+/* صفوف القائمة داخل البوابة: رحلاتك القادمة، أو مدن الرحلة ودولها. */
+.gatelist{text-align:start;margin:2px 0 4px;max-height:46vh;overflow-y:auto}
+.gatelist h4{display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:800;color:var(--brand);margin:10px 0 6px}
+.gatelist h4:first-child{margin-top:0}
+.gatelist .addhead{margin:14px 0 6px}
+.gatelist .grow{display:flex;align-items:center;gap:8px;width:100%;text-align:start;
+  padding:10px 12px;margin-bottom:6px;background:var(--card);
+  border:1px solid var(--line);border-radius:14px}
+.gatelist button.grow{cursor:pointer}
+.gatelist .grow .t{font-weight:700;font-size:14.5px}
+.gatelist .grow .d{margin-inline-start:auto;font-size:12px;color:var(--muted)}
+.gatelist .x{margin-inline-start:auto;color:var(--hot);font-size:15px;
+  width:30px;height:30px;border-radius:50%;flex:0 0 30px;cursor:pointer}
+@media (hover:hover) and (pointer:fine){
+  .gatelist button.grow:hover{border-color:var(--accent)}
+  .gatelist .x:hover{background:rgba(177,83,49,.10)}
+}
+.gatelist .x:active{transform:scale(.97)}
+.gateinput{width:100%;padding:10px 12px;border:1px solid var(--line);
+  border-radius:14px;background:var(--card);margin-top:4px}
+
+/* «تعديل» بجوار مدن الرحلة في رأس الخطة — رابط هادئ لا زر ينافس العنوان. */
+.editplaces{margin-inline-start:8px;font-weight:800;font-size:12.5px;
+  color:var(--brand);text-decoration:underline;text-underline-offset:3px}
+.editplaces:active{transform:scale(.97)}
+/* صندوق إضافة المدينة داخل «تعديل» — القائمة تحته لا تزاحم القائمة فوقه. */
+.gate .gateinput+.gatelist{margin-top:8px;max-height:30vh}
+
+/* تبويبات اللوحة: ثلاثة أبواب في سطر، المفتوح منها بلون العلامة. */
+.admintabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.admintabs button{padding:8px 16px;border:1px solid var(--line);background:var(--card);
+  color:var(--muted);border-radius:999px;cursor:pointer;font:inherit;font-weight:700;font-size:14px}
+.admintabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.agteam{padding:12px 0;border-top:1px solid var(--line)}
+.agteam:first-child{border-top:0}
+.agteam>.t{font-weight:900;color:var(--deep);font-size:15.5px}
+.agteam>.s{color:var(--muted);font-size:13px;margin-top:2px}
+.agrow{margin:10px 0 0;padding-inline-start:12px;border-inline-start:2px solid var(--line)}
+.agrow .t{font-weight:700;color:var(--deep);font-size:14px}
+.agmission{color:var(--muted);font-size:13px;line-height:1.65;margin-top:2px}

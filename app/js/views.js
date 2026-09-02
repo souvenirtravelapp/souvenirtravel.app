@@ -1,7 +1,7 @@
 // Souvenir's screens, translated for the web. Each view mirrors its iOS
 // sibling and speaks only to the ported logic modules; where the two
 // platforms must differ, the reason is written at the spot.
-import { el, flag, cityName, countryName, kiwiLink,
+import { el, flag, cityName, countryName, kiwiLink, gate,
          MONTHS_AR, WARMTH_AR, RAIN_AR, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
 import { FREE_REQUIREMENTS, VISA_GROUPS } from "./store.js";
 import { RAIN_WANTED, nextRainWanted, DESTINATION_TAGS } from "./filter.js";
@@ -550,6 +550,94 @@ function destRow(ctx, city, redraw, month = ctx.filter.month){
       el("span.view", {}, tt("عرض الوجهة"))));
 }
 
+/* ── من وجهةٍ إلى خطة: رحلة جديدة أم مرحلة في رحلة قائمة ──
+   كان الزر يختار `ups[0]` — أول رحلة قادمة — ويسأل عنها وحدها نعم أو لا،
+   فمن عنده رحلتان لم يملك أن يقول «بل الأخرى»، ومن قال لا وجد رحلة جديدة
+   أُنشئت له بلا سؤال. صار الاختيار معلنًا على ثلاث خطوات في بطاقة واحدة:
+   إلى أين، ثم أيّ رحلة، ثم التأكيد. (طارق 2026-09-02) */
+
+/// اسم الرحلة كما يُقرأ في «رحلاتك القادمة»: دولها، وإلا عنوانها.
+function tripLabel(trip, store){
+  const names = tripCountries(tripCities(trip, store));
+  return names.join(" + ") || trip.title || tt("رحلتك القادمة");
+}
+
+/// مدنها تحت اسمها — رحلتان إلى الدولة نفسها لا تُفرَّقان بالدولة.
+function tripCitiesLine(trip, store){
+  return tripCities(trip, store).map(cityName).join(" + ");
+}
+
+function tripWhen(trip){
+  return (trip.start || tt("؟")) + (trip.end ? " ← " + trip.end : "");
+}
+
+function startNewTrip(city){
+  const id = Trips.add({ title: cityName(city), cityId: city.id, start: null, end: null });
+  goto("#/plan/" + id);
+}
+
+/// ضمّ المدينة مرحلةً إلى رحلة قائمة.
+/// قسمة أولى معقولة: المدينة الجديدة تأخذ آخر ثلث الرحلة والسابقة تنتهي
+/// عندها — والتواريخ تُعدَّل بعدها من «مراحل الرحلة»، كما في المخطط سواءً.
+function joinCityToTrip(host, city){
+  const legs = (host.legs && host.legs.length) ? host.legs.slice()
+    : (host.cityId ? [{ cityId: host.cityId, from: host.start || "",
+                        to: host.end || host.start || "" }] : []);
+  const last = legs[legs.length - 1];
+  let from = last?.to || host.start || "";
+  let to = host.end || from;
+  if (host.start && host.end && host.end > host.start){
+    const d0 = new Date(host.start + "T00:00:00");
+    const d1 = new Date(host.end + "T00:00:00");
+    const n = Math.round((d1 - d0) / 86400000) + 1;
+    if (n >= 3){
+      const cut = new Date(d1);
+      cut.setDate(cut.getDate() - Math.max(1, Math.round(n / 3)) + 1);
+      from = cut.toISOString().slice(0, 10);
+      to = host.end;
+      if (last) last.to = from;
+    }
+  }
+  legs.push({ cityId: city.id, from, to });
+  Trips.update(host.id, { legs });
+  goto("#/plan/" + host.id);
+}
+
+/// البطاقة ذات الخطوات الثلاث. تُستدعى وعنده رحلة قادمة واحدة على الأقل.
+function chooseTripForCity(city, ups, store){
+  const name = cityName(city);
+  gate(close => {
+    const body = el("div");
+    const step1 = () => body.replaceChildren(
+      el("h3", {}, t`أين تضع ${name}؟`),
+      el("p", {}, t("ابدأ لها رحلة جديدة، أو اجعلها مرحلة في رحلة قادمة عندك.")),
+      el("button.btn", { onclick: () => { close(); startNewTrip(city); } },
+        t("رحلة جديدة")),
+      el("button.btn.ghost", { onclick: step2 }, t("أضفها إلى رحلة قائمة")),
+      el("button.later", { onclick: close }, t("إلغاء")));
+    const step2 = () => body.replaceChildren(
+      el("h3", {}, t("إلى أي رحلة؟")),
+      el("p", {}, t`اختر الرحلة التي تضم ${name} إليها.`),
+      el("div.gatelist", {}, ...ups.map(trip => {
+        const cities = tripCitiesLine(trip, store);
+        return el("button.grow", { onclick: () => step3(trip) },
+          el("div", { style: "min-width:0" },
+            el("div.t", {}, tripLabel(trip, store)),
+            cities ? el("div.d", { style: "margin:0" }, cities) : null),
+          el("span.d", {}, tripWhen(trip)));
+      })),
+      el("button.later", { onclick: step1 }, t("رجوع")));
+    const step3 = (trip) => body.replaceChildren(
+      el("h3", {}, t("تأكيد الإضافة")),
+      el("p", {}, t`ستُضاف ${name} مرحلةً إلى ${tripLabel(trip, store)}، وتأخذ آخر ثلث الرحلة — والتواريخ تعدّلها بعدُ من «مراحل الرحلة».`),
+      el("button.btn", { onclick: () => { close(); joinCityToTrip(trip, city); } },
+        t("أضفها")),
+      el("button.later", { onclick: step2 }, t("رجوع")));
+    step1();
+    return body;
+  });
+}
+
 /* ── صفحة الوجهة ───────────────────────────────────────────────────── */
 export function destination(ctx, cityId){
   const { store, filter, prefs, shortlist, papers } = ctx;
@@ -584,43 +672,13 @@ export function destination(ctx, cityId){
             start: null, end: null });
         return;
       }
-      // مدينة في رحلة قائمة؟ افتحها. وإلا فاسأل: رحلة جديدة أم مرحلة فيها؟
+      // مدينة في رحلة قائمة؟ افتحها. وإلا فالاختيار له: رحلة جديدة أم مرحلة فيها؟
       const ups = Trips.upcoming();
       const already = ups.find(x => x.cityId === city.id
         || (x.legs || []).some(l => l.cityId === city.id));
       if (already){ goto("#/plan/" + already.id); return; }
-      const host = ups[0];
-      if (host){
-        const hostName = host.title || tt("رحلتك القادمة");
-        if (confirm(tt`عندك رحلة إلى ${hostName}. أتضم ${cityName(city)} إليها كمرحلة؟`)){
-          const legs = (host.legs && host.legs.length) ? host.legs.slice()
-            : (host.cityId ? [{ cityId: host.cityId, from: host.start || "",
-                                to: host.end || host.start || "" }] : []);
-          // نفس قسمة المخطط: المدينة الجديدة تأخذ آخر ثلث الرحلة، والسابقة
-          // تنتهي عندها — ثم تُعدَّل التواريخ من «مراحل الرحلة».
-          const last = legs[legs.length - 1];
-          let from = last?.to || host.start || "";
-          let to = host.end || from;
-          if (host.start && host.end && host.end > host.start){
-            const d0 = new Date(host.start + "T00:00:00");
-            const d1 = new Date(host.end + "T00:00:00");
-            const n = Math.round((d1 - d0) / 86400000) + 1;
-            if (n >= 3){
-              const cut = new Date(d1);
-              cut.setDate(cut.getDate() - Math.max(1, Math.round(n / 3)) + 1);
-              from = cut.toISOString().slice(0, 10);
-              to = host.end;
-              if (last) last.to = from;
-            }
-          }
-          legs.push({ cityId: city.id, from, to });
-          Trips.update(host.id, { legs });
-          goto("#/plan/" + host.id);
-          return;
-        }
-      }
-      const id = Trips.add({ title: cityName(city), cityId: city.id, start: null, end: null });
-      goto("#/plan/" + id);
+      if (!ups.length){ startNewTrip(city); return; }
+      chooseTripForCity(city, ups, store);
     } },
     t("لدي رحلة قادمة لهذه المدينة — ابدأ التخطيط لها")));
 
@@ -1338,13 +1396,21 @@ export function feedbackSheet(){
 /* ── لوحة الإدارة ──
    لطارق وحده: من دخل الموقع، ومتى، وماذا قال. القواعد في Firestore هي
    الحارس الحقيقي؛ وإخفاء الصفحة أدبٌ لا أمن. */
+/* ── لوحة الإدارة ──
+   ثلاثة تبويبات: وكلاء الذكاء الذين يشتغلون على سوفينير، ومن سجّل فيه،
+   وما قالوه. لطارق وحده؛ القواعد في Firestore هي الحارس، وإخفاء الصفحة أدب.
+   سجل الوكلاء يعيش في عامل Cloudflare خلف مفتاح — يضعه طارق في متصفحه هو
+   مرة واحدة، فلا يسكن مفتاحٌ في شيفرة موقع عام. */
+const TEAMS_API = "https://mcp.souvenirtravel.app/teams/data";
+const TEAMS_KEY = "sv.teamsKey";
+
 export function admin(ctx){
   const root = el("div.wide");
   root.append(el("div.hero3", {},
     el("div.herorow", {},
       el("h1", {}, t("لوحة الإدارة")),
       el("a.circle", { href: "#/home" }, "‹")),
-    el("p", {}, t("من سجّل في سوفينير، وماذا قالوا."))));
+    el("p", {}, t("وكلاء سوفينير، ومن سجّل فيه، وماذا قالوا."))));
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.isAdmin()){
@@ -1357,35 +1423,108 @@ export function admin(ctx){
     if (!d || isNaN(d)) return "—";
     return d.toLocaleString(isEN ? "en-GB" : "ar", { dateStyle: "medium", timeStyle: "short" });
   };
-  const people = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
-  const says = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
-  inner.append(el("div.section", {}, el("h2", {}, t("المسجّلون")), people));
-  inner.append(el("div.section", {}, el("h2", {}, t("الملاحظات")), says));
 
-  cloud.listSignups().then(rows => {
-    people.replaceChildren(rows.length
-      ? el("div", {},
-          el("div.admincount", {}, t`العدد: ${String(rows.length)}`),
-          ...rows.map(r => el("div.adminrow", {},
+  const body = el("div");
+  const TABS = [
+    { id: "agents",   label: t("الوكلاء"),   draw: agentsTab },
+    { id: "users",    label: t("المسجّلون"), draw: usersTab },
+    { id: "feedback", label: t("الملاحظات"), draw: feedbackTab },
+  ];
+  // التبويب المفتوح يبقى بين الزيارات — من يتابع الملاحظات يفتحها كل مرة.
+  let on = (() => { try { return localStorage.getItem("sv.adminTab"); } catch { return null; } })();
+  if (!TABS.some(x => x.id === on)) on = "agents";
+  const bar = el("div.admintabs");
+  function show(id){
+    on = id;
+    try { localStorage.setItem("sv.adminTab", id); } catch {}
+    bar.replaceChildren(...TABS.map(x =>
+      el("button" + (x.id === on ? ".on" : ""), { onclick: () => show(x.id) }, x.label)));
+    body.replaceChildren(TABS.find(x => x.id === on).draw());
+  }
+  inner.append(bar, body);
+  show(on);
+  return root;
+
+  /* ── الوكلاء: الفرق ومهماتها كما هي في السجل الحي، قراءةً فقط.
+       التحرير يبقى في صفحة العامل — لوحة القراءة لا تُغري بتعديل عابر. */
+  function agentsTab(){
+    const wrap = el("div");
+    const key = (() => { try { return localStorage.getItem(TEAMS_KEY) || ""; } catch { return ""; } })();
+    if (!key){ wrap.append(keyCard()); return wrap; }
+    const card = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+    wrap.append(card);
+    fetch(TEAMS_API + "?key=" + encodeURIComponent(key))
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+      .then(d => {
+        const teams = d?.teams ?? [];
+        const n = teams.reduce((a, x) => a + (x.agents?.length ?? 0), 0);
+        card.replaceChildren(
+          el("div.admincount", {}, t`${String(teams.length)} فرق · ${String(n)} وكيلًا`),
+          ...teams.map(tm => el("div.agteam", {},
+            el("div.t", {}, tm.name || tm.id),
+            tm.goal ? el("div.s", {}, tm.goal) : null,
+            ...(tm.agents ?? []).map(a => el("div.agrow", {},
+              el("div.t", {}, a.name || a.id),
+              el("div.agmission", {}, a.mission || ""))))),
+          el("div", { style: "margin-top:14px;display:flex;gap:10px;flex-wrap:wrap" },
+            el("a.btn", { href: "https://mcp.souvenirtravel.app/teams?key=" + encodeURIComponent(key),
+                          target: "_blank", rel: "noopener" }, t("تعديل الوكلاء")),
+            el("button.later", { onclick: () => {
+              try { localStorage.removeItem(TEAMS_KEY); } catch {}
+              show("agents");
+            } }, t("انسَ المفتاح على هذا الجهاز"))));
+      })
+      .catch(e => card.replaceChildren(
+        el("div.muted", {}, t("تعذر قراءة سجل الوكلاء. ") + String(e?.message || e)),
+        el("div", { style: "margin-top:10px" }, keyCard())));
+    return wrap;
+  }
+
+  // المفتاح يكتبه طارق بنفسه ويبقى في متصفحه — لا يمر بي ولا يُرفع مع الموقع.
+  function keyCard(){
+    const inp = el("input.fbtext", { type: "password", placeholder: t("مفتاح صفحة الوكلاء"),
+                                     style: "min-height:auto;height:auto" });
+    return el("div.card", {},
+      el("p", {}, t("سجل الوكلاء محفوظ خارج الموقع بمفتاح. اكتبه مرة واحدة ليبقى في هذا المتصفح وحده.")),
+      inp,
+      el("button.btn", { style: "width:100%;margin-top:10px", onclick: () => {
+        const v = inp.value.trim();
+        if (!v) return;
+        try { localStorage.setItem(TEAMS_KEY, v); } catch {}
+        show("agents");
+      } }, t("احفظ وافتح")));
+  }
+
+  function usersTab(){
+    const card = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+    cloud.listSignups().then(rows => {
+      card.replaceChildren(rows.length
+        ? el("div", {},
+            el("div.admincount", {}, t`العدد: ${String(rows.length)}`),
+            ...rows.map(r => el("div.adminrow", {},
+              el("div", {},
+                el("div.t", {}, r.name || r.email || r.uid),
+                el("div.s", {}, r.email || ""),
+                el("div.s", {}, t`أول مرة ${when(r.createdAt ?? r.firstSeen)} · آخر مرة ${when(r.lastSeen)}`),
+                el("div.s", {}, (r.providers || []).join(" · "))))))
+        : el("div.muted", {}, t("لا أحد بعد.")));
+    }).catch(e => card.replaceChildren(
+      el("div.muted", {}, t("تعذر القراءة — تأكد من قواعد Firestore. ") + String(e?.code || e))));
+    return card;
+  }
+
+  function feedbackTab(){
+    const card = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+    cloud.listFeedback().then(rows => {
+      card.replaceChildren(rows.length
+        ? el("div", {}, ...rows.map(r => el("div.adminrow", {},
             el("div", {},
               el("div.t", {}, r.name || r.email || r.uid),
-              el("div.s", {}, r.email || ""),
-              el("div.s", {}, t`أول مرة ${when(r.createdAt ?? r.firstSeen)} · آخر مرة ${when(r.lastSeen)}`),
-              el("div.s", {}, (r.providers || []).join(" · "))))))
-      : el("div.muted", {}, t("لا أحد بعد.")));
-  }).catch(e => people.replaceChildren(
-    el("div.muted", {}, t("تعذر القراءة — تأكد من قواعد Firestore. ") + String(e?.code || e))));
-
-  cloud.listFeedback().then(rows => {
-    says.replaceChildren(rows.length
-      ? el("div", {}, ...rows.map(r => el("div.adminrow", {},
-          el("div", {},
-            el("div.t", {}, r.name || r.email || r.uid),
-            el("div.fbbody", {}, r.text || ""),
-            el("div.s", {}, t`${when(r.when)} · ${r.page || ""}`)))))
-      : el("div.muted", {}, t("لا ملاحظات بعد.")));
-  }).catch(e => says.replaceChildren(
-    el("div.muted", {}, t("تعذر القراءة — تأكد من قواعد Firestore. ") + String(e?.code || e))));
-
-  return root;
+              el("div.fbbody", {}, r.text || ""),
+              el("div.s", {}, t`${when(r.when)} · ${r.page || ""}`)))))
+        : el("div.muted", {}, t("لا ملاحظات بعد.")));
+    }).catch(e => card.replaceChildren(
+      el("div.muted", {}, t("تعذر القراءة — تأكد من قواعد Firestore. ") + String(e?.code || e))));
+    return card;
+  }
 }

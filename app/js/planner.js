@@ -2,7 +2,8 @@
 // سلة تجمع قبل التوزيع، رابط خرائط واحد لليوم، والفراغ محترم.
 // «أضف مكانًا» يقتل حلقة الاسم←الخرائط←الجدول: Nominatim يحدد ونحن نرتب.
 import { t, t as tt, isEN } from "/app/js/i18n.js";
-import { el, cityName, countryName, MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
+import { el, flag, cityName, countryName, gate, askConfirm,
+         MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
 import { visaLine, tripCountries } from "/app/js/views.js";
 import { activityIcon, eventIcon } from "/app/js/icons.js";
@@ -594,7 +595,10 @@ export function planner(ctx, tripId, render){
     el("div.herorow", {},
       el("div", { style: "min-width:0" },
         el("h1", {}, t`خطة رحلتك${titleCountries ? tt(" إلى ") + titleCountries : ""}`),
-        titleCities ? el("div.herocities", {}, titleCities) : null),
+        titleCities ? el("div.herocities", {}, titleCities,
+          // «تعديل» عند العنوان: من قرأ دولته ومدنه هنا يصحّحهما هنا.
+          el("button.editplaces", { onclick: () => openEditPlaces() },
+            t("تعديل"))) : null),
       // الرجوع من الخطة إلى رحلاتك القادمة دائمًا — منها جئت وإليها تعود.
       el("a.circle", { href: "#/upcoming" }, "‹")),
     // «أضف مدينة أخرى لهذه الرحلة» — المدخل الأول لتعدد المدن (طارق).
@@ -616,24 +620,7 @@ export function planner(ctx, tripId, render){
         .filter(c => !legsOf(trip).some(l => l.cityId === c.id)).slice(0, 6);
       for (const c of found){
         hits.append(el("button.srow", { style: "width:100%;text-align:start",
-          onclick: () => {
-            const legs = legsOf(trip).slice();
-            const last = legs[legs.length - 1];
-            // قسمة أولى معقولة: المدينة الجديدة تأخذ آخر ثلث الرحلة، والسابقة
-            // تنتهي عندها. والتواريخ تُعدَّل بعدها من «مراحل الرحلة».
-            const all = daysOf(trip);
-            let from = last?.to || trip.start || "";
-            let to = trip.end || from;
-            if (all.length >= 3){
-              const cut = all[Math.max(1, all.length - Math.max(1, Math.round(all.length / 3)))];
-              from = ymd(cut); to = ymd(all[all.length - 1]);
-              if (last) last.to = from;
-            }
-            legs.push({ cityId: c.id, from, to });
-            trip.legs = legs;
-            if (!trip.end || trip.end < to) trip.end = to;
-            save(); render();
-          } },
+          onclick: () => { addCityLeg(c); render(); } },
           el("div", {}, el("div.t", {}, cityName(c)),
             el("div.s", {}, countryName(c)))));
       }
@@ -642,6 +629,136 @@ export function planner(ctx, tripId, render){
       input, hits);
     inner.prepend(box);
     input.focus();
+  }
+
+  /// المدينة تصير مرحلةً في الرحلة. قسمة أولى معقولة: الجديدة تأخذ آخر ثلث
+  /// الرحلة والسابقة تنتهي عندها — ثم تُعدَّل التواريخ من «مراحل الرحلة».
+  function addCityLeg(c){
+    const legs = legsOf(trip).slice();
+    const last = legs[legs.length - 1];
+    const all = daysOf(trip);
+    let from = last?.to || trip.start || "";
+    let to = trip.end || from;
+    if (all.length >= 3){
+      const cut = all[Math.max(1, all.length - Math.max(1, Math.round(all.length / 3)))];
+      from = ymd(cut); to = ymd(all[all.length - 1]);
+      if (last) last.to = from;
+    }
+    legs.push({ cityId: c.id, from, to });
+    trip.legs = legs;
+    if (!trip.end || trip.end < to) trip.end = to;
+    save();
+  }
+
+  /// حذف مدنٍ من الرحلة بمعرّفاتها. الرحلة لا تُفرَّغ — آخر مدينة تبقى.
+  /// و`cityId` (مدينة الرحلة الأصل) قد يشير إلى محذوفة، فيتبع أول مرحلة
+  /// باقية: بدونه تبقى «بطاقة الصدق» تتحدث عن مدينة ليست في الرحلة.
+  function removeCities(ids){
+    const legs = legsOf(trip).filter(l => !ids.includes(l.cityId));
+    if (!legs.length) return;
+    trip.legs = legs;
+    if (ids.includes(trip.cityId)) trip.cityId = legs[0].cityId;
+    save();
+  }
+
+  /// «تعديل» بجوار العنوان: دول الرحلة ومدنها في نافذة واحدة، يُحذف منها
+  /// ويُضاف إليها، وكل إجراء يمرّ بتأكيد. كان الحذف ✕ صامتة داخل تبويب
+  /// «تواريخ الرحلة» — لا يجدها من يقرأ عنوانه ويريد تصحيحه، وتحذف بلا
+  /// سؤال. (طارق 2026-09-02)
+  function openEditPlaces(){
+    gate(close => {
+      const body = el("div");
+
+      // التأكيد يحلّ محلّ القائمة في البطاقة نفسها — لا نافذة فوق نافذة.
+      const ask = ({ title, text, yes, danger, onYes }) => body.replaceChildren(
+        el("h3", {}, title),
+        el("p", {}, text),
+        el("button.btn" + (danger ? ".danger" : ""),
+          { onclick: () => { onYes(); draw(); } }, yes),
+        el("button.later", { onclick: draw }, t("إلغاء")));
+
+      const askAdd = (c) => ask({
+        title: t("تأكيد الإضافة"),
+        text: t`ستُضاف ${cityName(c)} مرحلةً إلى الرحلة، وتأخذ آخر ثلثها — والتواريخ تعدّلها بعدُ من «مراحل الرحلة».`,
+        yes: t("أضفها"),
+        onYes: () => addCityLeg(c),
+      });
+      const askCity = (c) => ask({
+        title: t("حذف المدينة"),
+        text: t`ستُحذف ${cityName(c)} من الرحلة بمرحلتها وتواريخها، وما وزّعته لها في الجدول يبقى في أيامه.`,
+        yes: t("احذفها"), danger: true,
+        onYes: () => removeCities([c.id]),
+      });
+      const askCountry = (g) => ask({
+        title: t("حذف الدولة"),
+        text: t`ستُحذف ${g.name} من الرحلة ومعها ${g.cities.map(cityName).join(" + ")}، وما وزّعته لها في الجدول يبقى في أيامه.`,
+        yes: t("احذفها"), danger: true,
+        onYes: () => removeCities(g.cities.map(c => c.id)),
+      });
+
+      /// صندوق الإضافة — بصياغة الصفحة نفسها لئلا تكون للنية الواحدة عبارتان.
+      function addBox(){
+        const input = el("input.gateinput", { placeholder: t("اسم المدينة…") });
+        const hits = el("div.gatelist");
+        input.oninput = () => {
+          const q = input.value.trim().toLowerCase();
+          hits.replaceChildren();
+          if (q.length < 2) return;
+          const found = store.cities.filter(c =>
+            (c.name_ar || "").includes(q) || (c.name_en || "").toLowerCase().includes(q))
+            .filter(c => !legsOf(trip).some(l => l.cityId === c.id)).slice(0, 6);
+          if (!found.length){
+            hits.append(el("div.empty", {}, t("لا مدينة بهذا الاسم عندنا.")));
+            return;
+          }
+          for (const c of found)
+            hits.append(el("button.grow", { onclick: () => askAdd(c) },
+              el("div", { style: "min-width:0" },
+                el("div.t", {}, cityName(c)),
+                el("div.d", { style: "margin:0" }, countryName(c)))));
+        };
+        return el("div", {},
+          el("h4.addhead", {}, t("أضف مدينة أخرى لهذه الرحلة")),
+          input, hits);
+      }
+
+      function draw(){
+        const cities = legsOf(trip)
+          .map(l => store.cities.find(c => c.id === l.cityId)).filter(Boolean);
+        // الدول بترتيب ظهورها في مراحل الرحلة — لا ترتيب مخترع.
+        const groups = [];
+        for (const c of cities){
+          let g = groups.find(x => x.code === c.country_code);
+          if (!g){ g = { code: c.country_code, name: countryName(c), cities: [] }; groups.push(g); }
+          g.cities.push(c);
+        }
+        const list = el("div.gatelist");
+        for (const g of groups){
+          list.append(el("h4", {}, flag(g.code) + " " + g.name,
+            groups.length > 1
+              ? el("button.x", { "aria-label": t("احذف الدولة"),
+                  onclick: () => askCountry(g) }, "✕")
+              : null));
+          for (const c of g.cities)
+            list.append(el("div.grow", {},
+              el("span.t", {}, cityName(c)),
+              cities.length > 1
+                ? el("button.x", { "aria-label": t("احذف المدينة"),
+                    onclick: () => askCity(c) }, "✕")
+                : null));
+        }
+        body.replaceChildren(
+          el("h3", {}, t("مدن الرحلة ودولها")),
+          el("p", {}, cities.length > 1
+            ? t("احذف ما ليس منها، أو أضف مدينة أخرى.")
+            : t("مدينة واحدة — أضف غيرها قبل أن تحذفها، فالرحلة لا تبقى بلا مدينة.")),
+          list, addBox(),
+          el("button.later", { onclick: close }, t("تم")));
+      }
+
+      draw();
+      return body;
+    }, render);   // الصفحة تحته تُعاد مرة واحدة عند الإغلاق، فلا تقفز تحت يده
   }
 
   const inner = el("div.section");
@@ -705,11 +822,16 @@ export function planner(ctx, tripId, render){
         };
         secDates.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
           el("span.who", {}, "📍 " + (c ? cityName(c) : "")), lf, lt,
+          // الحذف هنا يمرّ بما يمرّ به حذف «تعديل» سواءً: سؤالٌ أولًا،
+          // ومدينة الرحلة الأصل تتبع أول مرحلة باقية.
           legs0.length > 1 ? el("button", { style: "border:none;background:none;"
-            + "cursor:pointer;color:var(--deep)", onclick: () => {
-              trip.legs = legs0.filter((_, k) => k !== i);
-              save(); render();
-            } }, "✕") : null));
+            + "cursor:pointer;color:var(--deep)", "aria-label": t("احذف المرحلة"),
+            onclick: () => askConfirm({
+              title: t("حذف المدينة"),
+              body: t`ستُحذف ${c ? cityName(c) : ""} من الرحلة بمرحلتها وتواريخها، وما وزّعته لها في الجدول يبقى في أيامه.`,
+              yes: t("احذفها"), danger: true,
+              onYes: () => { removeCities([l.cityId]); render(); },
+            }) }, "✕") : null));
       });
     }
 
