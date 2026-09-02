@@ -36,7 +36,8 @@ function drawTabs(){
   // والتفضيلات والأوراق والبيانات أبناء البيت.
   const on = { d: "next", find: "next", map: "next", fav: "next",
                plan: "upcoming",
-               prefs: "home", papers: "home", mydata: "home" }[path] || path;
+               prefs: "home", papers: "home", mydata: "home",
+               admin: "home" }[path] || path;
   const tripsGuard = e => guardNav(e, "#/trips",
     t("رحلاتك تُحفظ في حسابك لتجدها على كل أجهزتك."));
   const upcomingGuard = e => guardNav(e, "#/upcoming",
@@ -152,8 +153,18 @@ function openSettings(){
         row(t("بياناتي"), t("كل ما في حسابك، وباب المحو"), "#/mydata", ""),
         row(t("سياسة الخصوصية"), t("ما يُحفظ وكيف تتحقق بنفسك"), "/privacy/"),
         row(t("شروط الاستخدام"), t("استخدامك الشخصي وحدوده"), "/terms/"),
+        // رأيك قبل البريد: الباب الأقرب أولى بمن جاء للتوّ من تيكتوك.
+        el("a.srow", { href: "#", onclick: e => {
+            e.preventDefault(); close(); views.feedbackSheet();
+          } },
+          el("div", {},
+            el("div.t", {}, t("رأيك يهمّنا")),
+            el("div.s", {}, t("أرسل ملاحظتك مباشرة إلينا"))),
+          el("span.ch", {}, "‹")),
         row(t("تواصل معنا"), "support@souvenirtravel.app",
             "mailto:support@souvenirtravel.app"),
+        cloud.isAdmin()
+          ? row(t("لوحة الإدارة"), t("المسجّلون وملاحظاتهم"), "#/admin") : null,
         // الخروج آخر الأبواب لا جار الصورة — وبتأكيد، فالخروج قرار لا زلة إصبع.
         cloud.user ? el("a.srow", { href: "#", onclick: (e) => {
             e.preventDefault();
@@ -248,6 +259,7 @@ export function render(){
     plan:   () => planner(ctx, arg, render),
     fav:    () => views.favorites(ctx),
     mydata: () => views.mydata(ctx),
+    admin:  () => views.admin(ctx),
   }[path] || (() => views.home(ctx));
   view.append(draw());
   drawTabs();

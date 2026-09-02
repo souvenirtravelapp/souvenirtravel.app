@@ -849,3 +849,22 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .tabbtn:hover { background: rgba(40,36,30,.05); color: var(--text); }
 .tabbtn.on { background: var(--deep, #B4622E); color: #fff; }
 .tabpane { display: grid; gap: 8px; }
+
+/* رأيك يهمّنا: نصٌّ حرّ في بوابة الحساب نفسها — نفس اللوحة، بابٌ آخر. */
+.gate.fb{text-align:start}
+.gate.fb h3,.gate.fb p{text-align:center}
+.gate.fb .later{display:block;margin:0 auto}
+.fbtext{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid var(--line);
+  border-radius:12px;background:var(--card);color:var(--deep);font:inherit;font-size:14.5px;
+  resize:vertical;min-height:110px}
+.gate.fb .btn{width:100%;margin-top:10px}
+.fbnote{margin:8px 0 0;text-align:center;color:var(--muted);font-size:13px;min-height:18px}
+
+/* لوحة الإدارة: صفوف تُقرأ سريعًا — من، ومتى، وماذا قال. */
+.admincount{color:var(--muted);font-size:13px;margin-bottom:8px}
+.adminrow{padding:10px 0;border-top:1px solid var(--line)}
+.adminrow:first-child{border-top:0}
+.adminrow .t{font-weight:700;color:var(--deep)}
+.adminrow .s{color:var(--muted);font-size:12.5px;margin-top:2px}
+.fbbody{white-space:pre-wrap;margin:6px 0 2px;font-size:14.5px;color:var(--deep)}
+.muted{color:var(--muted);font-size:13.5px}

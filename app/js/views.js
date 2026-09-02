@@ -1296,3 +1296,96 @@ export function upcoming(ctx){
   return root;
 }
 
+
+/* ── رأيك: باب الملاحظات ──
+   جاء إلى سوفينير جمهورٌ من تيكتوك، والموقع في أوله. أنفع ما يُعطى زائرٌ
+   في هذه المرحلة بابٌ يقول منه ما نقص — فما يُقال هنا يصل طارق كما كُتب،
+   بلا نموذج ولا وسيط. مفتوح للمسجَّلين وحدهم: الاسم يضبط النبرة ويمنع الضجيج. */
+export function feedbackSheet(){
+  if (document.querySelector(".sheetback")) return;
+  if (!cloud.user){
+    askSignIn(t("ادخل بحسابك لترسل ملاحظتك — لنعرف لمن نردّ."));
+    return;
+  }
+  const back = el("div.sheetback", { onclick: close });
+  const box = el("textarea.fbtext", {
+    rows: 6, maxlength: 4000,
+    placeholder: t("ما الذي نقص؟ وما الذي أعجبك؟ اكتب بحرّية.") });
+  const note = el("p.fbnote", {});
+  const send = el("button.btn", { onclick: async () => {
+    const text = box.value.trim();
+    if (!text){ note.textContent = t("اكتب ملاحظتك أولًا."); return; }
+    send.disabled = true; note.textContent = t("جارٍ الإرسال…");
+    try {
+      await cloud.sendFeedback(text);
+      box.value = "";
+      note.textContent = t("وصلت — شكرًا لك. نقرأ كل ملاحظة.");
+      setTimeout(close, 1400);
+    } catch (e){
+      send.disabled = false;
+      note.textContent = t("تعذر الإرسال — أعد المحاولة.");
+    }
+  } }, t("أرسل"));
+  const card = el("div.gate.fb", {},
+    el("h3", {}, t("رأيك يهمّنا")),
+    el("p", {}, t("سوفينير في أوله، وملاحظتك تصنع ما بعده.")),
+    box, send, note,
+    el("button.later", { onclick: close }, t("ليس الآن")));
+  function close(){ back.remove(); card.remove(); }
+  document.body.append(back, card);
+}
+
+/* ── لوحة الإدارة ──
+   لطارق وحده: من دخل الموقع، ومتى، وماذا قال. القواعد في Firestore هي
+   الحارس الحقيقي؛ وإخفاء الصفحة أدبٌ لا أمن. */
+export function admin(ctx){
+  const root = el("div.wide");
+  root.append(el("div.hero3", {},
+    el("div.herorow", {},
+      el("h1", {}, t("لوحة الإدارة")),
+      el("a.circle", { href: "#/home" }, "‹")),
+    el("p", {}, t("من سجّل في سوفينير، وماذا قالوا."))));
+  const inner = el("div.section");
+  root.append(inner);
+  if (!cloud.isAdmin()){
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("p", {}, t("هذه الصفحة لصاحب الموقع."))));
+    return root;
+  }
+  const when = v => {
+    const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null);
+    if (!d || isNaN(d)) return "—";
+    return d.toLocaleString(isEN ? "en-GB" : "ar", { dateStyle: "medium", timeStyle: "short" });
+  };
+  const people = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+  const says = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+  inner.append(el("div.section", {}, el("h2", {}, t("المسجّلون")), people));
+  inner.append(el("div.section", {}, el("h2", {}, t("الملاحظات")), says));
+
+  cloud.listSignups().then(rows => {
+    people.replaceChildren(rows.length
+      ? el("div", {},
+          el("div.admincount", {}, t`العدد: ${String(rows.length)}`),
+          ...rows.map(r => el("div.adminrow", {},
+            el("div", {},
+              el("div.t", {}, r.name || r.email || r.uid),
+              el("div.s", {}, r.email || ""),
+              el("div.s", {}, t`أول مرة ${when(r.firstSeen)} · آخر مرة ${when(r.lastSeen)}`),
+              el("div.s", {}, (r.providers || []).join(" · "))))))
+      : el("div.muted", {}, t("لا أحد بعد.")));
+  }).catch(e => people.replaceChildren(
+    el("div.muted", {}, t("تعذر القراءة — تأكد من قواعد Firestore. ") + String(e?.code || e))));
+
+  cloud.listFeedback().then(rows => {
+    says.replaceChildren(rows.length
+      ? el("div", {}, ...rows.map(r => el("div.adminrow", {},
+          el("div", {},
+            el("div.t", {}, r.name || r.email || r.uid),
+            el("div.fbbody", {}, r.text || ""),
+            el("div.s", {}, t`${when(r.when)} · ${r.page || ""}`)))))
+      : el("div.muted", {}, t("لا ملاحظات بعد.")));
+  }).catch(e => says.replaceChildren(
+    el("div.muted", {}, t("تعذر القراءة — تأكد من قواعد Firestore. ") + String(e?.code || e))));
+
+  return root;
+}

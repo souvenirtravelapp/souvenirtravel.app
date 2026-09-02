@@ -11,7 +11,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
          onAuthStateChanged, deleteUser, linkWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, addDoc, collection,
+         getDocs, query, orderBy, limit, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
 const KEYS = ["sv.prefs", "sv.shortlist", "sv.papers", "sv.trips", "sv.tripsDel"];
@@ -207,7 +209,7 @@ export function restore(){
       stop();
       user = u;
       if (u){
-        try { await reconcile(false); await reconcileMemory(false); }
+        try { await markSignup(false); await reconcile(false); await reconcileMemory(false); }
         catch (e) { console.warn("sync:", e); }
       }
       resolve();
@@ -218,6 +220,7 @@ export function restore(){
 async function signInWith(provider){
   const cred = await signInWithPopup(auth, provider);
   user = cred.user;
+  await markSignup(true);
   await reconcile(true);
   await reconcileMemory(true);
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
@@ -229,6 +232,58 @@ export function signInApple(){
   const p = new OAuthProvider("apple.com");
   p.addScope("name"); p.addScope("email");
   return signInWith(p);
+}
+
+
+/* ── سجل المسجّلين وبريد الملاحظات ──
+   حتى الآن لم يكن للدخول أثر: وثيقة المزامنة تحمل رحلات صاحبها ولا تقول
+   لطارق أن أحدًا جاء. صار للتيكتوك جمهور، فصار للوصول أثرٌ يُقرأ:
+   signups/{uid} سطرٌ واحد لكل من دخل — أول مرة، وآخر مرة، وبأي حساب.
+   لا يُكتب فيه ما لا يظهر لصاحبه في «بياناتي»، ويُمحى معها. */
+
+const ADMINS = ["tariqmalki@gmail.com", "souvenirtravelapp@gmail.com"];
+export function isAdmin(){ return !!user && ADMINS.includes(user.email || ""); }
+
+function signupDoc(uid){ return doc(db, "signups", uid); }
+
+async function markSignup(firstLogin){
+  if (!user) return;
+  const card = {
+    name: user.displayName ?? "", email: user.email ?? "",
+    photo: user.photoURL ?? "",
+    providers: (user.providerData ?? []).map(p => p.providerId),
+    lang: document.documentElement.lang || "ar",
+    lastSeen: serverTimestamp(),
+  };
+  // أول مرة تُكتب مرة واحدة ولا تُلمس بعدها — وإلا صار «متى جاء» هو «متى عاد».
+  if (firstLogin) card.firstSeen = serverTimestamp();
+  try { await setDoc(signupDoc(user.uid), card, { merge: true }); }
+  catch (e){ console.warn("signup:", e); }
+}
+
+/* ملاحظة من مسجَّل: نصّه وهويته ولحظته. لا يقرؤها إلا هو وطارق. */
+export async function sendFeedback(text){
+  if (!user) throw new Error("no-user");
+  const body = String(text ?? "").trim().slice(0, 4000);
+  if (!body) throw new Error("empty");
+  await addDoc(collection(db, "feedback"), {
+    uid: user.uid, name: user.displayName ?? "", email: user.email ?? "",
+    text: body, lang: document.documentElement.lang || "ar",
+    page: location.hash || "#/home", when: serverTimestamp(),
+  });
+}
+
+/* لوحة طارق: من سجّل وماذا قالوا. القواعد تحرسها، والواجهة تخفيها. */
+export async function listSignups(max = 200){
+  const snap = await getDocs(query(collection(db, "signups"),
+                                   orderBy("lastSeen", "desc"), limit(max)));
+  return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+}
+
+export async function listFeedback(max = 200){
+  const snap = await getDocs(query(collection(db, "feedback"),
+                                   orderBy("when", "desc"), limit(max)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 /* ── وثيقة الذاكرة (docs/SyncContract.md §4): رحلات سابقة ورفقاء ── */
@@ -329,6 +384,8 @@ export async function linkProvider(name){
 /* المحو الذاتي: وثيقته من السحابة، وآثارها من الجهاز، وحسابه إن أمكن. */
 export async function eraseMyData(){
   if (!user) return;
+  // سطر السجل يُمحى مع البيانات: من محا حسابه لا يبقى له أثر في لوحة الإدارة.
+  try { await deleteDoc(signupDoc(user.uid)); } catch (e) { console.warn("signup:", e); }
   await deleteDoc(stateDoc(user.uid));
   await deleteDoc(memoryDoc(user.uid));
   for (const k of KEYS) localStorage.removeItem(k);
