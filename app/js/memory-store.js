@@ -54,7 +54,7 @@ export const Memory = {
 
   addCompanion(name, relation = ""){
     const data = read();
-    const made = { id: uuid(), name, emoji: "🙂", relation };
+    const made = { id: uuid(), name, relation };
     data.companions.push(made);
     write(data);
     return made;
