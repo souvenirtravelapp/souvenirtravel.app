@@ -526,7 +526,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   display: flex; align-items: center; justify-content: center; font-size: 17px;
   background: var(--aurora); color: rgba(255,255,255,.85);
   font-family: "Tajawal","DM Sans",Tahoma,sans-serif; font-weight: 900; }
-.pick .pn { font-size: 15px; font-weight: 400; line-height: 1.35; }
+.pick .pn { font-size: 17px; font-weight: 400; line-height: 1.35; }
 .pick .pc { font-size: 12px; color: var(--accent, #b8863b);
   font-weight: 700; }
 /* دائرةٌ تدور في البطاقة: العمل على جلب بياناتها جارٍ، لا عطلٌ ولا نسيان */
@@ -824,6 +824,13 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .facth { margin: 0 0 5px; font-size: 12px; font-weight: 800; letter-spacing: .02em;
   color: var(--deep, #B4622E); }
 .factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
+
+/* موضع المكان البعيد ومسافته — تحذيرٌ هادئ على البطاقة نفسها. ومن اقترح
+   مكانًا في دولةٍ أخرى يجب أن يعرف ذلك قبل أن يوزّعه على يومٍ لا يسعه. */
+.pcfar { font-size: 12px; font-weight: 700; line-height: 1.4; margin-top: 2px;
+  color: var(--deep, #B4622E); }
+.farnote { font-size: 13px; line-height: 1.7; margin: 2px 2px 8px;
+  color: var(--text, #28241E); opacity: .75; }
 
 /* «أضف مكانًا»: صندوقٌ يُرى ويقول ما هو. كان حقلًا عاريًا بكلمةٍ بجانبه،
    فلا يعرف القارئ أن الإضافة من حقّه — والدعوة نصف الميزة. */

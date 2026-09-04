@@ -978,9 +978,7 @@ export function planner(ctx, tripId, render){
     show(Math.min(factsTab, tabs.length - 1));
     inner.append(el("div.card", { style: "margin-bottom:14px" },
       el("h2", { style: "margin-bottom:6px" }, t("بيانات رحلتك")),
-      facts,
-      el("div.det.factdisc", {},
-        t("من مصادر رسمية وأرقام حقيقية — لا تخمين. القواعد تتغير، تحقق قبل السفر."))));
+      facts));
   }
 
   // رحلة بلا تواريخ بعد — الخانة في الحقائق؛ هذه البطاقة لرحلة بلا مدينة فقط.
@@ -1237,13 +1235,41 @@ export function planner(ctx, tripId, render){
   const freeBox = el("div.pickrow", {});
   const nearestBase = (p) => (bases.length && (p.lat || p.lon))
     ? bases.reduce((acc, b) => kmAB(p, b) < kmAB(p, acc) ? b : acc, bases[0]) : null;
+  // أين يقع فعلًا؟ أقرب مدينة نعرفها في سجلنا كله — لا مدن الرحلة وحدها.
+  // من كتب اسمًا فأصاب مكانًا في دولة أخرى يستحق أن يُقال له أين وقع، لا
+  // أن تُدفن بطاقته في آخر الصفحة بلا عنوان.
+  const nearestKnown = (p) => {
+    if (!(p.lat || p.lon)) return null;
+    let best = null, bestKm = Infinity;
+    for (const c of store.cities){
+      if (c.lat == null || c.lon == null) continue;
+      const d = kmAB(p, c);
+      if (d < bestKm){ bestKm = d; best = c; }
+    }
+    return best ? { city: best, km: Math.round(bestKm) } : null;
+  };
   for (const p of trip.plan){
     if (p.qid && regQids.has(p.qid)) continue;
     const rm = () => { trip.plan = trip.plan.filter(x => x.id !== p.id); save(); render(); };
     // ليس في سجلنا بعد: طلبُه خرج للوكلاء، والبطاقة تدور حتى تصل بياناته.
     const waiting = !p.qid;
     const base = nearestBase(p);
-    const where = base && kmAB(p, base) < 120 ? cityName(base) : "";
+    const baseKm = base ? Math.round(kmAB(p, base)) : null;
+    const near = base && baseKm < 120;
+    const where = near ? cityName(base) : "";
+    // بعيدٌ عن كل مدن رحلته: نقول له أين وقع وكم يبعد، بدل صمتٍ يوهمه
+    // أن اقتراحه في مكانه. والدولة تُذكر إن اختلفت — فذاك أبعد من مسافة.
+    let farLine = "";
+    if (!near && (p.lat || p.lon)){
+      const k = nearestKnown(p);
+      const there = k ? cityName(k.city) : "";
+      const land = k && base && k.city.country_code !== base.country_code
+        ? countryName(k.city) : "";
+      const bits = [];
+      if (there) bits.push(land ? there + tt("، ") + land : there);
+      if (base && baseKm != null) bits.push(tt`${baseKm} كم من ${cityName(base)}`);
+      farLine = bits.join(" · ");
+    }
     if (waiting && !p.ask && !asked.has(p.id)){
       asked.add(p.id);
       askForPlace(p, where).then(ok => { if (ok){ p.ask = 1; save(); } });
@@ -1256,7 +1282,9 @@ export function planner(ctx, tripId, render){
       el("div.pn", {}, p.name),
       waiting
         ? el("div.pc.wait", {}, el("i.spin"), t("جارٍ جمع بياناتها"))
-        : el("div.pc", {}, clean(p.kind) || "‏"));
+        : el("div.pc", {}, clean(p.kind) || "‏"),
+      // موضعه الحقيقي ومسافته — يُكتب على البطاقة نفسها لا في هامش.
+      farLine ? el("div.pcfar", {}, "⚑ " + farLine) : null);
     const wrap = el("div.pickwrap" + (p.day >= 0 ? "" : ".pend"), {}, body,
       el("button.pickadd.on", { "aria-label": t("أزل من الجدول"),
         title: t("أزل من الجدول"),
@@ -1265,7 +1293,9 @@ export function planner(ctx, tripId, render){
     (rowByCity.get(where) || freeBox).append(wrap);
   }
   if (freeBox.children.length){
-    regBox.append(el("div.legname", {}, t("أماكن أضفتها")));
+    regBox.append(el("div.legname", {}, t("أماكن أضفتها — خارج مدن رحلتك")));
+    regBox.append(el("div.farnote", {},
+      t("هذه لم تقع قرب أي مدينة في رحلتك. تحت كل بطاقة موضعها ومسافتها — راجعها قبل أن توزّعها على أيامك.")));
     regBox.append(freeBox);
   }
   const input = el("input.addowninput", {
