@@ -2086,9 +2086,16 @@ export function planner(ctx, tripId, render){
     }
     const fo = trip.flights.out, fb = trip.flights.back;
     const dstr = ymd(d);
+    // مدينة اليوم في رأسه: رحلةٌ بمدينتين تجعل القارئ يعدّ الأيام ليعرف أين
+    // هو في اليوم الخامس. الاسم هنا يقوله بلا عدّ. ولا يُكتب لرحلة مدينةٍ
+    // واحدة — لا معنى لتكرار اسمٍ لا بديل له.
+    const dayLeg = legForDay(trip, dstr);
+    const dayCity = legsOf(trip).length > 1 && dayLeg
+      ? store.cities.find(c => c.id === dayLeg.cityId) : null;
     const dayCell = el("td.dt-day", {},
       el("div.dn", {}, tt`يوم ${i + 1}`),
       el("div.dd", {}, fmtDayShort(d)),
+      dayCity ? el("div.dcity", {}, "📍 " + cityName(dayCity)) : null,
       (days.length > 1 && i === 0)
         ? el("div.dm", {}, "✈︎ " + (fo.no || tt("يوم الوصول"))
             + (fo.arr ? " — " + tt`الوصول ${fo.arr}` : "")) : null,
