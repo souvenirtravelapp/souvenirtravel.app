@@ -912,8 +912,11 @@ export function planner(ctx, tripId, render){
           trip.cityId = legs0[0].cityId;
           save(); render();
         };
+        // `disabled: false` تمرّ عبر setAttribute فتصير disabled="false" —
+        // وHTML يقرؤها معطَّلةً لا عاملة. فالسمة تُوضع أو لا تُوضع، ولا تُنفى.
         const arrow = (glyph, label, to, on) => el("button.legmove", {
-          "aria-label": label, title: label, disabled: !on,
+          "aria-label": label, title: label,
+          ...(on ? {} : { disabled: "disabled" }),
           onclick: () => on && swap(to) }, glyph);
         secDates.append(el("div.row.legrow",
           { style: "flex-wrap:wrap;gap:6px;align-items:center" },
