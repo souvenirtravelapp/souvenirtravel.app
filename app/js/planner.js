@@ -1315,10 +1315,10 @@ export function planner(ctx, tripId, render){
           a.added_count > 0 ? el("span.cnt", {}, tt`اختارها ${a.added_count}`) : null),
         blurb ? el("p.detblurb", {}, blurb) : null,
         rows.length ? el("div.detrows", {}, rows) : null,
-        // ما ليس في سجلنا بعد: نقول إن العمل جارٍ، ولا نترك نافذةً فارغة
-        // يظنّها القارئ عطلًا.
-        a.pending ? el("div.detwait", {}, el("i.spin"),
-          el("span", {}, t("جارٍ جمع بياناتها — أوقاتها وتذاكرها وما يلزم قبل الذهاب"))) : null,
+        // ما ليس في سجلنا بعد: الطلب مسجَّل في قائمة فريق البيانات، لا في
+        // عمليةٍ تدور الآن — فلا دوّارة تُوهم بانتظارٍ ينتهي بعد دقائق.
+        a.pending ? el("div.detwait", {}, "✓",
+          el("span", {}, t("طلبناها من فريق البيانات — أوقاتها وتذاكرها تصلك في تحديث قادم"))) : null,
         el("div.detlinks", {},
           a.tickets_url ? el("a", { href: a.tickets_url, target: "_blank",
             rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
@@ -1504,7 +1504,11 @@ export function planner(ctx, tripId, render){
       el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
       waiting
-        ? el("div.pc.wait", {}, el("i.spin"), t("جارٍ جمع بياناتها"))
+        // كان «جارٍ جمع بياناتها» مع دوّارة تدور بلا نهاية. والحقيقة أن
+        // الطلب يُحفظ في قائمةٍ يقرؤها طارق ويشغّل عليها فريق البيانات —
+        // لا وكيل يلتقطه لحظتها. فالدوّارة تعِد بعملٍ لا يجري، والصدق أن
+        // نقول: طُلب، ويصل في تحديثٍ قادم.
+        ? el("div.pc.wait", {}, "✓ " + t("طلبناها — تصلك في تحديث قادم"))
         : el("div.pc", {}, clean(p.kind) || "‏"),
       // موضعه الحقيقي ومسافته — يُكتب على البطاقة نفسها لا في هامش.
       farLine ? el("div.pcfar", {}, "⚑ " + farLine) : null);
@@ -2099,24 +2103,25 @@ export function planner(ctx, tripId, render){
             e.preventDefault(); showDayRoute(i, pts);
           } }, "⌗"));
     }
-    const fo = trip.flights.out, fb = trip.flights.back;
     const dstr = ymd(d);
     // مدينة اليوم في رأسه: رحلةٌ بمدينتين تجعل القارئ يعدّ الأيام ليعرف أين
     // هو في اليوم الخامس. الاسم هنا يقوله بلا عدّ. ولا يُكتب لرحلة مدينةٍ
     // واحدة — لا معنى لتكرار اسمٍ لا بديل له.
-    const dayLeg = legForDay(trip, dstr);
-    const dayCity = legsOf(trip).length > 1 && dayLeg
-      ? store.cities.find(c => c.id === dayLeg.cityId) : null;
+    // يوم الانتقال تغطّيه مرحلتان (نهاية الأولى بداية الثانية)، فيُكتب
+    // «فيينا - شلادمينغ»: من يقرأ اسمًا واحدًا يظنّ يومه كله في مدينة.
+    const legs2 = legsOf(trip);
+    const dayLegs = legs2.length > 1
+      ? legs2.filter(l => (!l.from || l.from <= dstr) && (!l.to || l.to >= dstr))
+      : [];
+    const dayCityText = dayLegs
+      .map(l => store.cities.find(c => c.id === l.cityId))
+      .filter(Boolean).map(cityName).join(" - ");
+    // رقم الرحلة ووقتها كانا يُكرَّران هنا وهما في سطر الأحداث وفي بطاقة
+    // الطيران — ثلاث مرات لخبرٍ واحد في خليةٍ عرضها مئة بكسل.
     const dayCell = el("td.dt-day", {},
       el("div.dn", {}, tt`يوم ${i + 1}`),
       el("div.dd", {}, fmtDayShort(d)),
-      dayCity ? el("div.dcity", {}, "📍 " + cityName(dayCity)) : null,
-      (days.length > 1 && i === 0)
-        ? el("div.dm", {}, "✈︎ " + (fo.no || tt("يوم الوصول"))
-            + (fo.arr ? " — " + tt`الوصول ${fo.arr}` : "")) : null,
-      (days.length > 1 && i === days.length - 1)
-        ? el("div.dm", {}, "✈︎ " + (fb.no || tt("يوم العودة"))
-            + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null);
+      dayCityText ? el("div.dcity", {}, dayCityText) : null);
       // «خط السير» نزل إلى سطر أرقام اليوم: كلاهما عن الطريق نفسه، وخليةُ
       // العنوان أضيق من أن تحمل رابطين تحت تاريخ.
     const ok = allowedSlots(trip, i, days.length);
