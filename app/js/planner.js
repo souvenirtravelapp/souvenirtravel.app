@@ -545,21 +545,41 @@ function autoPlan(trip, days, city, store){
 
 // إدراج الملتحقين بعد توزيع قائم: لا نبعثر ما استقر — كل معلق ينضم
 // لليوم الأقرب لمساره وفي أول فترة حرة فيه.
-function placePending(trip, days){
+//
+// العطل الذي عولج هنا (بلاغ طارق ٢٠٢٦-٠٩-٠٥): «قمة كابرون» أُضيفت وهي قرب
+// شلادمينغ فنزلت في أيام فيينا. والسبب أن المسافة كانت تُقاس إلى **مركز ما
+// استقر في ذلك اليوم**، فاليوم الفارغ لا مركز له فتصير مسافته صفرًا — أي
+// «أقرب شيء إلى كل شيء» — فيفوز دائمًا، وأول يوم فارغ هو أول أيام الرحلة.
+// ولم يكن في الحساب ذكرٌ للمرحلة أصلًا: يومٌ في فيينا كان يقبل مكانًا في
+// شلادمينغ ما دام فارغًا.
+//
+// الصواب أن يُقاس إلى **مدينة مرحلة ذلك اليوم** — فهي مرساة اليوم سواء
+// امتلأ أو فرغ. وما لا نعرف موضعه يبقى معلّقًا حتى تصل إحداثياته، فوضعه
+// في يومٍ بالحدس أسوأ من تركه ظاهرًا في «غير موزّعة».
+function placePending(trip, days, cities){
   const pending = trip.plan.filter(p => p.day < 0 || p.day >= days.length);
   if (!pending.length) return false;
+  const cityOfDay = (d) => {
+    const l = legForDay(trip, ymd(d));
+    return l ? (cities || []).find(c => c.id === l.cityId) : null;
+  };
   for (const p of pending){
+    if (!(p.lat || p.lon)) continue;   // لا موضع له بعد — لا يُحزر له يوم
     let best = -1, bd = Infinity;
     days.forEach((d, i) => {
       const slots = allowedSlots(trip, i, days.length);
       if (!slots.length) return;
-      const mine = trip.plan.filter(x => x.day === i && (x.lat || x.lon));
-      let dist = 0;
-      if (mine.length && (p.lat || p.lon)){
-        const cx = mine.reduce((a, x) => a + x.lat, 0) / mine.length;
-        const cy = mine.reduce((a, x) => a + x.lon, 0) / mine.length;
-        dist = Math.hypot(p.lat - cx, (p.lon - cy) * Math.cos(p.lat * Math.PI / 180));
+      // المرساة أولًا: مدينة المرحلة. وإن جهلناها فمركز ما استقر في اليوم.
+      let anchor = cityOfDay(d);
+      if (!anchor || anchor.lat == null){
+        const mine = trip.plan.filter(x => x.day === i && (x.lat || x.lon));
+        anchor = mine.length ? {
+          lat: mine.reduce((a, x) => a + x.lat, 0) / mine.length,
+          lon: mine.reduce((a, x) => a + x.lon, 0) / mine.length } : null;
       }
+      // بلا مرساة لا ندّعي قربًا: يُؤجَّل هذا اليوم لغيره ممّا نعرف مرساته.
+      const dist = anchor ? Math.hypot(p.lat - anchor.lat,
+        (p.lon - anchor.lon) * Math.cos(p.lat * Math.PI / 180)) : 1e6;
       if (closedWeekly(p, d)) return;   // مغلق ذلك اليوم — لا يُقترح فيه
       const load = trip.plan.filter(x => x.day === i).length / slots.length;
       const score = dist + load * 0.05;
@@ -1648,7 +1668,7 @@ export function planner(ctx, tripId, render){
         const legs = legsOf(trip);
         let ok = false;
         if (pend && scheduled){
-          ok = placePending(trip, dd2);
+          ok = placePending(trip, dd2, store.cities);
         } else if (legs.length > 1){
           for (const l of legs){
             const sub = dd2.filter(d => (!l.from || ymd(d) >= l.from)
