@@ -600,36 +600,10 @@ export function planner(ctx, tripId, render){
           el("button.editplaces", { onclick: () => openEditPlaces() },
             t("تعديل"))) : null),
       // الرجوع من الخطة إلى رحلاتك القادمة دائمًا — منها جئت وإليها تعود.
-      el("a.circle", { href: "#/upcoming" }, "‹")),
-    // «أضف مدينة أخرى لهذه الرحلة» — المدخل الأول لتعدد المدن (طارق).
-    el("div.addcity", { onclick: () => openAddCity() },
-      el("span.plus", {}, "+"),
-      el("span", {}, t("أضف مدينة أخرى لهذه الرحلة")))));
-
-  /// لوحة اختيار المدينة الثانية: بحث في مدننا، ثم مدى تواريخها داخل الرحلة.
-  function openAddCity(){
-    const box = el("div.card", { style: "margin-bottom:14px" });
-    const input = el("input", { placeholder: t("اسم المدينة…"), style: "width:100%" });
-    const hits = el("div");
-    input.oninput = () => {
-      const q = input.value.trim().toLowerCase();
-      hits.replaceChildren();
-      if (q.length < 2) return;
-      const found = store.cities.filter(c =>
-        (c.name_ar || "").includes(q) || (c.name_en || "").toLowerCase().includes(q))
-        .filter(c => !legsOf(trip).some(l => l.cityId === c.id)).slice(0, 6);
-      for (const c of found){
-        hits.append(el("button.srow", { style: "width:100%;text-align:start",
-          onclick: () => { addCityLeg(c); render(); } },
-          el("div", {}, el("div.t", {}, cityName(c)),
-            el("div.s", {}, countryName(c)))));
-      }
-    };
-    box.append(el("h2", { style: "margin-bottom:8px" }, t("أضف مدينة أخرى لهذه الرحلة")),
-      input, hits);
-    inner.prepend(box);
-    input.focus();
-  }
+      el("a.circle", { href: "#/upcoming" }, "‹"))));
+  // «أضف مدينة أخرى لهذه الرحلة» رُفع من الترويسة: كان يجاور «تعديل» بابين
+  // لنيةٍ واحدة — و«تعديل» يضيف المدينة ويحذفها معًا (addBox/askAdd أدناه).
+  // بابان لغرض واحد يجعلان القارئ يسأل عن الفرق بينهما، ولا فرق.
 
   /// المدينة تصير مرحلةً في الرحلة. قسمة أولى معقولة: الجديدة تأخذ آخر ثلث
   /// الرحلة والسابقة تنتهي عندها — ثم تُعدَّل التواريخ من «مراحل الرحلة».
