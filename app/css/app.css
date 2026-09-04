@@ -825,6 +825,19 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   color: var(--deep, #B4622E); }
 .factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
 
+/* «كامل الرحلة» عنوانٌ رئيسي والمدن تحته فروع — تقولها الإزاحة وحدها بلا
+   كلمة. والخط الرأسي يربط الفروع بأصلها فتُقرأ مجموعةً لا سطورًا متجاورة. */
+.legrow { position: relative; padding-inline-start: 22px; }
+.legrow::before { content: ""; position: absolute; inset-block: 0;
+  inset-inline-start: 7px; width: 2px; border-radius: 2px;
+  background: var(--line, #e5ddcf); }
+.legmoves { display: inline-flex; gap: 2px; }
+.legmove { border: 1px solid var(--line, #e5ddcf); background: var(--card, #fff);
+  color: var(--deep, #B4622E); border-radius: 8px; width: 26px; height: 26px;
+  cursor: pointer; font-size: 14px; line-height: 1; font-family: inherit; }
+.legmove:disabled { opacity: .3; cursor: default; }
+.legmove:not(:disabled):hover { background: rgba(40,36,30,.06); }
+
 /* موضع المكان البعيد ومسافته — تحذيرٌ هادئ على البطاقة نفسها. ومن اقترح
    مكانًا في دولةٍ أخرى يجب أن يعرف ذلك قبل أن يوزّعه على يومٍ لا يسعه. */
 .pcfar { font-size: 12px; font-weight: 700; line-height: 1.4; margin-top: 2px;

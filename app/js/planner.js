@@ -844,6 +844,14 @@ export function planner(ctx, tripId, render){
       const was = [trip.start, trip.end];
       trip.start = ds.value; trip.end = de.value || ds.value;
       const dropped = retimeTrip(trip, was[0], was[1]);
+      // بداية الرحلة هي بداية أولى مدنها، ونهايتها نهاية آخرها — بديهةٌ كان
+      // المستخدم يكتبها مرتين. وما بينهما يبقى كما رتّبه هو.
+      const L = legsOf(trip);
+      if (L.length){
+        L[0].from = trip.start;
+        L[L.length - 1].to = trip.end;
+        trip.legs = L;
+      }
       save(); render();
       if (dropped) noteDropped(dropped);
     };
@@ -859,13 +867,41 @@ export function planner(ctx, tripId, render){
         const lt = el("input", { type: "date", value: l.to || "" });
         lf.onchange = lt.onchange = () => {
           l.from = lf.value; l.to = lt.value;
+          // يوم الانتقال واحد: تُغادر فيينا في الثالث وتصل شلادمينغ فيه.
+          // فنهاية المدينة بدايةُ تاليتها — يكتبها مرة وتُكتب مرتين.
+          const nx = legs0[i + 1];
+          if (nx && l.to){
+            nx.from = l.to;
+            if (nx.to && nx.to < nx.from) nx.to = nx.from;
+          }
           trip.legs = legs0;
           if (trip.end && l.to > trip.end) trip.end = l.to;
           if (trip.start && l.from < trip.start) trip.start = l.from;
           save(); render();
         };
-        secDates.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
-          el("span.who", {}, "📍 " + (c ? cityName(c) : "")), lf, lt,
+        // الترتيب يُبدِّل **المدن** لا المدايات: التواريخ تبقى متسلسلة في
+        // مكانها وتتبادل المدينتان موضعيهما فيها. ولو بدّلنا المرحلتين
+        // بتاريخيهما لخرجت الرحلة عن ترتيبها الزمني وصار اليوم الرابع
+        // قبل الثاني.
+        const swap = (j) => {
+          const a = legs0[i], b = legs0[j];
+          if (!a || !b) return;
+          const keep = a.cityId; a.cityId = b.cityId; b.cityId = keep;
+          trip.legs = legs0;
+          // مدينة الرحلة الأصل هي أولاها دائمًا — وقد تبدّلت للتوّ.
+          trip.cityId = legs0[0].cityId;
+          save(); render();
+        };
+        const arrow = (glyph, label, to, on) => el("button.legmove", {
+          "aria-label": label, title: label, disabled: !on,
+          onclick: () => on && swap(to) }, glyph);
+        secDates.append(el("div.row.legrow",
+          { style: "flex-wrap:wrap;gap:6px;align-items:center" },
+          el("span.who", {}, "📍 " + (c ? cityName(c) : "")),
+          el("span.legmoves", {},
+            arrow("↑", t("قدّمها"), i - 1, i > 0),
+            arrow("↓", t("أخّرها"), i + 1, i < legs0.length - 1)),
+          lf, lt,
           // الحذف هنا يمرّ بما يمرّ به حذف «تعديل» سواءً: سؤالٌ أولًا،
           // ومدينة الرحلة الأصل تتبع أول مرحلة باقية.
           legs0.length > 1 ? el("button", { style: "border:none;background:none;"

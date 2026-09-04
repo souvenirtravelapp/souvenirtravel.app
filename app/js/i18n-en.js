@@ -322,6 +322,8 @@ export const EN = {
  "تغيّرت تواريخ رحلتك": "Your trip dates changed",
  "␟ من فعالياتك كانت في أيامٍ لم تعد ضمن الرحلة، فعادت إلى «غير موزّعة». وزّعها من جديد متى شئت.": "{0} of your activities were on days that are no longer part of the trip, so they went back to unscheduled. Spread them again whenever you like.",
  "فهمت": "Got it",
+ "قدّمها": "Move earlier",
+ "أخّرها": "Move later",
  "اكتشف": "Discover",
  "خطط": "Plan",
  "وثّق": "Keep",
