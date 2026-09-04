@@ -526,7 +526,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
   display: flex; align-items: center; justify-content: center; font-size: 17px;
   background: var(--aurora); color: rgba(255,255,255,.85);
   font-family: "Tajawal","DM Sans",Tahoma,sans-serif; font-weight: 900; }
-.pick .pn { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.pick .pn { font-size: 15px; font-weight: 400; line-height: 1.35; }
 .pick .pc { font-size: 12px; color: var(--accent, #b8863b);
   font-weight: 700; }
 /* دائرةٌ تدور في البطاقة: العمل على جلب بياناتها جارٍ، لا عطلٌ ولا نسيان */
@@ -726,7 +726,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* «أضف مدينة أخرى» بجوار عنوان الخطة */
 /* اسم مدينة المرحلة فوق اقتراحاتها */
-.legname { font-size: 12px; font-weight: 800; color: var(--deep, #B4622E);
+.legname { font-size: 15px; font-weight: 800; color: var(--deep, #B4622E);
   margin: 12px 2px 4px; }
 
 /* بطاقات مدن الرحلة داخل الخريطة، بجوار زر التوسيط */
@@ -826,7 +826,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
 
 /* أماكن قريبة من مكان الإقامة — قسم تحت اقتراحات المراحل */
-.nearhead { margin: 16px 2px 2px; font-size: 13px; font-weight: 800;
+.nearhead { margin: 18px 2px 4px; font-size: 16px; font-weight: 800;
   color: var(--text, #28241E); border-top: 1px solid var(--line, #e5ddcf);
   padding-top: 12px; }
 

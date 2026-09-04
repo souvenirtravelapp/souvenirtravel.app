@@ -1166,12 +1166,15 @@ export function planner(ctx, tripId, render){
     return el("div.pickwrap" + (chosen ? (chosen.day >= 0 ? "" : ".pend") : ""),
       {}, body, badge);
   };
-  // مجموعة لكل مرحلة بعنوان مدينتها — تُعرض العناوين حين تتعدد المدن فقط.
+  // مجموعة لكل مرحلة بعنوان مدينتها — والاسم يُكتب ولو كانت المدينة واحدة.
+  // كان يُخفى حينها، فيبدأ الاقتراح بلا عنوان بينما «الأماكن القريبة» تحته
+  // تعلن مدينتها دائمًا — فيسأل القارئ: لمن هذه الأولى؟ والتواريخ وحدها
+  // تُذكر عند التعدد، إذ لا معنى لمدىً واحد يساوي مدى الرحلة كلها.
   for (const g of legReg){
-    if (legReg.length > 1)
-      regBox.append(el("div.legname", {},
-        (g.city ? cityName(g.city) : "") +
-        (g.leg.from ? " · " + g.leg.from.slice(5) + " → " + (g.leg.to || "").slice(5) : "")));
+    regBox.append(el("div.legname", {},
+      (g.city ? cityName(g.city) : "") +
+      (legReg.length > 1 && g.leg.from
+        ? " · " + g.leg.from.slice(5) + " → " + (g.leg.to || "").slice(5) : "")));
     const gctx = { items: g.items, city: g.city ? cityName(g.city) : "" };
     regBox.append(el("div.pickrow", {}, g.items.map(a => pickCard(a, gctx))));
   }
