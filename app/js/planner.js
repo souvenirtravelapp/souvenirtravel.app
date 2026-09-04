@@ -328,6 +328,15 @@ function fmtDay(d){
   return d.toLocaleDateString(isEN ? "en" : "ar", {
     weekday: "short", day: "numeric", month: "short" });
 }
+/// خلية اليوم ضيّقة، وثلاث كلمات فيها تنزل ثلاثة أسطر. «الثلاثاء 9/8»
+/// تكفي: اليوم بالاسم ثم الشهر واليوم رقمين — يقرأهما العربي من يمينه
+/// يومًا ثم شهرًا، وهو الترتيب الذي طلبه طارق للتواريخ كلها.
+function fmtDayShort(d){
+  const wd = d.toLocaleDateString(isEN ? "en" : "ar", { weekday: "short" });
+  return isEN
+    ? `${wd} ${d.getDate()}/${d.getMonth() + 1}`
+    : `${wd} ${d.getMonth() + 1}/${d.getDate()}`;
+}
 
 // عدّاد المجتمع: إضافةٌ من السجل تزيد «اختارها N» واحدًا — بلا هوية،
 // نار-وانسَ، ومن الموقع الحي فقط كي لا تنتفخ الأعداد من التجارب.
@@ -976,11 +985,14 @@ export function planner(ctx, tripId, render){
       if (time) bits.push(iso(time));
       return bits.join(" ");
     };
-    const routeLine = (f) => {
-      const a = endPart(t("إقلاع من"), t("إقلاع"), f.from, f.dep);
-      const b = endPart(t("وصول إلى"), t("وصول"), f.to, f.arr);
-      return [a, b].filter(Boolean).join(" - ");
-    };
+    /// سطرٌ لكل طرف: الإقلاع فوق والوصول تحته. كانا في سطر واحد بشرطةٍ
+    /// بينهما فيلتفّ على الجوال في موضعٍ لا يختاره أحد، ويصير نصف الجملة
+    /// أعلى ونصفها أسفل بلا معنى. سطران مقصودان أوضح من سطرٍ ينكسر.
+    const routeParts = (f) => [
+      endPart(t("إقلاع من"), t("إقلاع"), f.from, f.dep),
+      endPart(t("وصول إلى"), t("وصول"), f.to, f.arr),
+    ].filter(Boolean);
+    const routeLine = (f) => routeParts(f).join(" - ");
 
     // رقم الرحلة وأوقاتها — يدخلها المستخدم فتحكم يومي السفر في الجدول والتوزيع.
     // رقم الرحلة أو الأوقات — لا كلاهما: الرقم يجلب الأوقات من الخادم،
@@ -990,12 +1002,14 @@ export function planner(ctx, tripId, render){
       const row = el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
         el("span.who", {}, "✈️ " + lbl));
       if ((f.dep || f.arr) && !f.editing){
-        const route = routeLine(f);
+        const parts = routeParts(f);
         row.append(
           el("div", { style: "display:flex;flex-direction:column;gap:2px;min-width:0" },
             f.no ? el("span", {}, iso(f.no)) : null,
             // الأوقات كانت تُكتب مرتين: مرة عارية ومرة مع المدينتين.
-            el("span", {}, route || tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`)),
+            ...(parts.length
+              ? parts.map(x => el("span", {}, x))
+              : [el("span", {}, tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`)])),
           // رقمٌ خاطئ يُصحَّح بالرقم لا باليد: «تصحيح الرقم» يعيدنا إلى
           // البحث فتُجلب الأوقات والمدينتان من جديد. و«الأوقات» لمن أرادها
           // يدويًا — كان الزر الوحيد يقود إلى اليد وحدها.
@@ -1022,28 +1036,32 @@ export function planner(ctx, tripId, render){
         return row;
       }
       const st = el("span.det");
+      // الجلب فعلٌ واحد لبابين: الزرّ ومفتاح الإدخال. من كتب رقمًا ثم ضغط
+      // Enter يتوقع أن يحدث شيء — وكان لا يحدث شيء، فيظنّ الحقل معطوبًا.
+      const fetchTimes = async () => {
+        const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
+        if (!v) return;
+        f.no = v; st.textContent = "…";
+        try {
+          const date = dir === "out" ? trip.start : trip.end;
+          const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
+            + encodeURIComponent(v) + (date ? "&date=" + date : ""));
+          const j = await r.json();
+          if (j.ok){
+            f.dep = j.dep; f.arr = j.arr;
+            if (j.from) f.from = j.from;   // مطار الإقلاع كان يُهمَل
+            if (j.to) f.to = j.to;
+            f.editing = false; f.manual = false;
+            // مطار جديد ⇐ زمن الطريق يُعاد حسابه
+            for (const st of trip.stays || []) delete st.driveMin;
+            save(); render(); return;
+          }
+        } catch {}
+        f.manual = true; save(); render();
+      };
+      no.onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); fetchTimes(); } };
       row.append(no,
-        el("button.chip", { onclick: async () => {
-          const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
-          if (!v) return;
-          f.no = v; st.textContent = "…";
-          try {
-            const date = dir === "out" ? trip.start : trip.end;
-            const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
-              + encodeURIComponent(v) + (date ? "&date=" + date : ""));
-            const j = await r.json();
-            if (j.ok){
-              f.dep = j.dep; f.arr = j.arr;
-              if (j.from) f.from = j.from;   // مطار الإقلاع كان يُهمَل
-              if (j.to) f.to = j.to;
-              f.editing = false; f.manual = false;
-              // مطار جديد ⇐ زمن الطريق يُعاد حسابه
-              for (const st of trip.stays || []) delete st.driveMin;
-              save(); render(); return;
-            }
-          } catch {}
-          f.manual = true; save(); render();
-        } }, t("أحضر الأوقات")),
+        el("button.chip", { onclick: fetchTimes }, t("أحضر الأوقات")),
         el("a", { href: "#", style: "font-size:12px", onclick: (e) => {
           e.preventDefault(); f.no = no.value.trim(); f.manual = true; save(); render();
         } }, t("أو أدخل الأوقات يدويًا")), st);
@@ -1297,10 +1315,10 @@ export function planner(ctx, tripId, render){
           a.added_count > 0 ? el("span.cnt", {}, tt`اختارها ${a.added_count}`) : null),
         blurb ? el("p.detblurb", {}, blurb) : null,
         rows.length ? el("div.detrows", {}, rows) : null,
-        // ما ليس في سجلنا بعد: نقول إن العمل جارٍ، ولا نترك نافذةً فارغة
-        // يظنّها القارئ عطلًا.
-        a.pending ? el("div.detwait", {}, el("i.spin"),
-          el("span", {}, t("جارٍ جمع بياناتها — أوقاتها وتذاكرها وما يلزم قبل الذهاب"))) : null,
+        // ما ليس في سجلنا بعد: الطلب مسجَّل في قائمة فريق البيانات، لا في
+        // عمليةٍ تدور الآن — فلا دوّارة تُوهم بانتظارٍ ينتهي بعد دقائق.
+        a.pending ? el("div.detwait", {}, "✓",
+          el("span", {}, t("طلبناها من فريق البيانات — أوقاتها وتذاكرها تصلك في تحديث قادم"))) : null,
         el("div.detlinks", {},
           a.tickets_url ? el("a", { href: a.tickets_url, target: "_blank",
             rel: "noopener nofollow" }, t("شراء التذاكر")) : null,
@@ -1486,7 +1504,11 @@ export function planner(ctx, tripId, render){
       el("div.pickicon", {}, activityIcon(p.name + " " + (p.en || ""), p.kind)),
       el("div.pn", {}, p.name),
       waiting
-        ? el("div.pc.wait", {}, el("i.spin"), t("جارٍ جمع بياناتها"))
+        // كان «جارٍ جمع بياناتها» مع دوّارة تدور بلا نهاية. والحقيقة أن
+        // الطلب يُحفظ في قائمةٍ يقرؤها طارق ويشغّل عليها فريق البيانات —
+        // لا وكيل يلتقطه لحظتها. فالدوّارة تعِد بعملٍ لا يجري، والصدق أن
+        // نقول: طُلب، ويصل في تحديثٍ قادم.
+        ? el("div.pc.wait", {}, "✓ " + t("طلبناها — تصلك في تحديث قادم"))
         : el("div.pc", {}, clean(p.kind) || "‏"),
       // موضعه الحقيقي ومسافته — يُكتب على البطاقة نفسها لا في هامش.
       farLine ? el("div.pcfar", {}, "⚑ " + farLine) : null);
@@ -1733,13 +1755,11 @@ export function planner(ctx, tripId, render){
     const dd2 = daysOf(trip);
     const pend = trip.plan.filter(p => p.day < 0 || p.day >= dd2.length).length;
     const scheduled = trip.plan.length - pend;
-    inner.append(el("div.card", { style: "margin-bottom:14px" },
-      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
-      el("p.det", { style: "margin-bottom:10px" },
-        trip.plan.length
-          ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
-          : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
-      el("button.btn", { onclick: () => {
+    // ثلاث حالات لا اثنتان. كان الزر يقول «وزّع الآن» حتى حين لا يبقى شيء
+    // ليوزَّع — فيدعو المستخدم إلى فعلٍ تم، وإن ضغطه أعاد ترتيب أيامه ومحا
+    // ما نقله بيده بلا سؤال. الزر يقول الآن ما سيفعله، ويستأذن قبل المحو.
+    const settled = pend === 0 && scheduled > 0;
+    const doPlan = () => {
         // كل مرحلة تُوزَّع وحدها: خلط مدينتين متباعدتين يُنتج أيامًا مبعثرة.
         const legs = legsOf(trip);
         let ok = false;
@@ -1781,9 +1801,26 @@ export function planner(ctx, tripId, render){
           ok = autoPlan(trip, dd2, city, store);
         }
         if (ok){ save(); render(); }
+    };
+    inner.append(el("div.card", { style: "margin-bottom:14px" },
+      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
+      el("p.det", { style: "margin-bottom:10px" },
+        settled
+          ? t("كل ما اخترته موزَّع على أيامك. إعادة التوزيع ترتّبها من جديد وتُلغي ما نقلته بيدك.")
+          : trip.plan.length
+            ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
+            : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
+      el("button.btn", { onclick: () => {
+        if (!settled) return doPlan();
+        askConfirm({
+          title: t("إعادة التوزيع"),
+          body: t("سيُعاد ترتيب فعالياتك على الأيام من جديد، وما نقلته بيدك يعود إلى ترتيب سوفينير."),
+          yes: t("أعِد الترتيب"),
+          onYes: doPlan,
+        });
       } }, pend
           ? tt`هناك ${pend} فعالية غير مضافة للجدول — اضغط للإضافة`
-          : t("وزّع الآن"))));
+          : settled ? t("أعِد توزيع أيامي") : t("وزّع الآن"))));
   }
 
   // السجل بالمعرّف — ليُفتَح لمكانٍ في الجدول ما يُفتح له في المقترحات.
@@ -2055,8 +2092,10 @@ export function planner(ctx, tripId, render){
           + (coords.length > 2
               ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
         : "https://www.google.com/maps/search/?api=1&query=" + coords[0];
-      route = el("div", { style: "display:flex;gap:8px;align-items:center;"
-        + "justify-content:center;flex-wrap:wrap;margin-top:4px" },
+      // صار جزءًا من سطر أرقام اليوم لا كتلةً تحت التاريخ: يجري معه في السطر
+      // نفسه ويبدأ بفاصلٍ إن سبقته أرقام.
+      route = el("span", { style: "display:inline-flex;gap:8px;align-items:center;"
+        + "flex-wrap:wrap;margin-inline-start:8px" },
         el("a", { target: "_blank", rel: "noopener", href: gmaps,
           style: "font-size:12.5px" }, t("خط السير ›")),
         el("a", { href: "#", style: "font-size:12.5px",
@@ -2064,18 +2103,27 @@ export function planner(ctx, tripId, render){
             e.preventDefault(); showDayRoute(i, pts);
           } }, "⌗"));
     }
-    const fo = trip.flights.out, fb = trip.flights.back;
     const dstr = ymd(d);
+    // مدينة اليوم في رأسه: رحلةٌ بمدينتين تجعل القارئ يعدّ الأيام ليعرف أين
+    // هو في اليوم الخامس. الاسم هنا يقوله بلا عدّ. ولا يُكتب لرحلة مدينةٍ
+    // واحدة — لا معنى لتكرار اسمٍ لا بديل له.
+    // يوم الانتقال تغطّيه مرحلتان (نهاية الأولى بداية الثانية)، فيُكتب
+    // «فيينا - شلادمينغ»: من يقرأ اسمًا واحدًا يظنّ يومه كله في مدينة.
+    const legs2 = legsOf(trip);
+    const dayLegs = legs2.length > 1
+      ? legs2.filter(l => (!l.from || l.from <= dstr) && (!l.to || l.to >= dstr))
+      : [];
+    const dayCityText = dayLegs
+      .map(l => store.cities.find(c => c.id === l.cityId))
+      .filter(Boolean).map(cityName).join(" - ");
+    // رقم الرحلة ووقتها كانا يُكرَّران هنا وهما في سطر الأحداث وفي بطاقة
+    // الطيران — ثلاث مرات لخبرٍ واحد في خليةٍ عرضها مئة بكسل.
     const dayCell = el("td.dt-day", {},
       el("div.dn", {}, tt`يوم ${i + 1}`),
-      el("div.dd", {}, fmtDay(d)),
-      (days.length > 1 && i === 0)
-        ? el("div.dm", {}, "✈︎ " + (fo.no || tt("يوم الوصول"))
-            + (fo.arr ? " — " + tt`الوصول ${fo.arr}` : "")) : null,
-      (days.length > 1 && i === days.length - 1)
-        ? el("div.dm", {}, "✈︎ " + (fb.no || tt("يوم العودة"))
-            + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null,
-      route);
+      el("div.dd", {}, fmtDayShort(d)),
+      dayCityText ? el("div.dcity", {}, dayCityText) : null);
+      // «خط السير» نزل إلى سطر أرقام اليوم: كلاهما عن الطريق نفسه، وخليةُ
+      // العنوان أضيق من أن تحمل رابطين تحت تاريخ.
     const ok = allowedSlots(trip, i, days.length);
     const hev = timedEvents(trip, dstr, city, store, days);
     const evRow = (ev) => el("div.trow", {},
@@ -2131,13 +2179,15 @@ export function planner(ctx, tripId, render){
     const sig = i + ":" + stops.map(p => p.id).join(",");
     const stat = trip.dayStats[sig];
     const bits = [];
-    if (stat) bits.push(tt`حلقة اليوم ${stat.km} كم · ${stat.min} د من الفندق وإليه`);
+    if (stat) bits.push(tt`${stat.km} كم · ${stat.min} د من الفندق وإليه`);
     const far = dayPlaces.filter(isFar);
     if (far.length) bits.push(tt`محطة بعيدة (${far[0].driveFromStayMin} د) — يوم مخفَّف بانطلاق مبكر`);
     else if (stops.length > 1) bits.push(t("محطات متجاورة في جهة واحدة — طريق واحد لا طريقان"));
-    if (bits.length)
+    if (bits.length || route)
       tablesBox.append(el("div.daywhy", { style: "border-inline-start:5px solid "
-        + dayColor(i) }, "◷ " + bits.join(" · ")));
+        + dayColor(i) },
+        bits.length ? "◷ " + bits.join(" · ") : "",
+        route || null));
   });
 
   // ── الجدول يمينًا والخريطة يسارًا — وعلى الجوال تنطوي الخريطة تحت الجدول ──
