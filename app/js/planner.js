@@ -248,6 +248,57 @@ function legForDay(trip, dstr){
     || legs[0] || null;
 }
 
+/// ما سقط من الجدول يُقال، لا يختفي. من قصّر رحلته يومين يجب أن يعرف أن
+/// فعالياتٍ عادت إلى المعلّقين — وإلا بحث عنها في الجدول ولم يجدها وظنّها ضاعت.
+function noteDropped(n){
+  gate(close => [
+    el("h3", {}, t("تغيّرت تواريخ رحلتك")),
+    el("p", {}, tt`${n} من فعالياتك كانت في أيامٍ لم تعد ضمن الرحلة، فعادت إلى «غير موزّعة». وزّعها من جديد متى شئت.`),
+    el("button.btn", { onclick: close }, t("فهمت")),
+  ]);
+}
+
+/// نقل الرحلة إلى تواريخها الجديدة — تُستدعى بعد كل تعديل على start/end.
+///
+/// العلّة التي تعالجها: المراحل والسكن تحمل تواريخ **مطلقة**، وبنود الجدول
+/// تحمل **فهرس يوم**. فمن كتب أكتوبر وقصد نوفمبر ثم صحّح، انتقلت رحلته
+/// وبقيت مراحله وفنادقه في أكتوبر — فلا يجد `legForDay` مرحلةً ليومٍ واحد
+/// ويردّ الأولى للجميع، فتصير رحلة المدينتين مدينةً واحدة بلا أن يُقال له.
+///
+/// والفهرس هو المعنى الصحيح للبند: «اليوم الأول من رحلتي» لا «الثالث من
+/// أكتوبر» — فيبقى كما هو، وينتقل معه. ولا يسقط إلا ما خرج عن مدى الرحلة
+/// بعد أن قصُرت، وذاك يُعاد إلى المعلّقين ويُقال عدده.
+function retimeTrip(trip, oldStart, oldEnd){
+  const dayMs = 86400000;
+  const shift = (d, off) => {
+    if (!d) return d;
+    const x = new Date(d + "T00:00:00");
+    x.setDate(x.getDate() + off);
+    return ymd(x);
+  };
+  const off = (oldStart && trip.start)
+    ? Math.round((new Date(trip.start + "T00:00:00")
+      - new Date(oldStart + "T00:00:00")) / dayMs) : 0;
+  const first = trip.start || "";
+  const last = trip.end || trip.start || "";
+  const clamp = (d) => !d ? d : (first && d < first ? first : (last && d > last ? last : d));
+
+  if (off && Array.isArray(trip.legs))
+    for (const l of trip.legs){ l.from = shift(l.from, off); l.to = shift(l.to, off); }
+  if (off && Array.isArray(trip.stays))
+    for (const st of trip.stays){ st.from = shift(st.from, off); st.to = shift(st.to, off); }
+  // قصُرت الرحلة أو طالت: ما خرج عن مداها يُقصّ إليه — مرحلةٌ خارج الرحلة
+  // كمرحلةٍ لا وجود لها.
+  for (const l of (trip.legs || [])){ l.from = clamp(l.from); l.to = clamp(l.to); }
+  for (const st of (trip.stays || [])){ st.from = clamp(st.from); st.to = clamp(st.to); }
+
+  const n = daysOf(trip).length;
+  let dropped = 0;
+  for (const p of (trip.plan || []))
+    if (p.day >= n){ p.day = -1; p.slot = ""; dropped++; }
+  return dropped;
+}
+
 function daysOf(trip){
   const out = [];
   if (!trip.start) return out;
@@ -775,7 +826,11 @@ export function planner(ctx, tripId, render){
     const de = el("input", { type: "date", value: trip.end || "" });
     ds.onchange = de.onchange = () => {
       if (!ds.value) return;
-      trip.start = ds.value; trip.end = de.value || ds.value; save(); render();
+      const was = [trip.start, trip.end];
+      trip.start = ds.value; trip.end = de.value || ds.value;
+      const dropped = retimeTrip(trip, was[0], was[1]);
+      save(); render();
+      if (dropped) noteDropped(dropped);
     };
     secDates.append(el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
       el("span.who", {}, "📅 " + tt("كامل الرحلة")), ds, de));
@@ -990,8 +1045,11 @@ export function planner(ctx, tripId, render){
       el("div", { style: "display:flex;gap:8px;flex-wrap:wrap" }, ts, te,
         el("button.btn", { onclick: () => {
           if (!ts.value) return;
+          const was = [trip.start, trip.end];
           trip.start = ts.value; trip.end = te.value || ts.value;
+          const dropped = retimeTrip(trip, was[0], was[1]);
           save(); render();
+          if (dropped) noteDropped(dropped);
         } }, t("اعتمد التواريخ")))));
   }
 
