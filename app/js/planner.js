@@ -985,11 +985,14 @@ export function planner(ctx, tripId, render){
       if (time) bits.push(iso(time));
       return bits.join(" ");
     };
-    const routeLine = (f) => {
-      const a = endPart(t("إقلاع من"), t("إقلاع"), f.from, f.dep);
-      const b = endPart(t("وصول إلى"), t("وصول"), f.to, f.arr);
-      return [a, b].filter(Boolean).join(" - ");
-    };
+    /// سطرٌ لكل طرف: الإقلاع فوق والوصول تحته. كانا في سطر واحد بشرطةٍ
+    /// بينهما فيلتفّ على الجوال في موضعٍ لا يختاره أحد، ويصير نصف الجملة
+    /// أعلى ونصفها أسفل بلا معنى. سطران مقصودان أوضح من سطرٍ ينكسر.
+    const routeParts = (f) => [
+      endPart(t("إقلاع من"), t("إقلاع"), f.from, f.dep),
+      endPart(t("وصول إلى"), t("وصول"), f.to, f.arr),
+    ].filter(Boolean);
+    const routeLine = (f) => routeParts(f).join(" - ");
 
     // رقم الرحلة وأوقاتها — يدخلها المستخدم فتحكم يومي السفر في الجدول والتوزيع.
     // رقم الرحلة أو الأوقات — لا كلاهما: الرقم يجلب الأوقات من الخادم،
@@ -999,12 +1002,14 @@ export function planner(ctx, tripId, render){
       const row = el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
         el("span.who", {}, "✈️ " + lbl));
       if ((f.dep || f.arr) && !f.editing){
-        const route = routeLine(f);
+        const parts = routeParts(f);
         row.append(
           el("div", { style: "display:flex;flex-direction:column;gap:2px;min-width:0" },
             f.no ? el("span", {}, iso(f.no)) : null,
             // الأوقات كانت تُكتب مرتين: مرة عارية ومرة مع المدينتين.
-            el("span", {}, route || tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`)),
+            ...(parts.length
+              ? parts.map(x => el("span", {}, x))
+              : [el("span", {}, tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`)])),
           // رقمٌ خاطئ يُصحَّح بالرقم لا باليد: «تصحيح الرقم» يعيدنا إلى
           // البحث فتُجلب الأوقات والمدينتان من جديد. و«الأوقات» لمن أرادها
           // يدويًا — كان الزر الوحيد يقود إلى اليد وحدها.
@@ -1031,28 +1036,32 @@ export function planner(ctx, tripId, render){
         return row;
       }
       const st = el("span.det");
+      // الجلب فعلٌ واحد لبابين: الزرّ ومفتاح الإدخال. من كتب رقمًا ثم ضغط
+      // Enter يتوقع أن يحدث شيء — وكان لا يحدث شيء، فيظنّ الحقل معطوبًا.
+      const fetchTimes = async () => {
+        const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
+        if (!v) return;
+        f.no = v; st.textContent = "…";
+        try {
+          const date = dir === "out" ? trip.start : trip.end;
+          const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
+            + encodeURIComponent(v) + (date ? "&date=" + date : ""));
+          const j = await r.json();
+          if (j.ok){
+            f.dep = j.dep; f.arr = j.arr;
+            if (j.from) f.from = j.from;   // مطار الإقلاع كان يُهمَل
+            if (j.to) f.to = j.to;
+            f.editing = false; f.manual = false;
+            // مطار جديد ⇐ زمن الطريق يُعاد حسابه
+            for (const st of trip.stays || []) delete st.driveMin;
+            save(); render(); return;
+          }
+        } catch {}
+        f.manual = true; save(); render();
+      };
+      no.onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); fetchTimes(); } };
       row.append(no,
-        el("button.chip", { onclick: async () => {
-          const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
-          if (!v) return;
-          f.no = v; st.textContent = "…";
-          try {
-            const date = dir === "out" ? trip.start : trip.end;
-            const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
-              + encodeURIComponent(v) + (date ? "&date=" + date : ""));
-            const j = await r.json();
-            if (j.ok){
-              f.dep = j.dep; f.arr = j.arr;
-              if (j.from) f.from = j.from;   // مطار الإقلاع كان يُهمَل
-              if (j.to) f.to = j.to;
-              f.editing = false; f.manual = false;
-              // مطار جديد ⇐ زمن الطريق يُعاد حسابه
-              for (const st of trip.stays || []) delete st.driveMin;
-              save(); render(); return;
-            }
-          } catch {}
-          f.manual = true; save(); render();
-        } }, t("أحضر الأوقات")),
+        el("button.chip", { onclick: fetchTimes }, t("أحضر الأوقات")),
         el("a", { href: "#", style: "font-size:12px", onclick: (e) => {
           e.preventDefault(); f.no = no.value.trim(); f.manual = true; save(); render();
         } }, t("أو أدخل الأوقات يدويًا")), st);
