@@ -328,6 +328,15 @@ function fmtDay(d){
   return d.toLocaleDateString(isEN ? "en" : "ar", {
     weekday: "short", day: "numeric", month: "short" });
 }
+/// خلية اليوم ضيّقة، وثلاث كلمات فيها تنزل ثلاثة أسطر. «الثلاثاء 9/8»
+/// تكفي: اليوم بالاسم ثم الشهر واليوم رقمين — يقرأهما العربي من يمينه
+/// يومًا ثم شهرًا، وهو الترتيب الذي طلبه طارق للتواريخ كلها.
+function fmtDayShort(d){
+  const wd = d.toLocaleDateString(isEN ? "en" : "ar", { weekday: "short" });
+  return isEN
+    ? `${wd} ${d.getDate()}/${d.getMonth() + 1}`
+    : `${wd} ${d.getMonth() + 1}/${d.getDate()}`;
+}
 
 // عدّاد المجتمع: إضافةٌ من السجل تزيد «اختارها N» واحدًا — بلا هوية،
 // نار-وانسَ، ومن الموقع الحي فقط كي لا تنتفخ الأعداد من التجارب.
@@ -2055,8 +2064,10 @@ export function planner(ctx, tripId, render){
           + (coords.length > 2
               ? "&waypoints=" + encodeURIComponent(coords.slice(1, -1).join("|")) : "")
         : "https://www.google.com/maps/search/?api=1&query=" + coords[0];
-      route = el("div", { style: "display:flex;gap:8px;align-items:center;"
-        + "justify-content:center;flex-wrap:wrap;margin-top:4px" },
+      // صار جزءًا من سطر أرقام اليوم لا كتلةً تحت التاريخ: يجري معه في السطر
+      // نفسه ويبدأ بفاصلٍ إن سبقته أرقام.
+      route = el("span", { style: "display:inline-flex;gap:8px;align-items:center;"
+        + "flex-wrap:wrap;margin-inline-start:8px" },
         el("a", { target: "_blank", rel: "noopener", href: gmaps,
           style: "font-size:12.5px" }, t("خط السير ›")),
         el("a", { href: "#", style: "font-size:12.5px",
@@ -2068,14 +2079,15 @@ export function planner(ctx, tripId, render){
     const dstr = ymd(d);
     const dayCell = el("td.dt-day", {},
       el("div.dn", {}, tt`يوم ${i + 1}`),
-      el("div.dd", {}, fmtDay(d)),
+      el("div.dd", {}, fmtDayShort(d)),
       (days.length > 1 && i === 0)
         ? el("div.dm", {}, "✈︎ " + (fo.no || tt("يوم الوصول"))
             + (fo.arr ? " — " + tt`الوصول ${fo.arr}` : "")) : null,
       (days.length > 1 && i === days.length - 1)
         ? el("div.dm", {}, "✈︎ " + (fb.no || tt("يوم العودة"))
-            + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null,
-      route);
+            + (fb.dep ? " — " + tt`الإقلاع ${fb.dep}` : "")) : null);
+      // «خط السير» نزل إلى سطر أرقام اليوم: كلاهما عن الطريق نفسه، وخليةُ
+      // العنوان أضيق من أن تحمل رابطين تحت تاريخ.
     const ok = allowedSlots(trip, i, days.length);
     const hev = timedEvents(trip, dstr, city, store, days);
     const evRow = (ev) => el("div.trow", {},
@@ -2131,13 +2143,15 @@ export function planner(ctx, tripId, render){
     const sig = i + ":" + stops.map(p => p.id).join(",");
     const stat = trip.dayStats[sig];
     const bits = [];
-    if (stat) bits.push(tt`حلقة اليوم ${stat.km} كم · ${stat.min} د من الفندق وإليه`);
+    if (stat) bits.push(tt`${stat.km} كم · ${stat.min} د من الفندق وإليه`);
     const far = dayPlaces.filter(isFar);
     if (far.length) bits.push(tt`محطة بعيدة (${far[0].driveFromStayMin} د) — يوم مخفَّف بانطلاق مبكر`);
     else if (stops.length > 1) bits.push(t("محطات متجاورة في جهة واحدة — طريق واحد لا طريقان"));
-    if (bits.length)
+    if (bits.length || route)
       tablesBox.append(el("div.daywhy", { style: "border-inline-start:5px solid "
-        + dayColor(i) }, "◷ " + bits.join(" · ")));
+        + dayColor(i) },
+        bits.length ? "◷ " + bits.join(" · ") : "",
+        route || null));
   });
 
   // ── الجدول يمينًا والخريطة يسارًا — وعلى الجوال تنطوي الخريطة تحت الجدول ──
