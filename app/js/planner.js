@@ -258,6 +258,21 @@ function noteDropped(n){
   ]);
 }
 
+/// الملعب لا يُقترَح. حكم طارق ٢٠٢٦-٠٩-٠٥: هو مكانٌ لمباراةٍ لا مزار، ولا
+/// يُدخَل إلا يوم لعبٍ يعرفه صاحبه — فمن أراده بحث عنه بالاسم ووجده. أما
+/// أن يُقحَم بين قصر شونبرون وسوق ناشماركت فيسرق موضعًا من فعاليةٍ تُعاش.
+const STADIUM_AR = /ملعب|استاد|ستاد/;
+const STADIUM_EN = /\b(stadium|arena|ballpark|velodrome|racecourse)\b|stadion|estádio|estadio|stade\b/i;
+// إلا ما صار مزارًا بنفسه: متحف النادي أو جولةٌ في الملعب تُدخَل أي يوم
+// بتذكرة، ولا تنتظر مباراة — وهذه فعالية تُعاش لا مقعدٌ ينتظر مباراة.
+const TOUR_AR = /متحف|جولة/;
+const TOUR_EN = /\b(museum|tour)\b/i;
+const isStadium = (a) => (STADIUM_AR.test(a?.name_ar || "")
+    || STADIUM_EN.test(a?.name_en || ""))
+  && !(TOUR_AR.test(a?.name_ar || "") || TOUR_EN.test(a?.name_en || ""));
+/// ما يُعرض في الاقتراحات — مصفاةٌ واحدة يمرّ بها سجلّ كل مدينة.
+const suggestable = (list) => (list || []).filter(a => !isStadium(a));
+
 /// نقل الرحلة إلى تواريخها الجديدة — تُستدعى بعد كل تعديل على start/end.
 ///
 /// العلّة التي تعالجها: المراحل والسكن تحمل تواريخ **مطلقة**، وبنود الجدول
@@ -1078,7 +1093,7 @@ export function planner(ctx, tripId, render){
     const legDays = [];
     for (let d = new Date(from + "T00:00:00"), end = new Date((to || from) + "T00:00:00");
          d <= end; d.setDate(d.getDate() + 1)) legDays.push(new Date(d));
-    const items = (store.attractions?.[l.cityId] || [])
+    const items = suggestable(store.attractions?.[l.cityId])
       .filter(a => !legDays.length || legDays.some(d => !closedWeekly(a, d)))
       .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 24);
     return { leg: l, city: c, items };
@@ -1251,7 +1266,7 @@ export function planner(ctx, tripId, render){
   if (bases.length){
     for (const c of store.cities){
       if (legCityIds.has(c.id) || c.lat == null) continue;
-      const items = (store.attractions?.[c.id] || [])
+      const items = suggestable(store.attractions?.[c.id])
         .sort((x, y) => (y.added_count || 0) - (x.added_count || 0)).slice(0, 12);
       if (!items.length) continue;
       let km = Infinity;

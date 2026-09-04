@@ -518,15 +518,15 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .pickrow { display: flex; flex-wrap: wrap; gap: 8px; }
 .pick { display: flex; align-items: center; gap: 8px;
   border: 2px solid var(--line, #e5ddcf); border-radius: 12px;
-  background: var(--card, #fff); padding: 5px 12px 5px 6px;
+  background: var(--card, #fff); padding: 3px 12px 3px 5px;
   cursor: pointer; font-family: inherit; text-align: start; }
-.pick img { width: 40px; height: 40px; border-radius: 9px; object-fit: cover;
-  display: block; flex: 0 0 40px; }
-.pick .aramp.sm { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 9px;
+.pick img { width: 36px; height: 36px; border-radius: 9px; object-fit: cover;
+  display: block; flex: 0 0 36px; }
+.pick .aramp.sm { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center; font-size: 17px;
   background: var(--aurora); color: rgba(255,255,255,.85);
   font-family: "Tajawal","DM Sans",Tahoma,sans-serif; font-weight: 900; }
-.pick .pn { font-size: 17px; font-weight: 400; line-height: 1.35; }
+.pick .pn { font-size: 15px; font-weight: 400; line-height: 1.3; }
 .pick .pc { font-size: 12px; color: var(--accent, #b8863b);
   font-weight: 700; }
 /* دائرةٌ تدور في البطاقة: العمل على جلب بياناتها جارٍ، لا عطلٌ ولا نسيان */
@@ -714,7 +714,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   color: #fff; }
 .rowthumb.kindth { color: var(--deep, #B4622E); }
 /* أيقونة بطاقة الاقتراح — نفس المربع بمقاس البطاقة */
-.pickicon { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 9px;
+.pickicon { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 9px;
   background: #fff; border: 1px solid var(--line, #e5ddcf);
   display: flex; align-items: center; justify-content: center;
   color: var(--deep, #B4622E); }
@@ -726,7 +726,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* «أضف مدينة أخرى» بجوار عنوان الخطة */
 /* اسم مدينة المرحلة فوق اقتراحاتها */
-.legname { font-size: 15px; font-weight: 800; color: var(--deep, #B4622E);
+.legname { font-size: 17px; font-weight: 800; color: var(--deep, #B4622E);
   margin: 12px 2px 4px; }
 
 /* بطاقات مدن الرحلة داخل الخريطة، بجوار زر التوسيط */
@@ -847,7 +847,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .addowninput:focus { outline: none; border-color: var(--accent, #b8863b); }
 
 /* أماكن قريبة من مكان الإقامة — قسم تحت اقتراحات المراحل */
-.nearhead { margin: 18px 2px 4px; font-size: 16px; font-weight: 800;
+.nearhead { margin: 18px 2px 4px; font-size: 19px; font-weight: 800;
   color: var(--text, #28241E); border-top: 1px solid var(--line, #e5ddcf);
   padding-top: 12px; }
 
