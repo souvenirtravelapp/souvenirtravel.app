@@ -938,6 +938,36 @@ export function planner(ctx, tripId, render){
       });
     }
 
+    // مطارٌ برمزه لا يقول شيئًا لمن لا يحفظ الرموز: VIE ثلاثة أحرف، و«فيينا»
+    // مدينةٌ يعرفها. فنردّ الإياتا إلى أقرب مدينةٍ في سجلنا مرتبطةً به.
+    const cityOfIata = (iata) => {
+      if (!iata) return "";
+      const code = iata.toUpperCase();
+      // `origins` خريطةٌ مسمّاة يدًا: مطارٌ ومدينته بالعربية. تُقدَّم على
+      // الحساب لأن الأقرب مسافةً ليس المدينة الأمّ دائمًا — RUH أقرب إلى
+      // الدرعية منه إلى الرياض، وDXB إلى الشارقة. جُرِّبا فأخطأ الحسابُ فيهما.
+      const o = (store.origins || []).find(x => (x.iata || "").toUpperCase() === code);
+      if (o) return isEN ? (o.city_en || o.city_ar) : (o.city_ar || o.city_en);
+      const ap = Object.values(store.airports || {})
+        .find(a => (a.iata || "").toUpperCase() === code);
+      if (!ap) return code;
+      let best = null, bd = Infinity;
+      for (const [cid, links] of Object.entries(store.cityAirports || {}))
+        for (const l of links)
+          if (l.airport_id === ap.id && (l.distance_km ?? 1e9) < bd){
+            bd = l.distance_km ?? 1e9; best = cid;
+          }
+      const c = best && store.cities.find(x => x.id === best);
+      return c ? cityName(c) : (ap.name_en || iata);
+    };
+    /// «فيينا ← الرياض (VIE ← RUH)» — المدينتان أولًا والرمزان بينهما لمن يريدهما.
+    const routeLine = (f) => {
+      const a = cityOfIata(f.from), b = cityOfIata(f.to);
+      if (!a && !b) return "";
+      const codes = [f.from, f.to].filter(Boolean).join(" ← ");
+      return [a || "؟", b || "؟"].join(" ← ") + (codes ? " (" + codes + ")" : "");
+    };
+
     // رقم الرحلة وأوقاتها — يدخلها المستخدم فتحكم يومي السفر في الجدول والتوزيع.
     // رقم الرحلة أو الأوقات — لا كلاهما: الرقم يجلب الأوقات من الخادم،
     // وإن تعذر الجلب انفتح الإدخال اليدوي.
@@ -946,11 +976,21 @@ export function planner(ctx, tripId, render){
       const row = el("div.row", { style: "flex-wrap:wrap;gap:6px;align-items:center" },
         el("span.who", {}, "✈️ " + lbl));
       if ((f.dep || f.arr) && !f.editing){
+        const route = routeLine(f);
         row.append(
-          el("span", {}, (f.no ? f.no + " — " : "")
-            + tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`),
-          el("button.chip", { onclick: () => { f.editing = true; save(); render(); } },
-            "✎"));
+          el("div", { style: "display:flex;flex-direction:column;gap:2px;min-width:0" },
+            el("span", {}, (f.no ? f.no + " — " : "")
+              + tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`),
+            route ? el("span.det", {}, "🛫 " + route) : null),
+          // رقمٌ خاطئ يُصحَّح بالرقم لا باليد: «تصحيح الرقم» يعيدنا إلى
+          // البحث فتُجلب الأوقات والمدينتان من جديد. و«الأوقات» لمن أرادها
+          // يدويًا — كان الزر الوحيد يقود إلى اليد وحدها.
+          el("button.chip", { title: t("صحّح رقم الرحلة"),
+            onclick: () => { f.editing = true; f.manual = false;
+              f.dep = ""; f.arr = ""; save(); render(); } }, "✎ " + t("الرقم")),
+          el("button.chip", { title: t("عدّل الأوقات يدويًا"),
+            onclick: () => { f.editing = true; f.manual = true; save(); render(); } },
+            "🕑"));
         return row;
       }
       const no = el("input", { placeholder: t("رقم الرحلة"), value: f.no || "",
@@ -963,6 +1003,8 @@ export function planner(ctx, tripId, render){
         no.onchange = dp.onchange = ar2.onchange = done;
         row.append(no, el("span.det", {}, t("إقلاع")), dp,
                    el("span.det", {}, t("وصول")), ar2);
+        const route = routeLine(f);
+        if (route) row.append(el("span.det", {}, "🛫 " + route));
         return row;
       }
       const st = el("span.det");
@@ -978,7 +1020,9 @@ export function planner(ctx, tripId, render){
             const j = await r.json();
             if (j.ok){
               f.dep = j.dep; f.arr = j.arr;
+              if (j.from) f.from = j.from;   // مطار الإقلاع كان يُهمَل
               if (j.to) f.to = j.to;
+              f.editing = false; f.manual = false;
               // مطار جديد ⇐ زمن الطريق يُعاد حسابه
               for (const st of trip.stays || []) delete st.driveMin;
               save(); render(); return;
@@ -1678,9 +1722,25 @@ export function planner(ctx, tripId, render){
                                      && (!l.to || ymd(d) <= l.to));
             if (!sub.length) continue;
             const off = dd2.findIndex(d => ymd(d) === ymd(sub[0]));
+            // من يخصّ هذه المرحلة؟ كان الجواب «من له qid في سجلّ مدينتها» —
+            // فما أضافه المستخدم بيده لا qid له، فلا يخصّ مرحلةً قط ويبقى
+            // معلّقًا حتى ضغطةٍ ثانية. والصواب أن تحكم الجغرافيا: أقرب مدن
+            // الرحلة إلى إحداثياته هي مرحلته، سجّلناه أو لم نسجّله.
+            const legCity = store.cities.find(c => c.id === l.cityId);
             const mine = trip.plan.filter(p => {
-              const a = (store.attractions?.[l.cityId] || []).find(x => x.qid === p.qid);
-              return !!a;
+              if ((store.attractions?.[l.cityId] || []).some(x => x.qid === p.qid))
+                return true;
+              if (p.qid || !(p.lat || p.lon) || !legCity || legCity.lat == null)
+                return false;
+              // أقرب مرحلةٍ إليه لا أيّ مرحلة: لا يُحسب لفيينا وشلادمينغ معًا.
+              let near = null, nd = Infinity;
+              for (const g of legs){
+                const gc = store.cities.find(c => c.id === g.cityId);
+                if (!gc || gc.lat == null) continue;
+                const d = kmAB(p, gc);
+                if (d < nd){ nd = d; near = g; }
+              }
+              return near === l;
             });
             const shadow = { ...trip, plan: mine };
             if (autoPlan(shadow, sub, store.cities.find(c => c.id === l.cityId), store)){
