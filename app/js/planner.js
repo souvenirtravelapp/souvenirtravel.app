@@ -960,12 +960,26 @@ export function planner(ctx, tripId, render){
       const c = best && store.cities.find(x => x.id === best);
       return c ? cityName(c) : (ap.name_en || iata);
     };
-    /// «فيينا ← الرياض (VIE ← RUH)» — المدينتان أولًا والرمزان بينهما لمن يريدهما.
+    /// «إقلاع من جدة (JED) 10:10 - وصول إلى فيينا (VIE) 14:25» — جملةٌ تُقرأ
+    /// لا رموزٌ وأسهم. الرمز والوقت لاتينيان داخل عربية، فيُعزلان بمحرفَي
+    /// العزل (U+2066/U+2069) وإلا أعاد ترتيبُ الاتجاه قوسًا أو نقطتين.
+    const LRI = "\u2066", PDI = "\u2069";
+    const iso = (x) => x ? LRI + x + PDI : "";
+    // «من» و«إلى» حرفا جرٍّ لا يقفان وحدهما: بلا مطارٍ معلوم تصير «إقلاع
+    // 10:10»، وبلا وقتٍ ولا مطار يسقط الطرف كله بدل «إقلاع من -» معلّقة.
+    const endPart = (withPlace, bare, iata, time) => {
+      const city = cityOfIata(iata);
+      if (!city && !time) return "";
+      const bits = [city ? withPlace : bare];
+      if (city) bits.push(city);
+      if (iata) bits.push(iso("(" + iata + ")"));
+      if (time) bits.push(iso(time));
+      return bits.join(" ");
+    };
     const routeLine = (f) => {
-      const a = cityOfIata(f.from), b = cityOfIata(f.to);
-      if (!a && !b) return "";
-      const codes = [f.from, f.to].filter(Boolean).join(" ← ");
-      return [a || "؟", b || "؟"].join(" ← ") + (codes ? " (" + codes + ")" : "");
+      const a = endPart(t("إقلاع من"), t("إقلاع"), f.from, f.dep);
+      const b = endPart(t("وصول إلى"), t("وصول"), f.to, f.arr);
+      return [a, b].filter(Boolean).join(" - ");
     };
 
     // رقم الرحلة وأوقاتها — يدخلها المستخدم فتحكم يومي السفر في الجدول والتوزيع.
@@ -979,9 +993,9 @@ export function planner(ctx, tripId, render){
         const route = routeLine(f);
         row.append(
           el("div", { style: "display:flex;flex-direction:column;gap:2px;min-width:0" },
-            el("span", {}, (f.no ? f.no + " — " : "")
-              + tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`),
-            route ? el("span.det", {}, "🛫 " + route) : null),
+            f.no ? el("span", {}, iso(f.no)) : null,
+            // الأوقات كانت تُكتب مرتين: مرة عارية ومرة مع المدينتين.
+            el("span", {}, route || tt`إقلاع ${f.dep || "؟"} · وصول ${f.arr || "؟"}`)),
           // رقمٌ خاطئ يُصحَّح بالرقم لا باليد: «تصحيح الرقم» يعيدنا إلى
           // البحث فتُجلب الأوقات والمدينتان من جديد. و«الأوقات» لمن أرادها
           // يدويًا — كان الزر الوحيد يقود إلى اليد وحدها.
@@ -1004,7 +1018,7 @@ export function planner(ctx, tripId, render){
         row.append(no, el("span.det", {}, t("إقلاع")), dp,
                    el("span.det", {}, t("وصول")), ar2);
         const route = routeLine(f);
-        if (route) row.append(el("span.det", {}, "🛫 " + route));
+        if (route) row.append(el("span.det", {}, route));
         return row;
       }
       const st = el("span.det");

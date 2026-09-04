@@ -327,6 +327,8 @@ export const EN = {
  "الرقم": "Number",
  "صحّح رقم الرحلة": "Correct the flight number",
  "عدّل الأوقات يدويًا": "Edit the times by hand",
+ "إقلاع من": "Departs",
+ "وصول إلى": "Arrives",
  "اكتشف": "Discover",
  "خطط": "Plan",
  "وثّق": "Keep",
