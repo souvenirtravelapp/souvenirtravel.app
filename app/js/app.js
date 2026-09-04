@@ -15,11 +15,14 @@ import { Trips } from "./trips-store.js";
 
 // أبواب سوفينير الأربعة كما رتبها طارق (2026-08-30): بيتٌ يستقبل، وبحثٌ
 // يرشّح، وقادمٌ يُخطَّط — قسم كبير قائم بذاته — وماضٍ يُحفظ.
+// كلمةٌ واحدة لكل باب. الأرقام كانت تُعلّم الترتيب مرة وتكلّف الوضوح كل مرة،
+// و«ابحث في الوجهات السياحية» كان ينزل ثلاثة أسطر في شريط الإبهام.
+// والثلاثة فعلٌ لا اسم: تكتشف، ثم تخطط، ثم توثّق — وهي رحلة المستخدم نفسها.
 const TABS = [
-  { hash: "#/home",     label: t("الرئيسية"),        icon: "icons/TabHome.svg"  },
-  { hash: "#/next",     label: t("١ ابحث في الوجهات السياحية"), icon: "icons/TabFind.svg"  },
-  { hash: "#/upcoming", label: t("٢ رحلاتك القادمة"),  icon: "icons/TabFav.svg"   },
-  { hash: "#/trips",    label: t("٣ تاريخ رحلاتك"),  icon: "icons/TabTrips.svg" },
+  { hash: "#/home",     label: t("الرئيسية"), icon: "icons/TabHome.svg"  },
+  { hash: "#/next",     label: t("اكتشف"),    icon: "icons/TabFind.svg"  },
+  { hash: "#/upcoming", label: t("خطط"),      icon: "icons/TabFav.svg"   },
+  { hash: "#/trips",    label: t("وثّق"),      icon: "icons/TabTrips.svg" },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -57,11 +60,11 @@ function drawTabs(){
       el("img", { src: "/icon.png", alt: "" }), t("سوفينير")),
     el("div.links", {},
       el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, t("الرئيسية")),
-      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("١ ابحث في الوجهات السياحية")),
+      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("اكتشف")),
       el("a", { href: "#/upcoming", class: on === "upcoming" ? "on" : "",
-        onclick: upcomingGuard }, t("٢ رحلاتك القادمة")),
+        onclick: upcomingGuard }, t("خطط")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
-        onclick: tripsGuard }, t("٣ تاريخ رحلاتك"))),
+        onclick: tripsGuard }, t("وثّق"))),
     langPill(),
     avatarFace());
 }

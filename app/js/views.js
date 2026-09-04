@@ -221,7 +221,7 @@ export function finder(ctx){
   // القلب في الرأس كما في التطبيق — المفضلة بنت هذه الصفحة لا بابٌ رابع.
   const root = el("div.wide");
   root.append(el("div.hero2", {},
-    el("h1", {}, t("وجهاتك القادمة")),
+    el("h1", {}, t("اكتشف وجهتك")),
     el("p", {}, t("رشّح وجهتك بالشهر والأجواء والتأشيرة والطيران المباشر — والقلب يحفظها في مفضلتك.")),
     searchStrip(ctx, true)));
   const inner = el("div.section");
@@ -893,7 +893,7 @@ export function favorites(ctx){
   root.append(el("div.hero3", {},
     el("div.herorow", {},
       el("h1", {}, t("المفضلة")),
-      el("a.circle", { href: "#/next", title: t("وجهاتك القادمة") }, "‹")),
+      el("a.circle", { href: "#/next", title: t("اكتشف وجهتك") }, "‹")),
     el("p", {}, t("الوجهات التي أحببتها، كلٌ بشهرها — تعيش في حسابك على كل أجهزتك."))));
   const inner = el("div.section");
   root.append(inner);
