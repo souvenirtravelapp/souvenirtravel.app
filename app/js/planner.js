@@ -1347,11 +1347,26 @@ export function planner(ctx, tripId, render){
   // كل صفٍّ يُحفظ باسم مدينته: ما يضيفه المستخدم بيده ينزل تحت مدينته لا
   // في صفٍّ يتيم آخر الصفحة — فالمكان يُقرأ مع جيرانه أو لا يُقرأ.
   const rowByCity = new Map();
+  /// مدى المرحلة بالعربية: «١٠ – ٢١ سبتمبر» في الشهر الواحد، و«٢٨ سبتمبر –
+  /// ٣ أكتوبر» عبر شهرين. كان «09-10 → 09-21» — أرقامٌ يقلب اتجاهُ الصفحة
+  /// ترتيبَها ويقلب سهمَها معها، فيقرأ العربي الشهر قبل اليوم والسهم معكوسًا.
+  /// والاسم الصريح للشهر لا يحتمل قلبًا، والشرطة لا اتجاه لها تُعكس.
+  const legRange = (from, to) => {
+    if (!from) return "";
+    const d1 = new Date(from + "T00:00:00");
+    const d2 = new Date((to || from) + "T00:00:00");
+    const loc = isEN ? "en" : "ar";
+    const mon = (d) => d.toLocaleDateString(loc, { month: "long" });
+    const day = (d) => d.toLocaleDateString(loc, { day: "numeric" });
+    return mon(d1) === mon(d2)
+      ? `${day(d1)} – ${day(d2)} ${mon(d2)}`
+      : `${day(d1)} ${mon(d1)} – ${day(d2)} ${mon(d2)}`;
+  };
   for (const g of legReg){
     const name = g.city ? cityName(g.city) : "";
-    regBox.append(el("div.legname", {},
-      name + (legReg.length > 1 && g.leg.from
-        ? " · " + g.leg.from.slice(5) + " → " + (g.leg.to || "").slice(5) : "")));
+    const range = legReg.length > 1 ? legRange(g.leg.from, g.leg.to) : "";
+    regBox.append(el("div.legname", {}, name,
+      range ? el("span.legdates", {}, " · " + range) : null));
     const gctx = { items: g.items, city: name };
     const row = el("div.pickrow", {}, g.items.map(a => pickCard(a, gctx)));
     regBox.append(row);

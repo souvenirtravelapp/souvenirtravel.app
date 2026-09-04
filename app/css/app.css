@@ -726,6 +726,8 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* «أضف مدينة أخرى» بجوار عنوان الخطة */
 /* اسم مدينة المرحلة فوق اقتراحاتها */
+/* التاريخ بجوار المدينة: أخفّ وأصغر — هو ظرفٌ للاسم لا شريكٌ له. */
+.legdates { font-size: 15px; font-weight: 400; opacity: .8; }
 .legname { font-size: 17px; font-weight: 800; color: var(--deep, #B4622E);
   margin: 12px 2px 4px; }
 
