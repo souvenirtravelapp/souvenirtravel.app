@@ -1170,13 +1170,18 @@ export function planner(ctx, tripId, render){
   // كان يُخفى حينها، فيبدأ الاقتراح بلا عنوان بينما «الأماكن القريبة» تحته
   // تعلن مدينتها دائمًا — فيسأل القارئ: لمن هذه الأولى؟ والتواريخ وحدها
   // تُذكر عند التعدد، إذ لا معنى لمدىً واحد يساوي مدى الرحلة كلها.
+  // كل صفٍّ يُحفظ باسم مدينته: ما يضيفه المستخدم بيده ينزل تحت مدينته لا
+  // في صفٍّ يتيم آخر الصفحة — فالمكان يُقرأ مع جيرانه أو لا يُقرأ.
+  const rowByCity = new Map();
   for (const g of legReg){
+    const name = g.city ? cityName(g.city) : "";
     regBox.append(el("div.legname", {},
-      (g.city ? cityName(g.city) : "") +
-      (legReg.length > 1 && g.leg.from
+      name + (legReg.length > 1 && g.leg.from
         ? " · " + g.leg.from.slice(5) + " → " + (g.leg.to || "").slice(5) : "")));
-    const gctx = { items: g.items, city: g.city ? cityName(g.city) : "" };
-    regBox.append(el("div.pickrow", {}, g.items.map(a => pickCard(a, gctx))));
+    const gctx = { items: g.items, city: name };
+    const row = el("div.pickrow", {}, g.items.map(a => pickCard(a, gctx)));
+    regBox.append(row);
+    if (name) rowByCity.set(name, row);
   }
   // ── أماكن قريبة من مكان إقامتك ──
   // من ينزل في شلادمينغ يزور هالشتات وسالزبورغ في يومٍ منها ولا ينقل حقائبه.
@@ -1222,7 +1227,9 @@ export function planner(ctx, tripId, render){
       regBox.append(el("div.legname", {},
         cityName(n.city) + " · " + (drv ? tt`${drv} د قيادة` : tt`~${n.km} كم`)));
       const nctx = { items: n.items, city: cityName(n.city) };
-      regBox.append(el("div.pickrow", {}, n.items.map(a => pickCard(a, nctx))));
+      const nrow = el("div.pickrow", {}, n.items.map(a => pickCard(a, nctx)));
+      regBox.append(nrow);
+      rowByCity.set(cityName(n.city), nrow);
     }
   }
 
@@ -1250,14 +1257,19 @@ export function planner(ctx, tripId, render){
       waiting
         ? el("div.pc.wait", {}, el("i.spin"), t("جارٍ جمع بياناتها"))
         : el("div.pc", {}, clean(p.kind) || "‏"));
-    freeBox.append(el("div.pickwrap" + (p.day >= 0 ? "" : ".pend"), {}, body,
+    const wrap = el("div.pickwrap" + (p.day >= 0 ? "" : ".pend"), {}, body,
       el("button.pickadd.on", { "aria-label": t("أزل من الجدول"),
         title: t("أزل من الجدول"),
-        onclick: (e) => { e.stopPropagation(); rm(); } }, "✓")));
+        onclick: (e) => { e.stopPropagation(); rm(); } }, "✓"));
+    // تحت مدينته إن عرفناها — وإلا فصفٌّ أخير لما لم نستطع نسبته.
+    (rowByCity.get(where) || freeBox).append(wrap);
   }
-  if (freeBox.children.length) regBox.append(freeBox);
-  const input = el("input", { placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…"),
-    style: "flex:1;min-width:0" });
+  if (freeBox.children.length){
+    regBox.append(el("div.legname", {}, t("أماكن أضفتها")));
+    regBox.append(freeBox);
+  }
+  const input = el("input.addowninput", {
+    placeholder: t("اكتب اسم مكان — زحليقة، مقهى، بحيرة…") });
   addBox.append(
     // مفتاح الألوان: العنوان يمينًا والدلالات يسارًا — ثلاث حالات لا تُشرح بكلام.
     el("div", { style: "display:flex;align-items:center;flex-wrap:wrap;gap:10px;"
@@ -1268,10 +1280,13 @@ export function planner(ctx, tripId, render){
         el("span", {}, el("i.sw.sw-pend", {}), t("مختار — لم يُضف للجدول")),
         el("span", {}, el("i.sw.sw-sel", {}), t("في الجدول")))),
     regBox,
-    el("div", { style: "display:flex;align-items:center;gap:10px;margin-top:12px" },
+    // صندوقٌ له عنوانه: كان حقلًا عاريًا بكلمة «أضف مكانًا» بجانبه، فيمرّ
+    // عليه القارئ ولا يعلم أن له أن يضيف من عنده. العنوان يقول له ذلك.
+    el("div.addown", {},
+      el("h3", {}, t("لم تجد ما تريد؟ أضفه بنفسك")),
+      el("p", {}, t("اكتب اسم أي مكان — مقهى، حديقة، مطعم، شاطئ — ونجمع بياناته ونضعه تحت مدينته.")),
       input,
-      el("span.det", { style: "white-space:nowrap" }, t("أضف مكانًا"))),
-    results);
+      results));
   // سجلنا أولًا ثم الخريطة: من كتب «شافبيرغ» عندنا سجلها كاملةً — اسمها
   // العربي وأوقاتها وإغلاقها وأيقونتها — فلا يُضاف صدفةٌ عارية من الخريطة
   // ولنا أصلها. والأقرب إلى مدن رحلته أوّلًا، ثم الأكثر اختيارًا.

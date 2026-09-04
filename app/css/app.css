@@ -825,6 +825,20 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   color: var(--deep, #B4622E); }
 .factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
 
+/* «أضف مكانًا»: صندوقٌ يُرى ويقول ما هو. كان حقلًا عاريًا بكلمةٍ بجانبه،
+   فلا يعرف القارئ أن الإضافة من حقّه — والدعوة نصف الميزة. */
+.addown { margin-top: 18px; padding: 14px; border-radius: 14px;
+  background: rgba(40,36,30,.04); border: 1px dashed var(--line, #e5ddcf); }
+.addown h3 { margin: 0; font-size: 16px; font-weight: 800;
+  color: var(--text, #28241E); }
+.addown p { margin: 4px 0 10px; font-size: 13px; line-height: 1.6;
+  color: var(--text, #28241E); opacity: .72; }
+.addowninput { width: 100%; box-sizing: border-box; font-family: inherit;
+  font-size: 15px; padding: 12px 14px; border-radius: 11px;
+  border: 1.5px solid var(--line, #e5ddcf); background: var(--card, #fff);
+  color: var(--text, #28241E); }
+.addowninput:focus { outline: none; border-color: var(--accent, #b8863b); }
+
 /* أماكن قريبة من مكان الإقامة — قسم تحت اقتراحات المراحل */
 .nearhead { margin: 18px 2px 4px; font-size: 16px; font-weight: 800;
   color: var(--text, #28241E); border-top: 1px solid var(--line, #e5ddcf);
