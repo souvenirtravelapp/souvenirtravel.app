@@ -1751,13 +1751,11 @@ export function planner(ctx, tripId, render){
     const dd2 = daysOf(trip);
     const pend = trip.plan.filter(p => p.day < 0 || p.day >= dd2.length).length;
     const scheduled = trip.plan.length - pend;
-    inner.append(el("div.card", { style: "margin-bottom:14px" },
-      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
-      el("p.det", { style: "margin-bottom:10px" },
-        trip.plan.length
-          ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
-          : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
-      el("button.btn", { onclick: () => {
+    // ثلاث حالات لا اثنتان. كان الزر يقول «وزّع الآن» حتى حين لا يبقى شيء
+    // ليوزَّع — فيدعو المستخدم إلى فعلٍ تم، وإن ضغطه أعاد ترتيب أيامه ومحا
+    // ما نقله بيده بلا سؤال. الزر يقول الآن ما سيفعله، ويستأذن قبل المحو.
+    const settled = pend === 0 && scheduled > 0;
+    const doPlan = () => {
         // كل مرحلة تُوزَّع وحدها: خلط مدينتين متباعدتين يُنتج أيامًا مبعثرة.
         const legs = legsOf(trip);
         let ok = false;
@@ -1799,9 +1797,26 @@ export function planner(ctx, tripId, render){
           ok = autoPlan(trip, dd2, city, store);
         }
         if (ok){ save(); render(); }
+    };
+    inner.append(el("div.card", { style: "margin-bottom:14px" },
+      el("h2", { style: "margin-bottom:6px" }, t("خطط لي أيامي")),
+      el("p.det", { style: "margin-bottom:10px" },
+        settled
+          ? t("كل ما اخترته موزَّع على أيامك. إعادة التوزيع ترتّبها من جديد وتُلغي ما نقلته بيدك.")
+          : trip.plan.length
+            ? t("سوفينير يوزع ما اخترته على الأيام: القريب مع القريب، والمطاعم مساءً، ويوما السفر خفيفان. عدّل بعدها ما شئت.")
+            : t("لم تختر أماكن بعد؟ نبدأ لك بأكثر ما اختاره المسافرون، ونوزعها على أيامك. عدّل بعدها ما شئت.")),
+      el("button.btn", { onclick: () => {
+        if (!settled) return doPlan();
+        askConfirm({
+          title: t("إعادة التوزيع"),
+          body: t("سيُعاد ترتيب فعالياتك على الأيام من جديد، وما نقلته بيدك يعود إلى ترتيب سوفينير."),
+          yes: t("أعِد الترتيب"),
+          onYes: doPlan,
+        });
       } }, pend
           ? tt`هناك ${pend} فعالية غير مضافة للجدول — اضغط للإضافة`
-          : t("وزّع الآن"))));
+          : settled ? t("أعِد توزيع أيامي") : t("وزّع الآن"))));
   }
 
   // السجل بالمعرّف — ليُفتَح لمكانٍ في الجدول ما يُفتح له في المقترحات.
