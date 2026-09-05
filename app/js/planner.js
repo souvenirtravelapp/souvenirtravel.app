@@ -684,15 +684,25 @@ function setupWizard({ trip, store, save, render, city, addCityLeg, removeCities
           && ((c.name_ar || "").includes(q)
             || (c.name_en || "").toLowerCase().includes(q))).slice(0, 6))
         hits.append(el("button.srow", { style: "width:100%;text-align:start",
-          onclick: () => { addCityLeg(c); input.value = ""; hits.replaceChildren();
-            paint(); } },
+          onclick: () => {
+            addCityLeg(c);
+            // رحلةٌ بدأت بلا مدينة: أولُ ما يُضاف هو مدينتها الأصل، وإلا
+            // بقيت الصفحة بلا مرجعٍ لطقسها وتأشيرتها وعنوانها.
+            if (!trip.cityId) trip.cityId = c.id;
+            if (!trip.title || trip.title === t("رحلة جديدة")) trip.title = cityName(c);
+            save();
+            input.value = ""; hits.replaceChildren(); paint();
+            btnRow.replaceChildren(...navNodes());
+          } },
           el("div", {}, el("div.t", {}, cityName(c)),
             el("div.s", {}, countryName(c)))));
     };
+    const navNodes = () => [...nav(false, t("التالي"),
+      legCities().length > 0, () => draw(1)).childNodes];
+    const btnRow = el("div.wiznav", {}, ...navNodes());
     box.append(...head(0, t("أين ستذهب؟"),
       t("مدينة واحدة تكفي — وتستطيع إضافة غيرها الآن أو لاحقًا.")),
-      list, input, hits,
-      nav(false, t("التالي"), legCities().length > 0, () => draw(1)));
+      list, input, hits, btnRow);
   }
 
   // ── ٢) التواريخ (إلزامية) ──

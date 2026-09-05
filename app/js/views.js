@@ -1339,15 +1339,26 @@ export function upcoming(ctx){
         askSignIn(t("ادخل بحسابك لتكون خططك معك على كل أجهزتك.")) }, t("الدخول"))));
     return root;
   }
+  // بابٌ للتخطيط من هنا: كان الطريق الوحيد أن يفتح وجهةً ثم يضغط «لدي رحلة
+  // قادمة لهذه المدينة» — يعرفه من مرّ به، ولا يخطر لمن جاء يخطط ابتداءً.
+  // والرحلة تُفتح بلا مدينة، فالمعالج أولُ ما يسأل عنه المدينة.
+  const newTripBtn = () => el("button.btn", {
+    onclick: () => goto("#/plan/" + Trips.add({
+      title: t("رحلة جديدة"), cityId: null, start: null, end: null })),
+  }, t("خطّط رحلة جديدة"));
+
   const coming = Trips.upcoming();
   if (!coming.length){
     inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
       el("div", { style: "font-size:34px" }, "🧭"),
-      el("p", {}, t("لا رحلات قادمة بعد — افتح أي وجهة واضغط «لدي رحلة قادمة لهذه المدينة».")),
-      el("a.btn", { href: "#/next", style: "display:inline-block;margin-top:6px" },
-        t("ابحث عن الوجهات"))));
+      el("p", {}, t("لا رحلات قادمة بعد — ابدأ بخطة، أو افتح وجهةً وأضفها منها.")),
+      el("div", { style: "display:flex;gap:8px;justify-content:center;"
+        + "flex-wrap:wrap;margin-top:6px" },
+        newTripBtn(),
+        el("a.later", { href: "#/next" }, t("ابحث عن الوجهات")))));
     return root;
   }
+  inner.append(el("div", { style: "margin-bottom:12px" }, newTripBtn()));
   const list = el("div");
   for (const tr of coming) list.append(tripCard(ctx, tr));
   inner.append(list);
