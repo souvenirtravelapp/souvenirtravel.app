@@ -620,6 +620,182 @@ async function searchPlaces(q, near, bounded){
   return r.ok ? r.json() : [];
 }
 
+/// معالج بدء الرحلة — أربع خطوات تُسأل مرة، ثم لا تعود.
+///
+/// من فتح رحلةً جديدة كان يجد صفحةً كاملة بأقسامها ولا يعرف من أين يبدأ:
+/// التواريخ في تبويب، والمدن في «تعديل»، والطيران والسكن في تبويبين آخرين.
+/// فيسأل السؤال الذي لا ينبغي أن يُسأل: «ماذا أفعل الآن؟». المعالج يسأله
+/// بالترتيب الذي يفكّر به المسافر: أين، ثم متى، ثم كيف أصل، ثم أين أنام.
+///
+/// وشرطان: مدينةٌ واحدة تكفي، والتواريخ وحدها إلزامية — فبها يُبنى الجدول
+/// كله. والطيران والسكن يُتخطّيان بكلمة، ويُدخَلان لاحقًا من «بيانات رحلتك»
+/// متى حُجزا. ولا يظهر إلا مرة: `trip.setup` يُختم عند الفراغ أو التخطي.
+function setupWizard({ trip, store, save, render, city, addCityLeg, removeCities }){
+  let step = 0;
+  const box = el("div");
+  const close = gate(() => box);
+  if (!close) return;
+  const finish = () => { trip.setup = 1; save(); close(); render(); };
+
+  const legCities = () => legsOf(trip)
+    .map(l => store.cities.find(c => c.id === l.cityId)).filter(Boolean);
+
+  const head = (n, title, sub) => [
+    el("div.wizsteps", {}, ...[0, 1, 2, 3].map(k =>
+      el("i" + (k === n ? ".on" : (k < n ? ".done" : "")), {}))),
+    el("h3", {}, title),
+    sub ? el("p", {}, sub) : null,
+  ];
+  const nav = (backOk, nextLabel, nextOk, onNext, skip) => el("div.wiznav", {},
+    el("button.btn", { ...(nextOk ? {} : { disabled: "disabled" }),
+      onclick: () => nextOk && onNext() }, nextLabel),
+    skip ? el("button.later", { onclick: skip.on }, skip.label) : null,
+    backOk ? el("button.later", { onclick: () => draw(step - 1) }, t("رجوع")) : null);
+
+  function draw(n){
+    step = n;
+    box.replaceChildren();
+    if (n === 0) return drawCities();
+    if (n === 1) return drawDates();
+    if (n === 2) return drawFlights();
+    return drawStay();
+  }
+
+  // ── ١) المدن ──
+  function drawCities(){
+    const list = el("div.wizchips");
+    const paint = () => {
+      list.replaceChildren();
+      for (const c of legCities())
+        list.append(el("span.wizchip", {}, cityName(c),
+          legsOf(trip).length > 1
+            ? el("button", { "aria-label": t("احذفها"), onclick: () => {
+                removeCities([c.id]); paint(); } }, "✕") : null));
+    };
+    paint();
+    const input = el("input.addowninput", { placeholder: t("اسم مدينة أخرى…") });
+    const hits = el("div.gatelist");
+    input.oninput = () => {
+      const q = input.value.trim().toLowerCase();
+      hits.replaceChildren();
+      if (q.length < 2) return;
+      const have = new Set(legsOf(trip).map(l => l.cityId));
+      for (const c of store.cities.filter(c => !have.has(c.id)
+          && ((c.name_ar || "").includes(q)
+            || (c.name_en || "").toLowerCase().includes(q))).slice(0, 6))
+        hits.append(el("button.srow", { style: "width:100%;text-align:start",
+          onclick: () => { addCityLeg(c); input.value = ""; hits.replaceChildren();
+            paint(); } },
+          el("div", {}, el("div.t", {}, cityName(c)),
+            el("div.s", {}, countryName(c)))));
+    };
+    box.append(...head(0, t("أين ستذهب؟"),
+      t("مدينة واحدة تكفي — وتستطيع إضافة غيرها الآن أو لاحقًا.")),
+      list, input, hits,
+      nav(false, t("التالي"), legCities().length > 0, () => draw(1)));
+  }
+
+  // ── ٢) التواريخ (إلزامية) ──
+  function drawDates(){
+    const ds = el("input", { type: "date", value: trip.start || "" });
+    const de = el("input", { type: "date", value: trip.end || "" });
+    const next = () => {
+      const was = [trip.start, trip.end];
+      trip.start = ds.value; trip.end = de.value || ds.value;
+      retimeTrip(trip, was[0], was[1]);
+      const L = legsOf(trip);
+      if (L.length){ L[0].from = trip.start; L[L.length - 1].to = trip.end;
+        trip.legs = L; }
+      save(); draw(2);
+    };
+    const btn = nav(true, t("التالي"), !!trip.start, next);
+    const sync = () => {
+      const ok = !!ds.value;
+      const b = btn.querySelector("button.btn");
+      if (ok) b.removeAttribute("disabled"); else b.setAttribute("disabled", "disabled");
+      b.onclick = () => ok && next();
+    };
+    ds.onchange = de.onchange = sync;
+    box.append(...head(1, t("متى رحلتك؟"),
+      t("التواريخ وحدها إلزامية — عليها يُبنى جدول أيامك.")),
+      el("div.wizrow", {}, el("span.det", {}, t("من")), ds,
+        el("span.det", {}, t("إلى")), de), btn);
+    sync();
+  }
+
+  // ── ٣) الطيران (يُتخطّى) ──
+  function drawFlights(){
+    const st = el("span.det");
+    const no = el("input.addowninput", { placeholder: t("رقم رحلة الذهاب"),
+      value: trip.flights.out.no || "" });
+    const grab = async () => {
+      const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
+      if (!v) return;
+      trip.flights.out.no = v; st.textContent = "…";
+      try {
+        const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
+          + encodeURIComponent(v) + (trip.start ? "&date=" + trip.start : ""));
+        const j = await r.json();
+        if (j.ok){
+          const f = trip.flights.out;
+          f.dep = j.dep; f.arr = j.arr;
+          if (j.from) f.from = j.from;
+          if (j.to) f.to = j.to;
+          save(); st.textContent = ""; draw(3); return;
+        }
+      } catch {}
+      st.textContent = t("لم نجد هذه الرحلة — أدخلها لاحقًا من «بيانات رحلتك».");
+      save();
+    };
+    no.onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); grab(); } };
+    box.append(...head(2, t("كيف تصل؟"),
+      t("رقم رحلة الذهاب يجلب أوقاتها ومطاريها — ويضبط يومي السفر في جدولك.")),
+      no, st,
+      nav(true, t("أحضر الأوقات"), true, grab,
+        { label: t("لم أحجز طيراني بعد"), on: () => draw(3) }));
+  }
+
+  // ── ٤) السكن (يُتخطّى) ──
+  function drawStay(){
+    const input = el("input.addowninput", { placeholder: t("اسم الفندق أو الحي…") });
+    const res = el("div.gatelist");
+    let timer = null;
+    const first = legsOf(trip)[0];
+    const near = legCities()[0] || city;
+    input.oninput = () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 3) return;
+      timer = setTimeout(async () => {
+        let hits = await searchPlaces(q, near, true).catch(() => []);
+        res.replaceChildren();
+        if (!hits.length){
+          res.append(el("div.s", { style: "padding:4px 2px" }, t("لا نتيجة بهذا الاسم")));
+          return;
+        }
+        for (const h of hits.slice(0, 5))
+          res.append(el("button.srow", { style: "width:100%;text-align:start",
+            onclick: () => {
+              trip.stays.push({ id: "s" + Date.now(),
+                name: h.display_name.split(",")[0], lat: +h.lat, lon: +h.lon,
+                from: first?.from || trip.start || "",
+                to: first?.to || trip.end || "" });
+              finish();
+            } },
+            el("div", {}, el("div.t", {}, h.display_name.split(",")[0]),
+              el("div.s", {}, h.display_name.split(",").slice(1, 3).join("،")))));
+      }, 400);
+    };
+    box.append(...head(3, t("أين ستقيم؟"),
+      t("فندقك يرتّب أيامك حوله — الأقرب فالأقرب، وذهابًا وإيابًا منه.")),
+      input, res,
+      nav(true, t("تمّ"), true, finish,
+        { label: t("لم أحجز سكنًا بعد"), on: finish }));
+  }
+
+  draw(0);
+}
+
 export function planner(ctx, tripId, render){
   const { store } = ctx;
   const trip = Trips.all().find(x => x.id === tripId);
@@ -728,6 +904,15 @@ export function planner(ctx, tripId, render){
     trip.legs = legs;
     if (ids.includes(trip.cityId)) trip.cityId = legs[0].cityId;
     save();
+  }
+
+  // رحلةٌ جديدة لم تُسأل بعد: المعالج يسألها مرة. الشرط تاريخٌ غائب وختمٌ
+  // غائب معًا — فرحلةٌ قديمة بلا تواريخ (وهي موجودة عند مستخدمين) لا يُقتحم
+  // عليها بنافذة، ورحلةٌ مرّت بالمعالج لا تُسأل ثانيةً ولو مسح تواريخه.
+  if (!trip.setup && !trip.start){
+    trip.setup = 1; save();          // يُختم قبل الفتح: نافذةٌ واحدة مهما أُعيد الرسم
+    setTimeout(() => setupWizard({ trip, store, save, render, city,
+      addCityLeg, removeCities }), 0);
   }
 
   /// «تعديل» بجوار العنوان: دول الرحلة ومدنها في نافذة واحدة، يُحذف منها
