@@ -855,6 +855,26 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .farnote { font-size: 13px; line-height: 1.7; margin: 2px 2px 8px;
   color: var(--text, #28241E); opacity: .75; }
 
+/* معالج بدء الرحلة: أربع نقاط تقول أين أنت من الطريق — الممتلئة خلفك
+   والمجوّفة أمامك — فلا يسأل «كم بقي؟». */
+.wizsteps { display: flex; gap: 6px; justify-content: center; margin-bottom: 10px; }
+.wizsteps i { width: 7px; height: 7px; border-radius: 50%; display: block;
+  background: var(--line, #e5ddcf); }
+.wizsteps i.on { background: var(--accent, #b8863b); transform: scale(1.35); }
+.wizsteps i.done { background: var(--deep, #B4622E); }
+.wizchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.wizchip { display: inline-flex; align-items: center; gap: 6px; font-size: 14px;
+  font-weight: 700; background: rgba(40,36,30,.06); border-radius: 999px;
+  padding: 5px 12px; }
+.wizchip button { border: none; background: none; cursor: pointer;
+  color: var(--deep, #B4622E); font-size: 13px; padding: 0; }
+.wizrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 4px 0 10px; }
+.wizrow input { font: inherit; font-size: 15px; padding: 8px 10px;
+  border-radius: 10px; border: 1.5px solid var(--line, #e5ddcf);
+  background: var(--card, #fff); color: var(--text, #28241E); }
+.wiznav { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+
 /* «أضف مكانًا»: صندوقٌ يُرى ويقول ما هو. كان حقلًا عاريًا بكلمةٍ بجانبه،
    فلا يعرف القارئ أن الإضافة من حقّه — والدعوة نصف الميزة. */
 .addown { margin-top: 18px; padding: 14px; border-radius: 14px;
