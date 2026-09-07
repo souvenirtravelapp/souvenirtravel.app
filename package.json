@@ -1,0 +1,13 @@
+{
+  "name": "souvenir-site",
+  "private": true,
+  "scripts": {
+    "stage:wrapper": "node scripts/stage-wrapper.mjs",
+    "sync:android": "npm run stage:wrapper && npx cap sync android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1"
+  }
+}

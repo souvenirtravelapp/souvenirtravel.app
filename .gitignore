@@ -2,3 +2,5 @@
 # impeccable working files — never published
 .impeccable/
 .claude/
+node_modules/
+wrapper/www/
