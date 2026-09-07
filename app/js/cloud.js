@@ -199,7 +199,11 @@ async function reconcile(firstLogin){
 
 /* يُنتظر قبل بناء المخازن: يهيئ Firebase ويستعيد جلسة سابقة إن وُجدت. */
 export function restore(){
+  // «رفاهية لا شريان» تشمل التعليق لا الفشل وحده: شبكة خانقة، مانع
+  // إضافات، أو غلاف تطبيقٍ لا يجيب فيه onAuthStateChanged إطلاقًا —
+  // خمس ثوانٍ ثم نمضي ضيوفًا، والمزامنة تلحق متى أجاب.
   return new Promise(resolve => {
+    setTimeout(resolve, 5000);
     try {
       const app = initializeApp(firebaseConfig);
       auth = getAuth(app);
