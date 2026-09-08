@@ -989,3 +989,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
    (وفيه «رحلاتك»، التوثيق الأصلي)، ولسان Web يهبط على «خطط» مباشرة. */
 html.sv-wrapper .topbar{display:none}
 html.sv-wrapper nav.tabs{display:none}
+
+/* غلاف Android: مسار أبل المنبثق محكوم بانفصال التخزين — يُخفى الزر
+   حتى يُبنى له طريق أصيل إن لزم. */
+html.sv-android .gsign.apple{display:none}

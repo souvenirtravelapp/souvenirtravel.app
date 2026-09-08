@@ -5,7 +5,10 @@
 (function(){
   var plat = (window.Capacitor && window.Capacitor.getPlatform)
     ? window.Capacitor.getPlatform() : "wrapper";
-  window.__souvenirWrapper = { platform: plat, build: "spike-a1" };
+  window.__souvenirWrapper = { platform: plat, build: "spike-a2" };
+  // منصة الغلاف على جذر الوثيقة — فتُفصَّل الواجهة بالـCSS لكل غلاف
+  // (كإخفاء دخول أبل حيث لا يعمل مساره المنبثق).
+  document.documentElement.classList.add("sv-" + plat);
   var resolve;
   window.__souvenirNativeAuthPromise = new Promise(function(r){ resolve = r; });
   window.__souvenirNativeAuthResolve = resolve;

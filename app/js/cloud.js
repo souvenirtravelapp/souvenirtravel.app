@@ -511,6 +511,15 @@ export async function eraseMyData(){
 }
 
 export async function signOutNow(){
+  // في الغلاف: الخروج من Firebase وحده لا يكفي — الاستعادة الصامتة عند
+  // الإقلاع التالي ستجد جلسة Google الأصيلة حيّة فتعيد الدخول. يُخرَج
+  // الطرفان معًا فيصير الخروج خروجًا.
+  try {
+    const p = typeof window !== "undefined" && window.__souvenirWrapper
+      && window.Capacitor && window.Capacitor.Plugins
+      && window.Capacitor.Plugins.SouvenirAuth;
+    if (p && p.signOut) await p.signOut();
+  } catch (e){ console.warn("native sign-out:", e); }
   await signOut(auth);
   user = null;
   localStorage.removeItem(STAMP);   // نسخة الجهاز تبقى له؛ توقف المزامنة فقط
