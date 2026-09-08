@@ -225,6 +225,7 @@ async function signInNative(a){
     auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null)),
     10000, "signInWithCredential");
   user = cred.user;
+  restoreVault(user.uid);
   svTrace("signed in, reconciling…");
   try {
     await bounded(markSignup(true), 10000, "markSignup");
@@ -309,6 +310,7 @@ export async function restore(){
 async function signInWith(provider){
   const cred = await signInWithPopup(auth, provider);
   user = cred.user;
+  restoreVault(user.uid);
   await markSignup(true);
   await reconcile(true);
   await reconcileMemory(true);
@@ -510,19 +512,48 @@ export async function eraseMyData(){
   location.reload();
 }
 
+/* خزائن الحسابات: عند الخروج تُنقل نسخة الجهاز إلى خزانة صاحبها
+   (sv.vault.<uid>) وتُفرَّغ الساحة — فلا يرث حسابٌ بقايا سابقه ولا
+   تُرفع رحلات أحد إلى سحابة غيره. عند عودته تُفتح خزانته وتُضم بالاتحاد
+   إلى ما جمعه ضيفٌ بعده، ثم تمضي مصالحته المعتادة. نقلٌ لا حذف. */
+const VAULT = "sv.vault.";
+const VAULT_KEYS = [...KEYS, "sv.filter", MEMKEY];
+
+function stashVault(uid){
+  const blob = {};
+  for (const k of VAULT_KEYS){
+    const raw = localStorage.getItem(k);
+    if (raw != null){ blob[k] = raw; localStorage.removeItem(k); }
+  }
+  if (Object.keys(blob).length)
+    localStorage.setItem(VAULT + uid, JSON.stringify(blob));
+}
+
+function restoreVault(uid){
+  let blob;
+  try { blob = JSON.parse(localStorage.getItem(VAULT + uid)); } catch { return; }
+  if (!blob) return;
+  writeLocal(union(blob, readLocal()));
+  // الذاكرة والفلتر خارج عهدة union: تعودان إن كانت الساحة خالية،
+  // وما زامنته السحابة يلحق عبر مصالحتيهما على كل حال.
+  for (const k of ["sv.filter", MEMKEY])
+    if (blob[k] != null && localStorage.getItem(k) == null)
+      localStorage.setItem(k, blob[k]);
+  localStorage.removeItem(VAULT + uid);
+}
+
 export async function signOutNow(){
-  // في الغلاف: الخروج من Firebase وحده لا يكفي — الاستعادة الصامتة عند
-  // الإقلاع التالي ستجد جلسة Google الأصيلة حيّة فتعيد الدخول. يُخرَج
-  // الطرفان معًا فيصير الخروج خروجًا.
-  try {
-    const p = typeof window !== "undefined" && window.__souvenirWrapper
-      && window.Capacitor && window.Capacitor.Plugins
-      && window.Capacitor.Plugins.SouvenirAuth;
-    if (p && p.signOut) await p.signOut();
-  } catch (e){ console.warn("native sign-out:", e); }
+  // في الغلاف يُخرَج الأصيل أولًا — وفشلُه يوقفنا هنا صادقين: لا إعلان
+  // خروج وجلسة Google حيّة تعيد صاحبها عند أول إقلاع.
+  const p = typeof window !== "undefined" && window.__souvenirWrapper
+    && window.Capacitor && window.Capacitor.Plugins
+    && window.Capacitor.Plugins.SouvenirAuth;
+  if (p && p.signOut) await p.signOut();
+  const uid = user && user.uid;
   await signOut(auth);
   user = null;
-  localStorage.removeItem(STAMP);   // نسخة الجهاز تبقى له؛ توقف المزامنة فقط
+  if (uid) stashVault(uid);
+  localStorage.removeItem(STAMP);
   localStorage.removeItem(MEMSTAMP);
   localStorage.removeItem(STATEIDS);
   localStorage.removeItem(STATETOMBS);

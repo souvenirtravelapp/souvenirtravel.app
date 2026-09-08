@@ -74,7 +74,12 @@ public class SouvenirAuthPlugin extends Plugin {
     @PluginMethod
     public void signOut(PluginCall call) {
         if (unconfigured()) { call.resolve(); return; }
-        client().signOut().addOnCompleteListener(t -> call.resolve());
+        // اكتمال العملية ليس نجاحها — الفشل يُبلَّغ فلا يُعلن خروجٌ لم يقع.
+        client().signOut().addOnCompleteListener(t -> {
+            if (t.isSuccessful()) call.resolve();
+            else call.reject("sign-out failed: "
+                + (t.getException() != null ? t.getException().getMessage() : "unknown"));
+        });
     }
 
     private JSObject payload(GoogleSignInAccount a) {
