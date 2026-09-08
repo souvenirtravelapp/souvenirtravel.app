@@ -19,6 +19,9 @@ for (const f of ["icon.png", "favicon.png"]) copyFileSync(join(root, f), join(ds
 
 const patch = (file, from, to) =>
   writeFileSync(file, readFileSync(file, "utf8").replaceAll(from, to));
+copyFileSync(join(root, "wrapper/boot.js"), join(dst, "boot.js"));
+patch(join(dst, "index.html"), '<script type="module"',
+      '<script src="./boot.js"></script>\n<script type="module"');
 patch(join(dst, "index.html"), '"/app/js/', '"./js/');
 patch(join(dst, "index.html"), '"/icon.png"', '"./icon.png"');
 patch(join(dst, "index.html"), '"/favicon.png"', '"./favicon.png"');

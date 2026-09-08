@@ -315,7 +315,19 @@ async function signInWith(provider){
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
 }
 
-export function signIn(){ return signInWith(new GoogleAuthProvider()); }
+export async function signIn(){
+  // في الغلاف: النافذة المنبثقة محكوم عليها بانفصال التخزين — فيتولى
+  // الأصيل جلب الاعتماد، ويمضي به نفس مسار الجسر المشترك بمصالحته.
+  const p = typeof window !== "undefined" && window.__souvenirWrapper
+    && window.Capacitor && window.Capacitor.Plugins
+    && window.Capacitor.Plugins.SouvenirAuth;
+  if (p){
+    const r = await p.signIn();
+    if (!r || !r.idToken) throw new Error("native sign-in returned no credential");
+    return window.__souvenirNativeSignIn(r);
+  }
+  return signInWith(new GoogleAuthProvider());
+}
 
 export function signInApple(){
   const p = new OAuthProvider("apple.com");

@@ -4,4 +4,7 @@
     <string name="title_activity_main">سوفينير</string>
     <string name="package_name">app.souvenirtravel</string>
     <string name="custom_url_scheme">app.souvenirtravel</string>
+    <!-- معرّف عميل الويب من Firebase (Authentication ← Google ← Web client ID)
+         يضعه المالك بيده — الجسر يرفض العمل بوضوح ما دام مفقودًا. -->
+    <string name="souvenir_web_client_id">MISSING_WEB_CLIENT_ID</string>
 </resources>
