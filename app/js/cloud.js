@@ -12,8 +12,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/fireba
 import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
          onAuthStateChanged, deleteUser, linkWithPopup, signInWithCredential }
   from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, addDoc, collection,
-         getDocs, query, orderBy, limit, serverTimestamp }
+import { getFirestore, initializeFirestore, doc, getDoc, setDoc, deleteDoc,
+         addDoc, collection, getDocs, query, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -204,16 +204,40 @@ async function reconcile(firstLogin){
    تحميل الصفحة مرة واحدة لتُبنى المخازن على المحلي المتصالح؛ وعلامة
    sessionStorage تمنع أي دوران إن لم تنجُ الجلسة من الإعادة. */
 let bridging = false;
+
+/* أثرٌ يصل سجلَّ الغلاف وحده — لا شيء منه في المتصفح العادي. */
+function svTrace(m){
+  try { if (window.__souvenirWrapper) webkit.messageHandlers.svlog.postMessage("bridge: " + m); }
+  catch (e) {}
+}
+/* سقفٌ لكل خطوة: وعدٌ لا يجيب في مهلته يُرفض — فلا يعلّق الإقلاع أبدًا. */
+function bounded(p, ms, label){
+  return Promise.race([p, new Promise((_, rej) =>
+    setTimeout(() => rej(new Error("timeout: " + label)), ms))]);
+}
+
 async function signInNative(a){
   if (!auth || !a || !a.idToken || auth.currentUser) return;
   bridging = true;
-  const cred = await signInWithCredential(
-    auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null));
+  svTrace("credential…");
+  const cred = await bounded(signInWithCredential(
+    auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null)),
+    10000, "signInWithCredential");
   user = cred.user;
-  await markSignup(true);
-  await reconcile(true);
-  await reconcileMemory(true);
+  svTrace("signed in, reconciling…");
+  try {
+    await bounded(markSignup(true), 10000, "markSignup");
+    await bounded(reconcile(true), 25000, "reconcile");
+    await bounded(reconcileMemory(true), 25000, "reconcileMemory");
+  } catch (e){
+    // مزامنة أولى لم تكتمل: نتراجع ضيوفًا هذه الجلسة — لا كتابة على
+    // السحابة بلا مصالحة أولى. الدخول يبقى محفوظًا للأصيل.
+    user = null; bridging = false;
+    svTrace("sync failed: " + e.message);
+    throw e;
+  }
   bridging = false;
+  svTrace("done");
   if (!sessionStorage.getItem("sv.bridge.reloaded")){
     sessionStorage.setItem("sv.bridge.reloaded", "1");
     location.reload();
@@ -230,7 +254,11 @@ export async function restore(){
   try {
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    db = getFirestore(app);
+    // قنوات Firestore البثية تعلّق داخل أغلفة WebView — الاستقصاء الطويل
+    // بديلها المعتمد هناك، والمتصفح العادي على حاله.
+    db = (typeof window !== "undefined" && window.__souvenirWrapper)
+      ? initializeFirestore(app, { experimentalForceLongPolling: true })
+      : getFirestore(app);
   } catch (e){ return; }
 
   // في الغلاف: الأصيل يسلّم اعتماده عبر وعدٍ يُزرع قبل أي وحدة — فننتظره
@@ -244,6 +272,7 @@ export async function restore(){
       new Promise(r => setTimeout(() => r(null), 3000)),
     ]);
   }
+  svTrace("restore: native=" + !!(nat && nat.idToken));
   if (nat && nat.idToken && !auth.currentUser){
     try {
       await signInNative(nat);
