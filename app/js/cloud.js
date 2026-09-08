@@ -226,26 +226,40 @@ if (typeof window !== "undefined")
       e => { bridging = false; console.warn("wrapper sign-in:", e); });
 
 /* يُنتظر قبل بناء المخازن: يهيئ Firebase ويستعيد جلسة سابقة إن وُجدت. */
-export function restore(){
+export async function restore(){
+  try {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (e){ return; }
+
+  // في الغلاف: الأصيل يسلّم اعتماده عبر وعدٍ يُزرع قبل أي وحدة — فننتظره
+  // هنا (بسقف قصير) قبل أن نقرر أننا ضيوف. هذا يقطع سباق «التسليم قبل
+  // ولادة الدالة» الذي يضيع فيه الاعتماد بصمت.
+  let nat = typeof window !== "undefined" ? window.__souvenirNativeAuth : null;
+  if (!nat && typeof window !== "undefined" && window.__souvenirWrapper
+      && window.__souvenirNativeAuthPromise){
+    nat = await Promise.race([
+      window.__souvenirNativeAuthPromise,
+      new Promise(r => setTimeout(() => r(null), 3000)),
+    ]);
+  }
+  if (nat && nat.idToken && !auth.currentUser){
+    try {
+      await signInNative(nat);
+      // نجح بلا إعادة تحميل (الجلسة نجت أو العلامة قائمة): المصالحة تمت
+      // داخل signInNative — لا حاجة لانتظار البث.
+      if (user) return;
+    } catch (e){ bridging = false; console.warn("wrapper sign-in:", e); }
+  }
+
   // «رفاهية لا شريان» تشمل التعليق لا الفشل وحده: شبكة خانقة، مانع
-  // إضافات، أو غلاف تطبيقٍ لا يجيب فيه onAuthStateChanged إطلاقًا —
-  // خمس ثوانٍ ثم نمضي ضيوفًا، والمزامنة تلحق متى أجاب. المستمع لا يُغلق
-  // عند المهلة: دخولٌ يكتمل متأخرًا يمرّ بمصالحته كاملةً ولا يكتب فوقها.
+  // إضافات، أو بيئة لا يجيب فيها onAuthStateChanged — خمس ثوانٍ ثم نمضي
+  // ضيوفًا، والمستمع لا يُغلق عند المهلة: دخول متأخر يمرّ بمصالحته كاملة.
   return new Promise(resolve => {
     setTimeout(resolve, 5000);
-    try {
-      const app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } catch (e){ resolve(); return; }
-    const native = typeof window !== "undefined" ? window.__souvenirNativeAuth : null;
     const stop = onAuthStateChanged(auth, async u => {
-      // أول بثٍّ فارغ واعتمادُ غلافٍ حاضرٌ أو في الطريق: نُبقي المستمع
-      // ونطلق الجسر — البث التالي يحمل المستخدم فيمضي المسار المعتاد.
-      if (!u && (bridging || (native && native.idToken))){
-        if (!bridging) window.__souvenirNativeSignIn(native);
-        return;
-      }
+      if (!u && bridging) return;   // جسرٌ في الطريق — البث التالي يحمل صاحبه
       stop();
       user = u;
       if (u){
