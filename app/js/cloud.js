@@ -327,6 +327,9 @@ export async function signIn(){
   if (p){
     const r = await p.signIn();
     if (!r || !r.idToken) throw new Error("native sign-in returned no credential");
+    // علامة «أُعيد الإقلاع» تحرس حلقة الإقلاع الصامت وحدها — الدخول
+    // التفاعلي (وتبديل الحساب) يستحق إعادةَ بنائه دائمًا.
+    try { sessionStorage.removeItem("sv.bridge.reloaded"); } catch (e) {}
     return window.__souvenirNativeSignIn(r);
   }
   return signInWith(new GoogleAuthProvider());
@@ -567,6 +570,7 @@ export async function signOutNow(){
   await signOut(auth);
   user = null;
   if (uid) stashVault(uid);
+  try { sessionStorage.removeItem("sv.bridge.reloaded"); } catch (e) {}
   localStorage.removeItem(OWNER);
   localStorage.removeItem(STAMP);
   localStorage.removeItem(MEMSTAMP);
