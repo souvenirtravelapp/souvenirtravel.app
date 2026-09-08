@@ -225,7 +225,7 @@ async function signInNative(a){
     auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null)),
     10000, "signInWithCredential");
   user = cred.user;
-  restoreVault(user.uid);
+  enterAccount(user.uid);
   svTrace("signed in, reconciling…");
   try {
     await bounded(markSignup(true), 10000, "markSignup");
@@ -299,6 +299,7 @@ export async function restore(){
       stop();
       user = u;
       if (u){
+        enterAccount(u.uid);
         try { await markSignup(false); await reconcile(false); await reconcileMemory(false); }
         catch (e) { console.warn("sync:", e); }
       }
@@ -310,7 +311,7 @@ export async function restore(){
 async function signInWith(provider){
   const cred = await signInWithPopup(auth, provider);
   user = cred.user;
-  restoreVault(user.uid);
+  enterAccount(user.uid);
   await markSignup(true);
   await reconcile(true);
   await reconcileMemory(true);
@@ -529,6 +530,19 @@ function stashVault(uid){
     localStorage.setItem(VAULT + uid, JSON.stringify(blob));
 }
 
+const OWNER = "sv.owner";   // uid صاحب بيانات الساحة الآن — يمنع الميراث
+
+/* يُنادى فور نجاح أي دخول وقبل أي مصالحة: إن كانت الساحة لمالك سابق
+   لم يخرج (تبديل حساب أصيل بلا خروج) عُزلت ساحته إلى خزانته أولًا،
+   فلا يرث الداخل رحلات غيره ولا تُرفع إلى سحابته. ثم تُفتح خزانة
+   الداخل إن وُجدت. نقلٌ لا حذف. */
+function enterAccount(uid){
+  const prev = localStorage.getItem(OWNER);
+  if (prev && prev !== uid) stashVault(prev);
+  localStorage.setItem(OWNER, uid);
+  restoreVault(uid);
+}
+
 function restoreVault(uid){
   let blob;
   try { blob = JSON.parse(localStorage.getItem(VAULT + uid)); } catch { return; }
@@ -553,6 +567,7 @@ export async function signOutNow(){
   await signOut(auth);
   user = null;
   if (uid) stashVault(uid);
+  localStorage.removeItem(OWNER);
   localStorage.removeItem(STAMP);
   localStorage.removeItem(MEMSTAMP);
   localStorage.removeItem(STATEIDS);
