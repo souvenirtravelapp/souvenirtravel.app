@@ -9,8 +9,9 @@
 // كتابةً يغلب، فيسري حذف القلب من جهاز إلى بقية الأجهزة بدل أن يعود.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
-         onAuthStateChanged, deleteUser, linkWithPopup, signInWithCredential }
+import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider,
+         OAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+         deleteUser, linkWithPopup, signInWithCredential }
   from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { getFirestore, initializeFirestore, doc, getDoc, setDoc, deleteDoc,
          addDoc, collection, getDocs, query, orderBy, limit, serverTimestamp }
@@ -253,7 +254,12 @@ if (typeof window !== "undefined")
 export async function restore(){
   try {
     const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
+    // ثبات جلسة Auth يقوم على indexedDB، وهو معطوب تحت مخطط الغلاف
+    // فتعلّق كل عمليات Auth خلف تهيئةٍ لا تكتمل. ذاكرة صريحة هناك —
+    // والجسر يعيد الدخول كل إقلاع فلا يُحتاج الثبات أصلًا.
+    auth = (typeof window !== "undefined" && window.__souvenirWrapper)
+      ? initializeAuth(app, { persistence: inMemoryPersistence })
+      : getAuth(app);
     // قنوات Firestore البثية تعلّق داخل أغلفة WebView — الاستقصاء الطويل
     // بديلها المعتمد هناك، والمتصفح العادي على حاله.
     db = (typeof window !== "undefined" && window.__souvenirWrapper)
