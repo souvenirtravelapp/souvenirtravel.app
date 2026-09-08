@@ -10,7 +10,8 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
-         onAuthStateChanged, deleteUser, linkWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+         onAuthStateChanged, deleteUser, linkWithPopup, signInWithCredential }
+  from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, addDoc, collection,
          getDocs, query, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
@@ -197,11 +198,39 @@ async function reconcile(firstLogin){
   return false;
 }
 
+/* جسر الغلاف: تطبيق الهاتف يدخل بجوجل أصيلًا (OAuth الويب محظور داخل
+   WebView) ويسلّم اعتماده هنا. الدخول به يمر بنفس مسار المصالحة الأول
+   للدخول العادي — فلا كتابة فوق بيانات السحابة بغير اتحاد. إن نجح أعيد
+   تحميل الصفحة مرة واحدة لتُبنى المخازن على المحلي المتصالح؛ وعلامة
+   sessionStorage تمنع أي دوران إن لم تنجُ الجلسة من الإعادة. */
+let bridging = false;
+async function signInNative(a){
+  if (!auth || !a || !a.idToken || auth.currentUser) return;
+  bridging = true;
+  const cred = await signInWithCredential(
+    auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null));
+  user = cred.user;
+  await markSignup(true);
+  await reconcile(true);
+  await reconcileMemory(true);
+  bridging = false;
+  if (!sessionStorage.getItem("sv.bridge.reloaded")){
+    sessionStorage.setItem("sv.bridge.reloaded", "1");
+    location.reload();
+  }
+}
+if (typeof window !== "undefined")
+  window.__souvenirNativeSignIn = a =>
+    signInNative(a).then(
+      () => { if (!user) return; },
+      e => { bridging = false; console.warn("wrapper sign-in:", e); });
+
 /* يُنتظر قبل بناء المخازن: يهيئ Firebase ويستعيد جلسة سابقة إن وُجدت. */
 export function restore(){
   // «رفاهية لا شريان» تشمل التعليق لا الفشل وحده: شبكة خانقة، مانع
   // إضافات، أو غلاف تطبيقٍ لا يجيب فيه onAuthStateChanged إطلاقًا —
-  // خمس ثوانٍ ثم نمضي ضيوفًا، والمزامنة تلحق متى أجاب.
+  // خمس ثوانٍ ثم نمضي ضيوفًا، والمزامنة تلحق متى أجاب. المستمع لا يُغلق
+  // عند المهلة: دخولٌ يكتمل متأخرًا يمرّ بمصالحته كاملةً ولا يكتب فوقها.
   return new Promise(resolve => {
     setTimeout(resolve, 5000);
     try {
@@ -209,7 +238,14 @@ export function restore(){
       auth = getAuth(app);
       db = getFirestore(app);
     } catch (e){ resolve(); return; }
+    const native = typeof window !== "undefined" ? window.__souvenirNativeAuth : null;
     const stop = onAuthStateChanged(auth, async u => {
+      // أول بثٍّ فارغ واعتمادُ غلافٍ حاضرٌ أو في الطريق: نُبقي المستمع
+      // ونطلق الجسر — البث التالي يحمل المستخدم فيمضي المسار المعتاد.
+      if (!u && (bridging || (native && native.idToken))){
+        if (!bridging) window.__souvenirNativeSignIn(native);
+        return;
+      }
       stop();
       user = u;
       if (u){
