@@ -318,14 +318,44 @@ async function signInWith(provider){
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
 }
 
+/* جسر iOS: لا Capacitor هناك — التخاطب عبر webkit.messageHandlers.svauth
+   بنداءٍ ذي معرّف يردّ عليه الأصيل بحلّ الوعد أو رفضه. الدخول التفاعلي
+   والخروج كلاهما جولة ذهابٍ وإياب هنا، فيُخرج الأصيل جلسته لا Firebase
+   وحده. */
+function iosAuth(){
+  return (typeof window !== "undefined" && window.webkit
+    && window.webkit.messageHandlers && window.webkit.messageHandlers.svauth)
+    ? window.webkit.messageHandlers.svauth : null;
+}
+if (typeof window !== "undefined"){
+  window.__svAuthCbs = window.__svAuthCbs || {};
+  window.__svAuthResolve = (id, payload) => {
+    const c = window.__svAuthCbs[id];
+    if (c){ delete window.__svAuthCbs[id]; c.resolve(payload); }
+  };
+  window.__svAuthReject = (id, msg) => {
+    const c = window.__svAuthCbs[id];
+    if (c){ delete window.__svAuthCbs[id]; c.reject(new Error(msg || "native auth failed")); }
+  };
+}
+let svAuthSeq = 0;
+function iosAuthCall(action){
+  const h = iosAuth();
+  return new Promise((resolve, reject) => {
+    const id = "svauth" + (++svAuthSeq);
+    window.__svAuthCbs[id] = { resolve, reject };
+    h.postMessage({ action, id });
+  });
+}
+
 export async function signIn(){
   // في الغلاف: النافذة المنبثقة محكوم عليها بانفصال التخزين — فيتولى
   // الأصيل جلب الاعتماد، ويمضي به نفس مسار الجسر المشترك بمصالحته.
   const p = typeof window !== "undefined" && window.__souvenirWrapper
     && window.Capacitor && window.Capacitor.Plugins
     && window.Capacitor.Plugins.SouvenirAuth;
-  if (p){
-    const r = await p.signIn();
+  if (p || iosAuth()){
+    const r = p ? await p.signIn() : await iosAuthCall("signIn");
     if (!r || !r.idToken) throw new Error("native sign-in returned no credential");
     // علامة «أُعيد الإقلاع» تحرس حلقة الإقلاع الصامت وحدها — الدخول
     // التفاعلي (وتبديل الحساب) يستحق إعادةَ بنائه دائمًا.
@@ -566,6 +596,7 @@ export async function signOutNow(){
     && window.Capacitor && window.Capacitor.Plugins
     && window.Capacitor.Plugins.SouvenirAuth;
   if (p && p.signOut) await p.signOut();
+  else if (iosAuth()) await iosAuthCall("signOut");
   const uid = user && user.uid;
   await signOut(auth);
   user = null;
