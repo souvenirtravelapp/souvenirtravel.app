@@ -297,6 +297,12 @@ async function boot(){
     localStorage.removeItem("sv.pending");
   }
   window.addEventListener("hashchange", render);
+  // عودةٌ للتبويب أو للمقدمة: اسحب ما استجد من الحساب وارسم إن تغيّر شيء —
+  // تغطي تبويب المتصفح وغلاف Android ولسان iOS بمستمع واحد.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    cloud.pullOnReturn().then(changed => { if (changed) render(); });
+  });
   render();
 }
 

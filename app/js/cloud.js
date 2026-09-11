@@ -454,6 +454,30 @@ async function pushMemory(){
   localStorage.setItem(MEMSTAMP, String(now));
 }
 
+/* سحبٌ عند العودة (اعتماد طارق 2026-09-11): المصالحة تجري عند الإقلاع
+   وحده، فمن عاد للتبويب أو أعاد التطبيق للمقدمة كان يحتاج رفرشًا ليرى ما
+   استجد من أجهزته الأخرى. تنادى من مستمع visibilitychange في app.js،
+   وتعيد true إن تغيّر المحلي فيُعاد الرسم — وإلا فلا رسم تحت يد المستخدم.
+   حارسان: لا سحب فوق سحب، ولا سحب قبل عشرين ثانية من سابقه. */
+let pulling = false, lastPull = 0;
+export async function pullOnReturn(){
+  svTrace("pull: visible");
+  if (!user || pulling || Date.now() - lastPull < 20000) return false;
+  pulling = true;
+  try {
+    const memBefore = localStorage.getItem(MEMKEY) ?? "";
+    const changed = await bounded(reconcile(false), 25000, "pull reconcile");
+    await bounded(reconcileMemory(false), 25000, "pull memory");
+    return changed || (localStorage.getItem(MEMKEY) ?? "") !== memBefore;
+  } catch (e){
+    console.warn("pull-on-return:", e);
+    return false;
+  } finally {
+    pulling = false;
+    lastPull = Date.now();
+  }
+}
+
 async function reconcileMemory(firstLogin){
   const snap = await getDoc(memoryDoc(user.uid));
   const cloudData = snap.exists() ? snap.data() : null;
