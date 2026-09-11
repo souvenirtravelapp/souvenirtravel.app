@@ -18,11 +18,13 @@ import { Trips } from "./trips-store.js";
 // كلمةٌ واحدة لكل باب. الأرقام كانت تُعلّم الترتيب مرة وتكلّف الوضوح كل مرة،
 // و«ابحث في الوجهات السياحية» كان ينزل ثلاثة أسطر في شريط الإبهام.
 // والثلاثة فعلٌ لا اسم: تكتشف، ثم تخطط، ثم توثّق — وهي رحلة المستخدم نفسها.
+// التسمية والأيقونات موحدة عبر الأسطح الثلاثة (قرار طارق 2026-09-11):
+// الرئيسية بيت · ابحث عدسة · خطط تقويم · وثق كتاب — بنفس الترتيب في iOS.
 const TABS = [
   { hash: "#/home",     label: t("الرئيسية"), icon: "icons/TabHome.svg"  },
-  { hash: "#/next",     label: t("اكتشف"),    icon: "icons/TabFind.svg"  },
+  { hash: "#/next",     label: t("ابحث"),     icon: "icons/TabFind.svg"  },
   { hash: "#/upcoming", label: t("خطط"),      icon: "icons/TabFav.svg"   },
-  { hash: "#/trips",    label: t("وثّق"),      icon: "icons/TabTrips.svg" },
+  { hash: "#/trips",    label: t("وثق"),      icon: "icons/TabTrips.svg" },
 ];
 
 let ctx = null;      // { store, prefs, shortlist, papers, filter } — one soul
@@ -60,11 +62,11 @@ function drawTabs(){
       el("img", { src: "/icon.png", alt: "" }), t("سوفينير")),
     el("div.links", {},
       el("a", { href: "#/home",  class: on === "home"  ? "on" : "" }, t("الرئيسية")),
-      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("اكتشف")),
+      el("a", { href: "#/next",  class: on === "next"  ? "on" : "" }, t("ابحث")),
       el("a", { href: "#/upcoming", class: on === "upcoming" ? "on" : "",
         onclick: upcomingGuard }, t("خطط")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
-        onclick: tripsGuard }, t("وثّق"))),
+        onclick: tripsGuard }, t("وثق"))),
     ...(cloud.user ? [] : [langPill()]),
     avatarFace());
 }
