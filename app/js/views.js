@@ -4,7 +4,7 @@
 import { el, flag, cityName, countryName, kiwiLink, gate,
          MONTHS_AR, WARMTH_AR, RAIN_AR, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
 import { FREE_REQUIREMENTS, VISA_GROUPS } from "./store.js";
-import { RAIN_WANTED, nextRainWanted, DESTINATION_TAGS } from "./filter.js";
+import { RAIN_WANTED, DESTINATION_TAGS } from "./filter.js";
 import { plan } from "./ideas.js";
 import { hasExpired } from "./papers.js";
 import { Trips } from "./trips-store.js";

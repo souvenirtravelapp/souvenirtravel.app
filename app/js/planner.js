@@ -220,13 +220,6 @@ function timedEvents(trip, dstr, city, store, days){
   return evs;
 }
 
-function eventSlot(ev, allowed){
-  if (ev.time == null) return allowed[0] || "morning";
-  if (ev.time <= 12.5) return "morning";
-  if (ev.time < 18) return "afternoon";
-  return "evening";
-}
-
 // لكل يوم لونه — في الجدول وعلى دبابيس الخريطة سواء.
 const DAYC = ["#B4622E", "#1F8F7C", "#3A6EA5", "#8E5BA6", "#C2903B",
               "#4C8A4C", "#A5486B", "#556B2F", "#20808D", "#7A5C3E"];
@@ -517,10 +510,6 @@ function autoPlan(trip, days, city, store){
       }
     }
     const dayGroup = seq.concat(noloc);
-
-    // التعليل — الشفافية تقنع أكثر من السحر.
-    dayGroup.forEach((p, k) => {
-    });
 
     const slots = allowedSlots(trip, i, days.length).slice();
     const taken = new Set();

@@ -163,10 +163,6 @@ export class TravelDataStore {
     return this.visas[passport]?.[c.country_code] ?? null;
   }
 
-  isSchengen(city, passport) {
-    return this.visa(city, passport)?.bloc === 'schengen';
-  }
-
   /// The shared regimes a destination belongs to, for one passport — what a
   /// bloc document has to be matched against (blocsFor in the app).
   blocs(city, passport) {
@@ -261,12 +257,4 @@ export class TravelDataStore {
     return code;
   }
 
-  /// How many countries the shared visa actually opens — counted from the
-  /// data rather than written into a sentence.
-  schengenCountryCount(passport) {
-    if (passport == null) return 0;
-    const rows = this.visas[passport];
-    if (!rows) return 0;
-    return Object.values(rows).filter((v) => v.bloc === 'schengen').length;
-  }
 }

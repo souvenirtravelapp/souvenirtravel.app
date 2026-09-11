@@ -26,7 +26,6 @@ function write(data){
 const uuid = () => crypto.randomUUID().toUpperCase();
 
 export const Memory = {
-  get data(){ return read(); },
   get trips(){
     return read().trips.slice()
       .sort((a, b) => (b.start || "").localeCompare(a.start || ""));
