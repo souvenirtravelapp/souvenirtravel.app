@@ -1184,7 +1184,26 @@ function memTimeline(ctx){
     if (y !== year){ year = y; wrap.append(el("div.year-h", {}, year)); }
     wrap.append(memTripCard(ctx, t));
   }
+  if (typeof window !== "undefined" && window.__souvenirWrapper) applyTripCovers(wrap, trips);
   return wrap;
+}
+
+/* مسح الصور (iOS): يسأل الملحق الأصيل عن غلافٍ لكل رحلة من مداها الزمني،
+   فيرسم صورةً حقيقية مكان الشفق. تحسينيّ بحت — غيابه أو فشله يُبقي الشفق. */
+async function applyTripCovers(root, trips){
+  try {
+    const plugin = window.Capacitor && window.Capacitor.Plugins
+      && window.Capacitor.Plugins.SouvenirPhotos;
+    if (!plugin) return;
+    const payload = trips.filter(t => t.start)
+      .map(t => ({ id: t.id, start: t.start, end: t.end || "" }));
+    if (!payload.length) return;
+    const { covers } = (await plugin.covers({ trips: payload })) || {};
+    for (const [id, thumb] of Object.entries(covers || {})){
+      const cell = thumb && root.querySelector(`.cover[data-tid="${id}"]`);
+      if (cell) cell.style.background = `center/cover no-repeat url("${thumb}")`;
+    }
+  } catch (e){ /* المسح تحسينيّ */ }
 }
 
 function memTripCard(ctx, t){
@@ -1195,7 +1214,7 @@ function memTripCard(ctx, t){
   const mates = (t.companionIds ?? [])
     .map(id => Memory.companion(id)?.name).filter(Boolean);
   return el("div.dest-row", {},
-    el("div.cover", { style: "background:var(--aurora)" },
+    el("div.cover", { style: "background:var(--aurora)", "data-tid": t.id },
       t.countryIso ? flag(t.countryIso) : "✈︎"),
     el("div.names", {},
       el("div.n", {}, title),

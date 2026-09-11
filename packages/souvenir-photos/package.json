@@ -1,0 +1,14 @@
+{
+  "name": "souvenir-photos",
+  "version": "1.0.0",
+  "description": "On-device photo cover matcher for the Souvenir iOS wrapper",
+  "private": true,
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "devDependencies": {
+    "@capacitor/ios": "^8.5.1"
+  }
+}
