@@ -1,0 +1,14 @@
+{
+  "name": "souvenir-auth",
+  "version": "1.0.0",
+  "description": "Native Google sign-in bridge for the Souvenir iOS wrapper",
+  "private": true,
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    }
+  },
+  "devDependencies": {
+    "@capacitor/ios": "^8.5.1"
+  }
+}

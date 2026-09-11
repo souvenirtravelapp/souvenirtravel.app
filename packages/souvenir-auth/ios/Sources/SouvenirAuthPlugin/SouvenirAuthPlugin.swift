@@ -1,11 +1,10 @@
 import Foundation
 import Capacitor
-import CapApp_SPM
 
-// جسر الدخول الأصلي لغلاف iOS — في هدف App (حيث يمسح Capacitor عن الملاحق
-// المخصّصة؛ مكتبات SPM المحلية لا تُمسح). نظير SouvenirAuthPlugin على Android
-// بنفس العقد: window.Capacitor.Plugins.SouvenirAuth بثلاث طرق تعيد { idToken }.
-// المنطق الأصيل (GoogleSignIn) في SouvenirAuthCore داخل CapApp-SPM.
+// جسر الدخول الأصلي لغلاف iOS — الآن حزمة ملحق Capacitor محلية، فيدرجه
+// cap sync في packageClassList تلقائيًّا (كأندرويد) بلا تعديل يدوي متجاهَل.
+// نظير SouvenirAuthPlugin على Android بنفس العقد:
+// window.Capacitor.Plugins.SouvenirAuth بثلاث طرق تعيد { idToken }.
 @objc(SouvenirAuthPlugin)
 public class SouvenirAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SouvenirAuthPlugin"
