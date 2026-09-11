@@ -12,6 +12,7 @@ public class SouvenirAuthPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signInApple", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise)
     ]
 
@@ -38,6 +39,19 @@ public class SouvenirAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                     call.reject("sign-in failed: \(error.localizedDescription)"); return
                 }
                 call.resolve(["idToken": token ?? NSNull()])
+            }
+        }
+    }
+
+    /// دخول بأبل — يعرض ورقة أبل ويعيد { idToken, rawNonce } أو يرفض.
+    @objc func signInApple(_ call: CAPPluginCall) {
+        NSLog("SVAUTH: signInApple called")
+        DispatchQueue.main.async {
+            SouvenirAuthCore.signInApple { token, rawNonce, error in
+                if let error = error {
+                    call.reject("apple sign-in failed: \(error.localizedDescription)"); return
+                }
+                call.resolve(["idToken": token ?? NSNull(), "rawNonce": rawNonce ?? NSNull()])
             }
         }
     }

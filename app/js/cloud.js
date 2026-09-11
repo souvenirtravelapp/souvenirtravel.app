@@ -221,8 +221,10 @@ async function signInNative(a){
   if (!auth || !a || !a.idToken || auth.currentUser) return;
   bridging = true;
   svTrace("credential…");
-  const cred = await bounded(signInWithCredential(
-    auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null)),
+  const credential = a.provider === "apple"
+    ? new OAuthProvider("apple.com").credential({ idToken: a.idToken, rawNonce: a.rawNonce })
+    : GoogleAuthProvider.credential(a.idToken, a.accessToken || null);
+  const cred = await bounded(signInWithCredential(auth, credential),
     10000, "signInWithCredential");
   user = cred.user;
   enterAccount(user.uid);
@@ -368,10 +370,21 @@ export async function signIn(){
   return signInWith(new GoogleAuthProvider());
 }
 
-export function signInApple(){
-  const p = new OAuthProvider("apple.com");
-  p.addScope("name"); p.addScope("email");
-  return signInWith(p);
+export async function signInApple(){
+  // في الغلاف: المنبثق محجوب بانفصال التخزين — الأصيل يجلب اعتماد أبل
+  // (idToken + rawNonce) ويمضي به نفس مسار الجسر المشترك بمصالحته.
+  const p = typeof window !== "undefined" && window.__souvenirWrapper
+    && window.Capacitor && window.Capacitor.Plugins
+    && window.Capacitor.Plugins.SouvenirAuth;
+  if (p && p.signInApple){
+    const r = await p.signInApple();
+    if (!r || !r.idToken) throw new Error("native apple sign-in returned no credential");
+    try { sessionStorage.removeItem("sv.bridge.reloaded"); } catch (e) {}
+    return window.__souvenirNativeSignIn({ ...r, provider: "apple" });
+  }
+  const prov = new OAuthProvider("apple.com");
+  prov.addScope("name"); prov.addScope("email");
+  return signInWith(prov);
 }
 
 
