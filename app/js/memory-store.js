@@ -51,6 +51,16 @@ export const Memory = {
     write(data);
   },
 
+  /// غلاف الرحلة: معرّف صورة على الجهاز (localIdentifier) — يُزامَن للحساب،
+  /// والصورة نفسها تبقى على الجهاز يحلّها الملحق الأصيل.
+  setCover(tripId, coverId){
+    const data = read();
+    const t = data.trips.find(x => x.id === tripId);
+    if (!t) return;
+    t.coverId = coverId;
+    write(data);
+  },
+
   addCompanion(name, relation = ""){
     const data = read();
     const made = { id: uuid(), name, relation };

@@ -29,30 +29,42 @@ public enum SouvenirPhotosCore {
             let mgr = PHImageManager.default()
             var out: [String: String] = [:]
             for trip in trips {
-                guard let id = trip["id"] as? String,
-                      let range = dateRange(trip),
-                      let asset = bestAsset(in: range),
-                      let b64 = thumbnail(asset, mgr, 600) else { continue }
-                out[id] = b64
+                guard let id = trip["id"] as? String else { continue }
+                // غلاف اختاره المستخدم يتقدّم على المطابقة الزمنية.
+                let picked: PHAsset?
+                if let coverId = trip["coverId"] as? String, !coverId.isEmpty {
+                    picked = assetById(coverId)
+                } else if let range = dateRange(trip) {
+                    picked = bestAsset(in: range)
+                } else {
+                    picked = nil
+                }
+                if let a = picked, let b64 = thumbnail(a, mgr, 600) { out[id] = b64 }
             }
             DispatchQueue.main.async { completion(out) }
         }
     }
 
-    // معرض رحلة واحدة: صورها زمنيًّا حتى الحدّ.
+    // معرض رحلة واحدة: صورها زمنيًّا حتى الحدّ — كلٌّ بمعرّفه ومصغّره.
     public static func photos(for trip: [String: Any], limit: Int,
-                              completion: @escaping ([String]) -> Void) {
+                              completion: @escaping ([[String: String]]) -> Void) {
         withReadAccess { ok in
             guard ok, let range = dateRange(trip) else {
                 DispatchQueue.main.async { completion([]) }; return
             }
             let mgr = PHImageManager.default()
-            var out: [String] = []
+            var out: [[String: String]] = []
             for asset in assetsInRange(range, limit: limit) {
-                if let b64 = thumbnail(asset, mgr, 300, fast: true) { out.append(b64) }
+                if let b64 = thumbnail(asset, mgr, 300, fast: true) {
+                    out.append(["id": asset.localIdentifier, "thumb": b64])
+                }
             }
             DispatchQueue.main.async { completion(out) }
         }
+    }
+
+    private static func assetById(_ id: String) -> PHAsset? {
+        PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
     }
 
     private static func fetch(in range: (Date, Date)) -> PHFetchResult<PHAsset> {

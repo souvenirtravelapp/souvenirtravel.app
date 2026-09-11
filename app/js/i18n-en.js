@@ -131,6 +131,8 @@ export const EN = {
  "لم تُعثر هذه الرحلة.": "Trip not found.",
  "لا صور لهذه الرحلة على هذا الجهاز.": "No photos for this trip on this device.",
  "جارٍ تحميل الصور…": "Loading photos…",
+ "اضغط صورة لجعلها الغلاف.": "Tap a photo to make it the cover.",
+ "الغلاف": "Cover",
  "المحو": "Erase",
  "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS.": "Your visas and residencies, entered by hand and kept in your account — reading documents with the camera is an iOS app feature.",
  " · منتهية": " · expired",

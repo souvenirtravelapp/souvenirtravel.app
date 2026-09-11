@@ -1195,8 +1195,8 @@ async function applyTripCovers(root, trips){
     const plugin = window.Capacitor && window.Capacitor.Plugins
       && window.Capacitor.Plugins.SouvenirPhotos;
     if (!plugin) return;
-    const payload = trips.filter(t => t.start)
-      .map(t => ({ id: t.id, start: t.start, end: t.end || "" }));
+    const payload = trips.filter(t => t.start || t.coverId)
+      .map(t => ({ id: t.id, start: t.start || "", end: t.end || "", coverId: t.coverId || "" }));
     if (!payload.length) return;
     const { covers } = (await plugin.covers({ trips: payload })) || {};
     for (const [id, thumb] of Object.entries(covers || {})){
@@ -1293,7 +1293,10 @@ async function loadTripGallery(container, trip){
     if (!plugin || !plugin.photos || !trip.start) return;
     const grid = el("div", { style: "display:grid;grid-template-columns:repeat(3,1fr);gap:6px" });
     const status = el("div.det", { style: "color:var(--muted)" }, tt("جارٍ تحميل الصور…"));
-    container.append(el("div.section", {}, el("h2", {}, tt("الصور")), grid, status));
+    container.append(el("div.section", {},
+      el("h2", {}, tt("الصور")),
+      el("div.det", { style: "color:var(--muted);margin-bottom:6px" }, tt("اضغط صورة لجعلها الغلاف.")),
+      grid, status));
     const { photos } = (await plugin.photos({
       trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 })) || {};
     status.remove();
@@ -1302,9 +1305,29 @@ async function loadTripGallery(container, trip){
         tt("لا صور لهذه الرحلة على هذا الجهاز.")));
       return;
     }
-    for (const src of photos)
-      grid.append(el("div", { style: "aspect-ratio:1;border-radius:10px;"
-        + `background:center/cover no-repeat url("${src}")` }));
+    const cellStyle = (thumb, on) => "aspect-ratio:1;border-radius:10px;cursor:pointer;position:relative;"
+      + `background:center/cover no-repeat url("${thumb}");`
+      + (on ? "outline:3px solid var(--deep);outline-offset:-3px;" : "");
+    const badge = () => el("div", { style: "position:absolute;top:4px;inset-inline-start:4px;"
+      + "background:var(--deep);color:#fff;font-size:11px;padding:2px 6px;border-radius:8px" }, "★ " + tt("الغلاف"));
+    const cells = [];
+    const paint = () => cells.forEach(c => {
+      const on = trip.coverId === c.p.id;
+      c.el.style.cssText = cellStyle(c.p.thumb, on);
+      c.el.replaceChildren(on ? badge() : null);
+    });
+    for (const p of photos){
+      const cell = el("div", { onclick: () => {
+        Memory.setCover(trip.id, p.id);
+        trip.coverId = p.id;
+        const top = container.querySelector(`.cover[data-tid="${trip.id}"]`);
+        if (top){ top.style.background = `center/cover no-repeat url("${p.thumb}")`; top.replaceChildren(); }
+        paint();
+      } });
+      cells.push({ el: cell, p });
+      grid.append(cell);
+    }
+    paint();
   } catch (e){ /* الصور تحسينيّة */ }
 }
 
