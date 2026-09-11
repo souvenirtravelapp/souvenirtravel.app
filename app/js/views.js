@@ -1287,26 +1287,25 @@ export function memTripDetail(ctx, id){
 /* معرض صور الرحلة (iOS): يطلب صور مداها الزمني من الملحق الأصيل ويرسمها شبكةً.
    تحسينيّ — غيابه أو فشله لا يعطّل التفصيل. */
 async function loadTripGallery(container, trip){
-  const grid = el("div", { style: "display:grid;grid-template-columns:repeat(3,1fr);gap:6px" });
-  const note = el("div.det", { style: "color:var(--muted);font-size:12px" });
-  container.append(el("div.section", {}, el("h2", {}, tt("الصور") + " ·g2"), grid, note));
   try {
-    const cap = window.Capacitor;
-    if (!(cap && cap.Plugins)){ note.textContent = "⚠︎ Capacitor.Plugins غير متاح"; return; }
-    const plugin = cap.Plugins.SouvenirPhotos;
-    if (!plugin){ note.textContent = "⚠︎ ملحق SouvenirPhotos غير مسجّل"; return; }
-    if (!plugin.photos){ note.textContent = "⚠︎ طريقة photos غير موجودة (بناء قديم)"; return; }
-    if (!trip.start){ note.textContent = "⚠︎ لا تاريخ بداية للرحلة"; return; }
-    const res = await plugin.photos({
-      trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 });
-    const photos = res && res.photos;
+    const plugin = window.Capacitor && window.Capacitor.Plugins
+      && window.Capacitor.Plugins.SouvenirPhotos;
+    if (!plugin || !plugin.photos || !trip.start) return;
+    const grid = el("div", { style: "display:grid;grid-template-columns:repeat(3,1fr);gap:6px" });
+    const status = el("div.det", { style: "color:var(--muted)" }, tt("جارٍ تحميل الصور…"));
+    container.append(el("div.section", {}, el("h2", {}, tt("الصور")), grid, status));
+    const { photos } = (await plugin.photos({
+      trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 })) || {};
+    status.remove();
     if (!photos || !photos.length){
-      note.textContent = "⚠︎ صفر صورة في المدى " + trip.start + " ← " + (trip.end || "؟"); return;
+      grid.replaceWith(el("div.card", { style: "color:var(--muted)" },
+        tt("لا صور لهذه الرحلة على هذا الجهاز.")));
+      return;
     }
     for (const src of photos)
       grid.append(el("div", { style: "aspect-ratio:1;border-radius:10px;"
         + `background:center/cover no-repeat url("${src}")` }));
-  } catch (e){ note.textContent = "⚠︎ خطأ: " + (e && e.message ? e.message : e); }
+  } catch (e){ /* الصور تحسينيّة */ }
 }
 
 function countryNameAr(store, iso){

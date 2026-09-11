@@ -49,7 +49,7 @@ public enum SouvenirPhotosCore {
             let mgr = PHImageManager.default()
             var out: [String] = []
             for asset in assetsInRange(range, limit: limit) {
-                if let b64 = thumbnail(asset, mgr, 500) { out.append(b64) }
+                if let b64 = thumbnail(asset, mgr, 300, fast: true) { out.append(b64) }
             }
             DispatchQueue.main.async { completion(out) }
         }
@@ -83,16 +83,17 @@ public enum SouvenirPhotosCore {
         return out
     }
 
-    private static func thumbnail(_ asset: PHAsset, _ mgr: PHImageManager, _ px: CGFloat) -> String? {
+    private static func thumbnail(_ asset: PHAsset, _ mgr: PHImageManager, _ px: CGFloat,
+                                  fast: Bool = false) -> String? {
         let opts = PHImageRequestOptions()
         opts.isSynchronous = true                      // نحن على خيط خلفي أصلًا
-        opts.deliveryMode = .highQualityFormat
+        opts.deliveryMode = fast ? .fastFormat : .highQualityFormat  // المعرض: نسخة سريعة
         opts.isNetworkAccessAllowed = true             // صور iCloud أيضًا
         opts.resizeMode = .fast
         var b64: String?
         mgr.requestImage(for: asset, targetSize: CGSize(width: px, height: px),
                          contentMode: .aspectFill, options: opts) { image, _ in
-            if let image = image, let data = image.jpegData(compressionQuality: 0.7) {
+            if let image = image, let data = image.jpegData(compressionQuality: fast ? 0.6 : 0.7) {
                 b64 = "data:image/jpeg;base64," + data.base64EncodedString()
             }
         }

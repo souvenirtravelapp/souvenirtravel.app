@@ -130,6 +130,7 @@ export const EN = {
  "اكتشفها سوفينير من صورك": "Detected by Souvenir from your photos",
  "لم تُعثر هذه الرحلة.": "Trip not found.",
  "لا صور لهذه الرحلة على هذا الجهاز.": "No photos for this trip on this device.",
+ "جارٍ تحميل الصور…": "Loading photos…",
  "المحو": "Erase",
  "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS.": "Your visas and residencies, entered by hand and kept in your account — reading documents with the camera is an iOS app feature.",
  " · منتهية": " · expired",
