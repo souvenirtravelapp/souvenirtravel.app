@@ -1115,6 +1115,7 @@ export function tripCard(ctx, t){
 
 let memLens = "timeline";   // عدسة الذاكرة تعيش عبر الرسمات
 let memAdding = false;
+let memEditingId = null;     // رحلةٌ يُحرَّر تفصيلها الآن (بمعرّفها)
 
 export function trips(ctx){
   const { store } = ctx;
@@ -1240,10 +1241,16 @@ function memTripCard(ctx, t){
 export function memTripDetail(ctx, id){
   const { store } = ctx;
   const trip = Memory.trips.find(x => x.id === id);
-  const back = el("a.circle", { href: "#/trips" }, "‹");
+  // رجوع بحجم لمسٍ مريح على الحافة القائدة (يمين في RTL) بسهم يشير إليها.
+  const back = el("a", { href: "#/trips", "aria-label": tt("رجوع"),
+    style: "width:44px;height:44px;flex:0 0 auto;border-radius:50%;background:var(--card);"
+      + "border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;"
+      + "font-size:26px;line-height:1;color:var(--text);text-decoration:none" }, "›");
+  const headRow = h1 => el("div", { style: "display:flex;align-items:center;gap:12px" },
+    back, el("h1", { style: "margin:0" }, h1));
   const root = el("div.wide");
   if (!trip){
-    root.append(el("div.hero3", {}, el("div.herorow", {}, el("h1", {}, tt("رحلة")), back)),
+    root.append(el("div.hero3", {}, headRow(tt("رحلة"))),
       el("div.section", {}, el("div.empty", {}, tt("لم تُعثر هذه الرحلة."))));
     return root;
   }
@@ -1255,10 +1262,15 @@ export function memTripDetail(ctx, id){
   const sec = (label, body) => el("div.section", {}, el("h2", {}, label), body);
 
   root.append(el("div.hero3", {},
-    el("div.herorow", {}, el("h1", {}, title), back),
-    el("p", {}, span)));
+    headRow(title),
+    el("p", { style: "margin-top:6px" }, span)));
   const inner = el("div.section");
   root.append(inner);
+
+  if (memEditingId === trip.id){ inner.append(editTripForm(ctx, trip)); return root; }
+  inner.append(el("div", { style: "margin-bottom:10px" },
+    el("button.out", { onclick: () => { memEditingId = trip.id; render(); } },
+      "✎ " + tt("تعديل الرحلة"))));
 
   inner.append(el("div.cover", { "data-tid": trip.id,
     style: "background:var(--aurora);height:190px;border-radius:16px;"
@@ -1393,6 +1405,72 @@ function openPhotoViewer(container, trip, items, startP){
   overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
   show(startP);
   document.body.append(overlay);
+}
+
+/* تعديل رحلة الذاكرة — أماكن (إضافة/حذف)، تاريخ، رفقاء، ملاحظات. */
+function editTripForm(ctx, trip){
+  const { store } = ctx;
+  const done = () => { memEditingId = null; render(); };
+  const places = (trip.places ?? []).map(p => ({ ...p }));
+
+  const placesBox = el("div", { style: "margin-bottom:8px" });
+  const drawPlaces = () => placesBox.replaceChildren(...(places.length
+    ? places.map((p, i) => el("div", { style: "display:flex;align-items:center;gap:8px;margin-bottom:6px" },
+        el("span", { style: "flex:1" }, "📍 " + p.name
+          + (p.countryIso ? " · " + (countryNameAr(store, p.countryIso) || p.countryIso) : "")),
+        el("button.out", { onclick: () => { places.splice(i, 1); drawPlaces(); } }, "✕")))
+    : [el("div.det", { style: "color:var(--muted)" }, tt("لا أماكن — أضف أدناه."))]));
+  drawPlaces();
+
+  const seen = new Set();
+  const newPlace = el("input", { placeholder: tt("أضف مكانًا") });
+  const newCountry = el("select.menu", {},
+    el("option", { value: "" }, tt("الدولة")),
+    [...store.cities].sort((a, b) => countryName(a).localeCompare(countryName(b), isEN ? "en" : "ar"))
+      .filter(c => !seen.has(c.country_code) && seen.add(c.country_code))
+      .map(c => el("option", { value: c.country_code }, countryName(c))));
+  const addPlace = el("button.out", { onclick: () => {
+    const name = newPlace.value.trim(); if (!name) return;
+    places.push({ name, countryIso: newCountry.value || "" });
+    newPlace.value = ""; newCountry.value = ""; drawPlaces();
+  } }, tt("أضف"));
+
+  const start = el("input", { type: "date", value: trip.start || "" });
+  const end = el("input", { type: "date", value: trip.end || "" });
+  const notes = el("input", { value: trip.notes || "", placeholder: tt("ملاحظات (اختياري)") });
+
+  const picked = new Set(trip.companionIds ?? []);
+  const mates = el("div.chips", {}, Memory.companions.map(c => {
+    const b = chip(c.name, picked.has(c.id), () => {
+      picked.has(c.id) ? picked.delete(c.id) : picked.add(c.id); b.classList.toggle("on");
+    });
+    return b;
+  }));
+
+  return el("div.card", {},
+    el("h2", { style: "margin-bottom:8px" }, tt("تعديل الرحلة")),
+    el("div.det", { style: "margin-bottom:4px" }, tt("الأماكن")), placesBox,
+    el("div.planrow", {}, newPlace, newCountry, addPlace),
+    el("div.det", { style: "margin:12px 0 4px" }, tt("التاريخ")),
+    el("div.planrow", {}, start, end),
+    Memory.companions.length
+      ? el("div", { style: "margin-top:12px" },
+          el("div.det", { style: "margin-bottom:6px" }, tt("الرفقاء:")), mates)
+      : null,
+    el("div.planrow", { style: "margin-top:12px" }, notes),
+    el("div.planrow", { style: "margin-top:14px;gap:8px" },
+      el("button.btn", { onclick: () => {
+        Memory.updateTrip(trip.id, {
+          start: start.value || trip.start || "",
+          end: end.value || "",
+          notes: notes.value.trim(),
+          places,
+          countryIso: (places[0] && places[0].countryIso) || trip.countryIso || "",
+          companionIds: [...picked],
+        });
+        done();
+      } }, tt("حفظ")),
+      el("button.later", { onclick: done }, tt("إلغاء"))));
 }
 
 function countryNameAr(store, iso){

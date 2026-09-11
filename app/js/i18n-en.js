@@ -136,6 +136,8 @@ export const EN = {
  "اجعلها الغلاف": "Make it the cover",
  "إزالة هذه الصورة من الرحلة؟ تبقى في مكتبة صورك.": "Remove this photo from the trip? It stays in your photo library.",
  "إضافة صور": "Add photos",
+ "تعديل الرحلة": "Edit trip",
+ "حفظ": "Save",
  "الغلاف": "Cover",
  "المحو": "Erase",
  "تأشيراتك وإقاماتك، تدخلها بنفسك وتُحفظ في حسابك — قراءة الوثائق بالكاميرا ميزة تطبيق iOS.": "Your visas and residencies, entered by hand and kept in your account — reading documents with the camera is an iOS app feature.",

@@ -80,6 +80,15 @@ export const Memory = {
     write(data);
   },
 
+  /// تعديل حقول الرحلة (تاريخ، رفقاء، أماكن، ملاحظات) — تُدمج وتُزامَن.
+  updateTrip(id, fields){
+    const data = read();
+    const t = data.trips.find(x => x.id === id);
+    if (!t) return;
+    Object.assign(t, fields);
+    write(data);
+  },
+
   addCompanion(name, relation = ""){
     const data = read();
     const made = { id: uuid(), name, relation };
