@@ -53,8 +53,8 @@ export function countryName(c){ return isEN ? (c.country_name_en || c.country_na
 // الموقع الحي». في iOS وسيطٌ أصيل يعترض المسار النسبي ويجلبه، وAndroid
 // بلا وسيط، فيُكتب له المسار مطلقًا إلى الموقع الحي من هنا.
 export function assetURL(rel){
-  return (globalThis.__souvenirWrapper?.platform === "android")
-    ? "https://souvenirtravel.app/app/" + rel : rel;
+  // أي غلاف (أندرويد أو iOS/Capacitor) بلا وسيط أصول أصيل: اجلب من الموقع الحيّ.
+  return globalThis.__souvenirWrapper ? "https://souvenirtravel.app/app/" + rel : rel;
 }
 
 // The affiliate handoff — website channel, disclosed. Mirrors the pages.

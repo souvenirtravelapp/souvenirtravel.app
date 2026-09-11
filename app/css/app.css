@@ -952,6 +952,7 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 html.sv-wrapper .topbar{display:none}
 html.sv-wrapper nav.tabs{display:none}
 
-/* غلاف Android: مسار أبل المنبثق محكوم بانفصال التخزين — يُخفى الزر
-   حتى يُبنى له طريق أصيل إن لزم. */
-html.sv-android .gsign.apple{display:none}
+/* الأغلفة (Android وiOS): مسار أبل المنبثق محجوب داخل WebView — يُخفى الزر
+   حتى يُبنى له طريق أصيل (ملحق Sign in with Apple). الدخول بجوجل أصيل يعمل. */
+html.sv-android .gsign.apple,
+html.sv-ios .gsign.apple{display:none}
