@@ -3,6 +3,9 @@
 .impeccable/
 .claude/
 node_modules/
-wrapper/www/
+wrapper/www/*
+!wrapper/www/index.html
 ios/App/build/
 build/
+
+graphify-out/
