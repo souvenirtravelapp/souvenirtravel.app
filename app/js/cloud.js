@@ -9,7 +9,7 @@
 // كتابةً يغلب، فيسري حذف القلب من جهاز إلى بقية الأجهزة بدل أن يعود.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider,
+import { getAuth, initializeAuth, browserLocalPersistence, GoogleAuthProvider,
          OAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
          deleteUser, linkWithPopup, signInWithCredential }
   from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
@@ -258,11 +258,12 @@ if (typeof window !== "undefined")
 export async function restore(){
   try {
     const app = initializeApp(firebaseConfig);
-    // ثبات جلسة Auth يقوم على indexedDB، وهو معطوب تحت مخطط الغلاف
-    // فتعلّق كل عمليات Auth خلف تهيئةٍ لا تكتمل. ذاكرة صريحة هناك —
-    // والجسر يعيد الدخول كل إقلاع فلا يُحتاج الثبات أصلًا.
+    // الغلاف الرفيع يحمّل أصلًا حقيقيًّا (souvenirtravel.app) حيث التخزين
+    // المحلي يعمل — فنثبّت الجلسة فيه (لا indexedDB الذي كان يعلّق تحت
+    // المخطط القديم). هذا يُبقي جلسة أبل وجوجل عبر إعادة التحميل؛ الاستعادة
+    // الأصيلة لجوجل تبقى احتياطًا للإقلاع الأول.
     auth = (typeof window !== "undefined" && window.__souvenirWrapper)
-      ? initializeAuth(app, { persistence: inMemoryPersistence })
+      ? initializeAuth(app, { persistence: browserLocalPersistence })
       : getAuth(app);
     // قنوات Firestore البثية تعلّق داخل أغلفة WebView — الاستقصاء الطويل
     // بديلها المعتمد هناك، والمتصفح العادي على حاله.
