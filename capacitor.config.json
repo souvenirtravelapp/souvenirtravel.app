@@ -1,5 +1,9 @@
 {
   "appId": "app.souvenirtravel",
   "appName": "سوفينير",
-  "webDir": "wrapper/www"
+  "webDir": "wrapper/www",
+  "server": {
+    "url": "https://souvenirtravel.app/app/",
+    "cleartext": false
+  }
 }
