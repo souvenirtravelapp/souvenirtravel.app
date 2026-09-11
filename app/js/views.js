@@ -171,6 +171,15 @@ function shelf(title, inner){
   return el("div.section", {}, el("h2.shelfhead", {}, title), inner);
 }
 
+// بطاقة «يحتاج حسابًا» الواحدة: أيقونة إن وُجدت، وسطر يشرح لماذا، وزر يفتح
+// البوابة. كانت تُبنى يدًا في ست شاشات بفروق لا يقصدها أحد.
+function signinCard(icon, body, gateMsg, label = t("الدخول بحساب جوجل"), pad = "26px 18px"){
+  return el("div.card", { style: "text-align:center;padding:" + pad },
+    icon ? el("div", { style: "font-size:34px" }, icon) : null,
+    el("p", {}, body),
+    el("button.btn", { onclick: () => askSignIn(gateMsg) }, label));
+}
+
 // شريط البطل: سؤالا الجميع — الوجهة والشهر — لا غير؛ زره يغوص في
 // «وجهاتك القادمة» حيث الفلتر الكامل. النسخة المدمجة (داخل صفحة الفلتر)
 // بلا شهر، فالشهر هناك في صندوقه.
@@ -348,11 +357,9 @@ export function filterSection(ctx, opts = {}){
     results.replaceChildren();
     if (filter.presentation === "fav"){
       if (!cloud.user){
-        results.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-          el("div", { style: "font-size:34px" }, "♡"),
-          el("p", {}, t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر.")),
-          el("button.btn", { onclick: () =>
-            askSignIn(t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")) }, t("تسجيل الدخول"))));
+        results.append(signinCard("♡",
+          t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر."),
+          t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك."), t("تسجيل الدخول")));
         return;
       }
       const kept = [...shortlist.cityIDs]
@@ -894,11 +901,9 @@ export function favorites(ctx){
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
-    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("div", { style: "font-size:34px" }, "♡"),
-      el("p", {}, t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")) }, t("الدخول بحساب جوجل"))));
+    inner.append(signinCard("♡",
+      t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر."),
+      t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")));
     return root;
   }
   const kept = [...shortlist.cityIDs]
@@ -924,10 +929,9 @@ export function mydata(ctx){
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
-    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("p", {}, t("ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لترى بياناتك وتتحكم بها.")) }, t("الدخول"))));
+    inner.append(signinCard(null,
+      t("ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت."),
+      t("ادخل بحسابك لترى بياناتك وتتحكم بها."), t("الدخول")));
     return root;
   }
 
@@ -1025,10 +1029,10 @@ export function papers(ctx){
     countryOptions.push(el("option", { value: c.country_code }, countryName(c)));
   }
   if (!cloud.user){
-    append(el("div.card", { style: "text-align:center;padding:22px 18px" },
-      el("p", {}, t("أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت.")) }, t("الدخول بحساب جوجل"))));
+    append(signinCard(null,
+      t("أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك."),
+      t("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت."),
+      t("الدخول بحساب جوجل"), "22px 18px"));
     return root;
   }
   const country = el("select", {}, countryOptions);
@@ -1108,11 +1112,9 @@ export function trips(ctx){
   const body = wrap => { root.append(el("div.section", {}, wrap)); return root; };
 
   if (!cloud.user){
-    return body(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("div", { style: "font-size:34px" }, "✈︎"),
-      el("p", {}, t("الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.")) }, t("الدخول بحساب جوجل"))));
+    return body(signinCard("✈︎",
+      t("الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر."),
+      t("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.")));
   }
 
   const inner = el("div.section");
@@ -1328,11 +1330,9 @@ export function upcoming(ctx){
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
-    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("div", { style: "font-size:34px" }, "🧭"),
-      el("p", {}, t("رحلاتك القادمة تحتاج حسابًا — ادخل لتبدأ التخطيط، أو لتسترجع خططك من جهاز آخر.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتكون خططك معك على كل أجهزتك.")) }, t("الدخول"))));
+    inner.append(signinCard("🧭",
+      t("رحلاتك القادمة تحتاج حسابًا — ادخل لتبدأ التخطيط، أو لتسترجع خططك من جهاز آخر."),
+      t("ادخل بحسابك لتكون خططك معك على كل أجهزتك."), t("الدخول")));
     return root;
   }
   // بابٌ للتخطيط من هنا: كان الطريق الوحيد أن يفتح وجهةً ثم يضغط «لدي رحلة
