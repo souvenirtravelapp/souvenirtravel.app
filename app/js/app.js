@@ -40,7 +40,7 @@ function drawTabs(){
   // كل طريق يضيء بابه: الوجهة والمفضلة والبحث أبناء «وجهاتك القادمة»،
   // والتفضيلات والأوراق والبيانات أبناء البيت.
   const on = { d: "next", find: "next", map: "next", fav: "next",
-               plan: "upcoming",
+               plan: "upcoming", trip: "trips",
                prefs: "home", papers: "home", mydata: "home",
                admin: "home" }[path] || path;
   const tripsGuard = e => guardNav(e, "#/trips",
@@ -261,6 +261,7 @@ export function render(){
     trips:  () => views.trips(ctx),
     upcoming: () => views.upcoming(ctx),
     plan:   () => planner(ctx, arg, render),
+    trip:   () => views.memTripDetail(ctx, arg),
     fav:    () => views.favorites(ctx),
     mydata: () => views.mydata(ctx),
     admin:  () => views.admin(ctx),

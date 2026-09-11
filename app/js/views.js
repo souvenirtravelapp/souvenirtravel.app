@@ -1214,23 +1214,71 @@ function memTripCard(ctx, t){
   const mates = (t.companionIds ?? [])
     .map(id => Memory.companion(id)?.name).filter(Boolean);
   return el("div.dest-row", {},
-    el("div.cover", { style: "background:var(--aurora)", "data-tid": t.id },
-      t.countryIso ? flag(t.countryIso) : "✈︎"),
-    el("div.names", {},
-      el("div.n", {}, title),
-      el("div.c", {}, countryNameAr(store, t.countryIso) || ""),
-      mates.length ? el("div.badges", {},
-        mates.map(name => el("span.badge", {}, "👤 " + name))) : null,
-      t.notes ? el("div.det", {}, t.notes) : null,
-      el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : "")
-        + (t.source === "photos" ? tt(" · من صورك") : "")),),
+    el("a", { href: "#/trip/" + t.id,
+              style: "display:contents;color:inherit;text-decoration:none" },
+      el("div.cover", { style: "background:var(--aurora)", "data-tid": t.id },
+        t.countryIso ? flag(t.countryIso) : "✈︎"),
+      el("div.names", {},
+        el("div.n", {}, title),
+        el("div.c", {}, countryNameAr(store, t.countryIso) || ""),
+        mates.length ? el("div.badges", {},
+          mates.map(name => el("span.badge", {}, "👤 " + name))) : null,
+        t.notes ? el("div.det", {}, t.notes) : null,
+        el("div.det", {}, (t.start || tt("؟")) + (t.end ? " ← " + t.end : "")
+          + (t.source === "photos" ? tt(" · من صورك") : "")))),
     el("div.side", {},
       el("div"),
       t.source === "manual"
         ? el("button.out", { onclick: () => {
             if (confirm(tt("حذف هذه الرحلة من حسابك؟"))) { Memory.removeTrip(t.id); render(); }
           } }, tt("حذف"))
-        : el("span.det", { style: "font-size:11px;color:var(--muted)" }, tt("من التطبيق"))));
+        : el("span.det", { style: "font-size:11px;color:var(--muted)" }, tt("من صورك"))));
+}
+
+/* تفصيل رحلة الذاكرة — كامل التوثيق: أماكن، تاريخ، رفقاء، ملاحظات، غلاف.
+   معرض الصور وإدارتها (إضافة/حذف/غلاف) مرحلة تالية عبر ملحق souvenir-photos. */
+export function memTripDetail(ctx, id){
+  const { store } = ctx;
+  const trip = Memory.trips.find(x => x.id === id);
+  const back = el("a.circle", { href: "#/trips" }, "‹");
+  const root = el("div.wide");
+  if (!trip){
+    root.append(el("div.hero3", {}, el("div.herorow", {}, el("h1", {}, tt("رحلة")), back)),
+      el("div.section", {}, el("div.empty", {}, tt("لم تُعثر هذه الرحلة."))));
+    return root;
+  }
+  const places = (trip.places ?? []).map(p => p.name);
+  const title = places.length ? places.join(tt("، "))
+    : (countryNameAr(store, trip.countryIso) || tt("رحلة"));
+  const mates = (trip.companionIds ?? []).map(cid => Memory.companion(cid)?.name).filter(Boolean);
+  const span = (trip.start || tt("؟")) + (trip.end ? " ← " + trip.end : "");
+  const sec = (label, body) => el("div.section", {}, el("h2", {}, label), body);
+
+  root.append(el("div.hero3", {},
+    el("div.herorow", {}, el("h1", {}, title), back),
+    el("p", {}, span)));
+  const inner = el("div.section");
+  root.append(inner);
+
+  inner.append(el("div.cover", { "data-tid": trip.id,
+    style: "background:var(--aurora);height:190px;border-radius:16px;"
+         + "display:flex;align-items:center;justify-content:center;font-size:44px" },
+    trip.countryIso ? flag(trip.countryIso) : "✈︎"));
+
+  if (places.length) inner.append(sec(tt("الأماكن"), el("div.card", {},
+    (trip.places ?? []).map(p => el("div", {}, "📍 " + p.name
+      + (p.countryIso ? " · " + (countryNameAr(store, p.countryIso) || p.countryIso) : ""))))));
+
+  inner.append(sec(tt("التاريخ"), el("div.card", {}, span)));
+  inner.append(sec(tt("الرفقاء"), el("div.card", {},
+    mates.length ? mates.map(n => el("div", {}, "👤 " + n)) : tt("لا أحد"))));
+  if (trip.notes) inner.append(sec(tt("ملاحظات"), el("div.card", {}, trip.notes)));
+
+  inner.append(el("div.det", { style: "color:var(--muted);margin-top:6px" },
+    trip.source === "manual" ? tt("أضفتها بنفسك") : tt("اكتشفها سوفينير من صورك")));
+
+  if (typeof window !== "undefined" && window.__souvenirWrapper) applyTripCovers(inner, [trip]);
+  return root;
 }
 
 function countryNameAr(store, iso){
