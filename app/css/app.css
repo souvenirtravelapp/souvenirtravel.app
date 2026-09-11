@@ -944,3 +944,14 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .agrow{margin:10px 0 0;padding-inline-start:12px;border-inline-start:2px solid var(--line)}
 .agrow .t{font-weight:700;color:var(--deep);font-size:14px}
 .agmission{color:var(--muted);font-size:13px;line-height:1.65;margin-top:2px}
+
+/* ── داخل غلاف التطبيق: شريط واحد لا شريطان ──────────────────────────
+   الغلاف يضع sv-wrapper على <html> قبل أي تحميل. رأس الويب وشريطه
+   العائم يختفيان — فالهوية يمسكها التطبيق، والملاحة لشريطه الأصلي
+   (وفيه «رحلاتك»، التوثيق الأصلي)، ولسان Web يهبط على «خطط» مباشرة. */
+html.sv-wrapper .topbar{display:none}
+html.sv-wrapper nav.tabs{display:none}
+
+/* غلاف Android: مسار أبل المنبثق محكوم بانفصال التخزين — يُخفى الزر
+   حتى يُبنى له طريق أصيل إن لزم. */
+html.sv-android .gsign.apple{display:none}

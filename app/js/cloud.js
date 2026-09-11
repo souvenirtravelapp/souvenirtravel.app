@@ -9,10 +9,12 @@
 // كتابةً يغلب، فيسري حذف القلب من جهاز إلى بقية الأجهزة بدل أن يعود.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut,
-         onAuthStateChanged, deleteUser, linkWithPopup } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, addDoc, collection,
-         getDocs, query, orderBy, limit, serverTimestamp }
+import { getAuth, initializeAuth, inMemoryPersistence, GoogleAuthProvider,
+         OAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+         deleteUser, linkWithPopup, signInWithCredential }
+  from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getFirestore, initializeFirestore, doc, getDoc, setDoc, deleteDoc,
+         addDoc, collection, getDocs, query, orderBy, limit, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
@@ -197,18 +199,107 @@ async function reconcile(firstLogin){
   return false;
 }
 
+/* جسر الغلاف: تطبيق الهاتف يدخل بجوجل أصيلًا (OAuth الويب محظور داخل
+   WebView) ويسلّم اعتماده هنا. الدخول به يمر بنفس مسار المصالحة الأول
+   للدخول العادي — فلا كتابة فوق بيانات السحابة بغير اتحاد. إن نجح أعيد
+   تحميل الصفحة مرة واحدة لتُبنى المخازن على المحلي المتصالح؛ وعلامة
+   sessionStorage تمنع أي دوران إن لم تنجُ الجلسة من الإعادة. */
+let bridging = false;
+
+/* أثرٌ يصل سجلَّ الغلاف وحده — لا شيء منه في المتصفح العادي. */
+function svTrace(m){
+  try { if (window.__souvenirWrapper) webkit.messageHandlers.svlog.postMessage("bridge: " + m); }
+  catch (e) {}
+}
+/* سقفٌ لكل خطوة: وعدٌ لا يجيب في مهلته يُرفض — فلا يعلّق الإقلاع أبدًا. */
+function bounded(p, ms, label){
+  return Promise.race([p, new Promise((_, rej) =>
+    setTimeout(() => rej(new Error("timeout: " + label)), ms))]);
+}
+
+async function signInNative(a){
+  if (!auth || !a || !a.idToken || auth.currentUser) return;
+  bridging = true;
+  svTrace("credential…");
+  const cred = await bounded(signInWithCredential(
+    auth, GoogleAuthProvider.credential(a.idToken, a.accessToken || null)),
+    10000, "signInWithCredential");
+  user = cred.user;
+  enterAccount(user.uid);
+  svTrace("signed in, reconciling…");
+  try {
+    await bounded(markSignup(true), 10000, "markSignup");
+    await bounded(reconcile(true), 25000, "reconcile");
+    await bounded(reconcileMemory(true), 25000, "reconcileMemory");
+  } catch (e){
+    // مزامنة أولى لم تكتمل: نتراجع ضيوفًا هذه الجلسة — لا كتابة على
+    // السحابة بلا مصالحة أولى. الدخول يبقى محفوظًا للأصيل.
+    user = null; bridging = false;
+    svTrace("sync failed: " + e.message);
+    throw e;
+  }
+  bridging = false;
+  svTrace("done");
+  if (!sessionStorage.getItem("sv.bridge.reloaded")){
+    sessionStorage.setItem("sv.bridge.reloaded", "1");
+    location.reload();
+  }
+}
+if (typeof window !== "undefined")
+  window.__souvenirNativeSignIn = a =>
+    signInNative(a).then(
+      () => { if (!user) return; },
+      e => { bridging = false; console.warn("wrapper sign-in:", e); });
+
 /* يُنتظر قبل بناء المخازن: يهيئ Firebase ويستعيد جلسة سابقة إن وُجدت. */
-export function restore(){
-  return new Promise(resolve => {
+export async function restore(){
+  try {
+    const app = initializeApp(firebaseConfig);
+    // ثبات جلسة Auth يقوم على indexedDB، وهو معطوب تحت مخطط الغلاف
+    // فتعلّق كل عمليات Auth خلف تهيئةٍ لا تكتمل. ذاكرة صريحة هناك —
+    // والجسر يعيد الدخول كل إقلاع فلا يُحتاج الثبات أصلًا.
+    auth = (typeof window !== "undefined" && window.__souvenirWrapper)
+      ? initializeAuth(app, { persistence: inMemoryPersistence })
+      : getAuth(app);
+    // قنوات Firestore البثية تعلّق داخل أغلفة WebView — الاستقصاء الطويل
+    // بديلها المعتمد هناك، والمتصفح العادي على حاله.
+    db = (typeof window !== "undefined" && window.__souvenirWrapper)
+      ? initializeFirestore(app, { experimentalForceLongPolling: true })
+      : getFirestore(app);
+  } catch (e){ return; }
+
+  // في الغلاف: الأصيل يسلّم اعتماده عبر وعدٍ يُزرع قبل أي وحدة — فننتظره
+  // هنا (بسقف قصير) قبل أن نقرر أننا ضيوف. هذا يقطع سباق «التسليم قبل
+  // ولادة الدالة» الذي يضيع فيه الاعتماد بصمت.
+  let nat = typeof window !== "undefined" ? window.__souvenirNativeAuth : null;
+  if (!nat && typeof window !== "undefined" && window.__souvenirWrapper
+      && window.__souvenirNativeAuthPromise){
+    nat = await Promise.race([
+      window.__souvenirNativeAuthPromise,
+      new Promise(r => setTimeout(() => r(null), 3000)),
+    ]);
+  }
+  svTrace("restore: native=" + !!(nat && nat.idToken));
+  if (nat && nat.idToken && !auth.currentUser){
     try {
-      const app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } catch (e){ resolve(); return; }
+      await signInNative(nat);
+      // نجح بلا إعادة تحميل (الجلسة نجت أو العلامة قائمة): المصالحة تمت
+      // داخل signInNative — لا حاجة لانتظار البث.
+      if (user) return;
+    } catch (e){ bridging = false; console.warn("wrapper sign-in:", e); }
+  }
+
+  // «رفاهية لا شريان» تشمل التعليق لا الفشل وحده: شبكة خانقة، مانع
+  // إضافات، أو بيئة لا يجيب فيها onAuthStateChanged — خمس ثوانٍ ثم نمضي
+  // ضيوفًا، والمستمع لا يُغلق عند المهلة: دخول متأخر يمرّ بمصالحته كاملة.
+  return new Promise(resolve => {
+    setTimeout(resolve, 5000);
     const stop = onAuthStateChanged(auth, async u => {
+      if (!u && bridging) return;   // جسرٌ في الطريق — البث التالي يحمل صاحبه
       stop();
       user = u;
       if (u){
+        enterAccount(u.uid);
         try { await markSignup(false); await reconcile(false); await reconcileMemory(false); }
         catch (e) { console.warn("sync:", e); }
       }
@@ -220,13 +311,29 @@ export function restore(){
 async function signInWith(provider){
   const cred = await signInWithPopup(auth, provider);
   user = cred.user;
+  enterAccount(user.uid);
   await markSignup(true);
   await reconcile(true);
   await reconcileMemory(true);
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
 }
 
-export function signIn(){ return signInWith(new GoogleAuthProvider()); }
+export async function signIn(){
+  // في الغلاف: النافذة المنبثقة محكوم عليها بانفصال التخزين — فيتولى
+  // الأصيل جلب الاعتماد، ويمضي به نفس مسار الجسر المشترك بمصالحته.
+  const p = typeof window !== "undefined" && window.__souvenirWrapper
+    && window.Capacitor && window.Capacitor.Plugins
+    && window.Capacitor.Plugins.SouvenirAuth;
+  if (p){
+    const r = await p.signIn();
+    if (!r || !r.idToken) throw new Error("native sign-in returned no credential");
+    // علامة «أُعيد الإقلاع» تحرس حلقة الإقلاع الصامت وحدها — الدخول
+    // التفاعلي (وتبديل الحساب) يستحق إعادةَ بنائه دائمًا.
+    try { sessionStorage.removeItem("sv.bridge.reloaded"); } catch (e) {}
+    return window.__souvenirNativeSignIn(r);
+  }
+  return signInWith(new GoogleAuthProvider());
+}
 
 export function signInApple(){
   const p = new OAuthProvider("apple.com");
@@ -409,10 +516,63 @@ export async function eraseMyData(){
   location.reload();
 }
 
+/* خزائن الحسابات: عند الخروج تُنقل نسخة الجهاز إلى خزانة صاحبها
+   (sv.vault.<uid>) وتُفرَّغ الساحة — فلا يرث حسابٌ بقايا سابقه ولا
+   تُرفع رحلات أحد إلى سحابة غيره. عند عودته تُفتح خزانته وتُضم بالاتحاد
+   إلى ما جمعه ضيفٌ بعده، ثم تمضي مصالحته المعتادة. نقلٌ لا حذف. */
+const VAULT = "sv.vault.";
+const VAULT_KEYS = [...KEYS, "sv.filter", MEMKEY];
+
+function stashVault(uid){
+  const blob = {};
+  for (const k of VAULT_KEYS){
+    const raw = localStorage.getItem(k);
+    if (raw != null){ blob[k] = raw; localStorage.removeItem(k); }
+  }
+  if (Object.keys(blob).length)
+    localStorage.setItem(VAULT + uid, JSON.stringify(blob));
+}
+
+const OWNER = "sv.owner";   // uid صاحب بيانات الساحة الآن — يمنع الميراث
+
+/* يُنادى فور نجاح أي دخول وقبل أي مصالحة: إن كانت الساحة لمالك سابق
+   لم يخرج (تبديل حساب أصيل بلا خروج) عُزلت ساحته إلى خزانته أولًا،
+   فلا يرث الداخل رحلات غيره ولا تُرفع إلى سحابته. ثم تُفتح خزانة
+   الداخل إن وُجدت. نقلٌ لا حذف. */
+function enterAccount(uid){
+  const prev = localStorage.getItem(OWNER);
+  if (prev && prev !== uid) stashVault(prev);
+  localStorage.setItem(OWNER, uid);
+  restoreVault(uid);
+}
+
+function restoreVault(uid){
+  let blob;
+  try { blob = JSON.parse(localStorage.getItem(VAULT + uid)); } catch { return; }
+  if (!blob) return;
+  writeLocal(union(blob, readLocal()));
+  // الذاكرة والفلتر خارج عهدة union: تعودان إن كانت الساحة خالية،
+  // وما زامنته السحابة يلحق عبر مصالحتيهما على كل حال.
+  for (const k of ["sv.filter", MEMKEY])
+    if (blob[k] != null && localStorage.getItem(k) == null)
+      localStorage.setItem(k, blob[k]);
+  localStorage.removeItem(VAULT + uid);
+}
+
 export async function signOutNow(){
+  // في الغلاف يُخرَج الأصيل أولًا — وفشلُه يوقفنا هنا صادقين: لا إعلان
+  // خروج وجلسة Google حيّة تعيد صاحبها عند أول إقلاع.
+  const p = typeof window !== "undefined" && window.__souvenirWrapper
+    && window.Capacitor && window.Capacitor.Plugins
+    && window.Capacitor.Plugins.SouvenirAuth;
+  if (p && p.signOut) await p.signOut();
+  const uid = user && user.uid;
   await signOut(auth);
   user = null;
-  localStorage.removeItem(STAMP);   // نسخة الجهاز تبقى له؛ توقف المزامنة فقط
+  if (uid) stashVault(uid);
+  try { sessionStorage.removeItem("sv.bridge.reloaded"); } catch (e) {}
+  localStorage.removeItem(OWNER);
+  localStorage.removeItem(STAMP);
   localStorage.removeItem(MEMSTAMP);
   localStorage.removeItem(STATEIDS);
   localStorage.removeItem(STATETOMBS);
