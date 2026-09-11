@@ -1241,13 +1241,13 @@ function memTripCard(ctx, t){
 export function memTripDetail(ctx, id){
   const { store } = ctx;
   const trip = Memory.trips.find(x => x.id === id);
-  // رجوع بحجم لمسٍ مريح على الحافة القائدة (يمين في RTL) بسهم يشير إليها.
+  // رجوع كبير واضح على يسار الرأس (كما طلب المالك في مرفقه).
   const back = el("a", { href: "#/trips", "aria-label": tt("رجوع"),
-    style: "width:44px;height:44px;flex:0 0 auto;border-radius:50%;background:var(--card);"
-      + "border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;"
-      + "font-size:26px;line-height:1;color:var(--text);text-decoration:none" }, "›");
-  const headRow = h1 => el("div", { style: "display:flex;align-items:center;gap:12px" },
-    back, el("h1", { style: "margin:0" }, h1));
+    style: "font-size:36px;font-weight:900;line-height:1;color:var(--deep);"
+      + "text-decoration:none;padding:2px 12px;flex:0 0 auto" }, "‹");
+  const headRow = h1 => el("div",
+    { style: "display:flex;align-items:center;justify-content:space-between;gap:12px" },
+    el("h1", { style: "margin:0" }, h1), back);
   const root = el("div.wide");
   if (!trip){
     root.append(el("div.hero3", {}, headRow(tt("رحلة"))),
@@ -1269,8 +1269,9 @@ export function memTripDetail(ctx, id){
 
   if (memEditingId === trip.id){ inner.append(editTripForm(ctx, trip)); return root; }
   inner.append(el("div", { style: "margin-bottom:10px" },
-    el("button.out", { onclick: () => { memEditingId = trip.id; render(); } },
-      "✎ " + tt("تعديل الرحلة"))));
+    el("button", { style: "background:var(--deep);color:#fff;border:none;font-weight:800;"
+      + "padding:10px 20px;border-radius:12px;cursor:pointer;font-size:14.5px",
+      onclick: () => { memEditingId = trip.id; render(); } }, "✎ " + tt("تعديل الرحلة"))));
 
   inner.append(el("div.cover", { "data-tid": trip.id,
     style: "background:var(--aurora);height:190px;border-radius:16px;"
@@ -1307,12 +1308,15 @@ async function loadTripGallery(container, trip){
     const empty = el("div.det", { style: "color:var(--muted)" });
     const status = el("div.det", { style: "color:var(--muted)" }, tt("جارٍ تحميل الصور…"));
     const addBtn = plugin.pickPhotos
-      ? el("button.out", { style: "margin-top:12px", onclick: () => addMore() }, "＋ " + tt("إضافة صور"))
+      ? el("button", { style: "background:var(--card);border:1.5px solid var(--deep);color:var(--deep);"
+          + "font-weight:800;padding:9px 18px;border-radius:12px;cursor:pointer;font-size:14px;margin-bottom:10px",
+          onclick: () => addMore() }, "＋ " + tt("إضافة صور"))
       : null;
     container.append(el("div.section", {},
       el("h2", {}, tt("الصور")),
+      addBtn,
       el("div.det", { style: "color:var(--muted);margin-bottom:6px" }, tt("اضغط صورة لعرضها.")),
-      grid, empty, status, addBtn));
+      grid, empty, status));
 
     const items = [];
     const addCell = p => {
