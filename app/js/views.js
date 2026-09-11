@@ -918,6 +918,25 @@ export function favorites(ctx){
   return root;
 }
 
+/* تصدير بياناتي — نسخة احتياطية محلية تحلّ محلّ نسخة .souvenir الأصيلة.
+   بياناتُ الزائر وحدها؛ مفاتيح الإدارة (teamsKey/owner) لا تُصدَّر. */
+const EXPORT_KEYS = ["sv.shortlist", "sv.trips", "sv.tripsDel", "sv.memory",
+                     "sv.papers", "sv.prefs", "sv.filter", "sv.profile", "sv.lang"];
+function exportMyData(){
+  const data = {};
+  for (const k of EXPORT_KEYS){
+    const v = localStorage.getItem(k);
+    if (v != null){ try { data[k] = JSON.parse(v); } catch { data[k] = v; } }
+  }
+  const stamp = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([JSON.stringify({ app: "souvenir", exported: stamp, data }, null, 2)],
+                        { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = el("a", { href: url, download: `souvenir-${stamp}.json` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 /* ── بياناتي: الشفافية كاملة — ما في الحساب يراه صاحبه، ويمحوه بزر ── */
 export function mydata(ctx){
   const { store, shortlist, prefs, papers, filter } = ctx;
@@ -973,6 +992,11 @@ export function mydata(ctx){
 
   inner.append(sec(t("الجواز"), el("div.card", {},
     filter.passport ? t`جواز ${PASSPORT_AR[filter.passport] || filter.passport}` : t("غير محدد"))));
+
+  inner.append(sec(t("نسخة احتياطية"), el("div.card", {},
+    el("p", { style: "margin:0 0 10px;color:var(--muted)" },
+      t("نزّل بياناتك ملفًّا واحدًا تحفظه عندك — بديل النسخة الاحتياطية.")),
+    el("button.out", { onclick: exportMyData }, t("نزّل نسخة من بياناتي")))));
 
   // المحو الذاتي — سؤال تأكيد في المكان نفسه، ثم لا رجعة.
   const eraseBox = el("div.card", { style: "border-color:var(--hot)" });
