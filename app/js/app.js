@@ -65,7 +65,18 @@ function drawTabs(){
         onclick: upcomingGuard }, t("خطط")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
         onclick: tripsGuard }, t("وثّق"))),
+    ...(cloud.user ? [] : [langPill()]),
     avatarFace());
+}
+
+// زر اللغة: للضيف وحده — من دخل يغيّرها من الإعدادات خلف صورته (قرار
+// طارق 2026-09-11). لا يخص iOS: ترويسته مخفية والترس الأصيل ظاهر للضيف.
+function langPill(){
+  return el("button.langpill", {
+    onclick: () => setLang(isEN ? "ar" : "en"),
+    title: isEN ? "العربية" : "English",
+    "aria-label": isEN ? "العربية" : "English",
+  }, isEN ? "ع" : "EN");
 }
 
 const SIGNIN_MSG = t("بحساب واحد تُحفظ مفضلتك ورحلاتك وأوراقك — وتجدها على كل أجهزتك.");
