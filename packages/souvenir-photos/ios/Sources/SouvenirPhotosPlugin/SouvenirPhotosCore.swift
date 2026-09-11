@@ -1,5 +1,6 @@
 import Foundation
 import Photos
+import PhotosUI
 import UIKit
 
 // صور الرحلة من مكتبة الجهاز في مداها الزمني — كله على الجهاز، بلا رفع، بلا
@@ -78,6 +79,43 @@ public enum SouvenirPhotosCore {
         }
     }
 
+    // مصغّرات لمعرّفات محدّدة (الصور المُضافة يدويًّا) — بترتيب الطلب.
+    public static func thumbnails(for ids: [String],
+                                  completion: @escaping ([[String: String]]) -> Void) {
+        withReadAccess { ok in
+            guard ok, !ids.isEmpty else { DispatchQueue.main.async { completion([]) }; return }
+            let mgr = PHImageManager.default()
+            var byId: [String: PHAsset] = [:]
+            PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
+                .enumerateObjects { a, _, _ in byId[a.localIdentifier] = a }
+            var out: [[String: String]] = []
+            for id in ids {
+                if let a = byId[id], let b64 = thumbnail(a, mgr, 300, fast: true) {
+                    out.append(["id": id, "thumb": b64])
+                }
+            }
+            DispatchQueue.main.async { completion(out) }
+        }
+    }
+
+    // منتقي صور النظام — يعيد [{id, thumb}] للمختارة (يحتفظ بمندوبه أثناء العرض).
+    private static var picker: PhotoPicker?
+    public static func pickPhotos(from vc: UIViewController,
+                                  completion: @escaping ([[String: String]]) -> Void) {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .images
+        config.selectionLimit = 0
+        let controller = PHPickerViewController(configuration: config)
+        let coord = PhotoPicker { ids in
+            picker = nil
+            if ids.isEmpty { DispatchQueue.main.async { completion([]) } }
+            else { thumbnails(for: ids, completion: completion) }
+        }
+        picker = coord
+        controller.delegate = coord
+        vc.present(controller, animated: true)
+    }
+
     private static func fetch(in range: (Date, Date)) -> PHFetchResult<PHAsset> {
         let opts = PHFetchOptions()
         opts.predicate = NSPredicate(
@@ -152,5 +190,14 @@ public enum SouvenirPhotosCore {
         let cal = Calendar.current
         let monthStart = cal.date(from: cal.dateComponents([.year, .month], from: d)) ?? d
         return cal.date(byAdding: DateComponents(month: 1, second: -1), to: monthStart) ?? d
+    }
+}
+
+private final class PhotoPicker: NSObject, PHPickerViewControllerDelegate {
+    private let done: ([String]) -> Void
+    init(_ done: @escaping ([String]) -> Void) { self.done = done }
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        done(results.compactMap { $0.assetIdentifier })
     }
 }

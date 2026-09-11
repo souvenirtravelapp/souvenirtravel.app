@@ -70,6 +70,16 @@ export const Memory = {
     write(data);
   },
 
+  /// إضافة صور يدويًّا للرحلة (معرّفات الجهاز) — تُزامَن، وتُلغى إخفاءها إن وُجد.
+  addPhotos(tripId, ids){
+    const data = read();
+    const t = data.trips.find(x => x.id === tripId);
+    if (!t) return;
+    t.photoIds = [...new Set([...(t.photoIds ?? []), ...ids])];
+    if (t.hiddenPhotoIds) t.hiddenPhotoIds = t.hiddenPhotoIds.filter(h => !ids.includes(h));
+    write(data);
+  },
+
   addCompanion(name, relation = ""){
     const data = read();
     const made = { id: uuid(), name, relation };

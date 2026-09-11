@@ -1290,29 +1290,51 @@ async function loadTripGallery(container, trip){
   try {
     const plugin = window.Capacitor && window.Capacitor.Plugins
       && window.Capacitor.Plugins.SouvenirPhotos;
-    if (!plugin || !plugin.photos || !trip.start) return;
+    if (!plugin || !plugin.photos) return;
     const grid = el("div", { style: "display:grid;grid-template-columns:repeat(3,1fr);gap:6px" });
+    const empty = el("div.det", { style: "color:var(--muted)" });
     const status = el("div.det", { style: "color:var(--muted)" }, tt("جارٍ تحميل الصور…"));
+    const addBtn = plugin.pickPhotos
+      ? el("button.out", { style: "margin-top:12px", onclick: () => addMore() }, "＋ " + tt("إضافة صور"))
+      : null;
     container.append(el("div.section", {},
       el("h2", {}, tt("الصور")),
       el("div.det", { style: "color:var(--muted);margin-bottom:6px" }, tt("اضغط صورة لعرضها.")),
-      grid, status));
-    const res = (await plugin.photos({
-      trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 })) || {};
-    status.remove();
-    const hidden = new Set(trip.hiddenPhotoIds ?? []);
-    const photos = (res.photos ?? []).filter(p => p && !hidden.has(p.id));
-    if (!photos.length){
-      grid.replaceWith(el("div.card", { style: "color:var(--muted)" },
-        tt("لا صور لهذه الرحلة على هذا الجهاز.")));
-      return;
-    }
-    for (const p of photos){
+      grid, empty, status, addBtn));
+
+    const items = [];
+    const addCell = p => {
       p.cell = el("div", { style: "aspect-ratio:1;border-radius:10px;cursor:pointer;"
           + `background:center/cover no-repeat url("${p.thumb}")`,
-        onclick: () => openPhotoViewer(container, trip, photos, p) });
-      grid.append(p.cell);
+        onclick: () => openPhotoViewer(container, trip, items, p) });
+      items.push(p); grid.append(p.cell);
+    };
+    const refreshEmpty = () =>
+      empty.textContent = items.length ? "" : tt("لا صور لهذه الرحلة على هذا الجهاز.");
+
+    async function addMore(){
+      try {
+        const picked = ((await plugin.pickPhotos()) || {}).photos ?? [];
+        if (!picked.length) return;
+        Memory.addPhotos(trip.id, picked.map(p => p.id));
+        trip.photoIds = [...new Set([...(trip.photoIds ?? []), ...picked.map(p => p.id)])];
+        const have = new Set(items.map(p => p.id));
+        picked.forEach(p => { if (!have.has(p.id)) addCell(p); });
+        refreshEmpty();
+      } catch (e){ /* الإضافة تحسينيّة */ }
     }
+
+    const matched = trip.start ? (((await plugin.photos({
+      trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 })) || {}).photos ?? []) : [];
+    const added = (plugin.thumbnails && (trip.photoIds ?? []).length)
+      ? (((await plugin.thumbnails({ ids: trip.photoIds })) || {}).photos ?? []) : [];
+    status.remove();
+    const hidden = new Set(trip.hiddenPhotoIds ?? []), seen = new Set();
+    for (const p of [...added, ...matched]){
+      if (!p || hidden.has(p.id) || seen.has(p.id)) continue;
+      seen.add(p.id); addCell(p);
+    }
+    refreshEmpty();
   } catch (e){ /* الصور تحسينيّة */ }
 }
 

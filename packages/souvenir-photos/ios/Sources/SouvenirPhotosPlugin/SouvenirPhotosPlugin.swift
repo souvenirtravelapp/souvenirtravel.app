@@ -11,7 +11,9 @@ public class SouvenirPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "covers", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "photos", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "fullImage", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "fullImage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "thumbnails", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pickPhotos", returnType: CAPPluginReturnPromise)
     ]
 
     public override func load() {
@@ -41,6 +43,24 @@ public class SouvenirPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
         guard let id = call.getString("id") else { call.resolve(["image": NSNull()]); return }
         SouvenirPhotosCore.fullImage(id: id) { img in
             call.resolve(["image": img ?? NSNull()])
+        }
+    }
+
+    /// مصغّرات لمعرّفات محدّدة { ids:[...] }: { photos:[{id,thumb}] }.
+    @objc func thumbnails(_ call: CAPPluginCall) {
+        let ids = (call.getArray("ids") ?? []).compactMap { $0 as? String }
+        SouvenirPhotosCore.thumbnails(for: ids) { arr in
+            call.resolve(["photos": arr])
+        }
+    }
+
+    /// منتقي صور النظام: { photos:[{id,thumb}] } للمختارة (أو فارغة).
+    @objc func pickPhotos(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let vc = self.bridge?.viewController else { call.resolve(["photos": []]); return }
+            SouvenirPhotosCore.pickPhotos(from: vc) { arr in
+                call.resolve(["photos": arr])
+            }
         }
     }
 }
