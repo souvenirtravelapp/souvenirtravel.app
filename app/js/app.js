@@ -65,7 +65,6 @@ function drawTabs(){
         onclick: upcomingGuard }, t("خطط")),
       el("a", { href: "#/trips", class: on === "trips" ? "on" : "",
         onclick: tripsGuard }, t("وثّق"))),
-    langPill(),
     avatarFace());
 }
 
@@ -84,24 +83,17 @@ function guardNav(e, hash, msg){
 function avatarFace(){
   const u = cloud.user;
   const base = { onclick: openSettings, title: t("الإعدادات"), "aria-label": t("الإعدادات") };
-  if (u?.photoURL)
+  // الصورة المختارة في التطبيق تسبق صورة مزوّد الدخول (اعتماد طارق 2026-09-11).
+  const photo = cloud.accountPhoto();
+  if (photo)
     return el("button.avatar.real", base,
-      el("img", { src: u.photoURL, alt: "", referrerpolicy: "no-referrer" }));
+      el("img", { src: photo, alt: "", referrerpolicy: "no-referrer" }));
   if (u){
     const letter = (u.displayName || u.email || "•").trim()[0];
     return el("button.avatar.letter", base, letter);
   }
   return el("button.signin", { onclick: () => askSignIn(SIGNIN_MSG) },
     t("تسجيل الدخول"));
-}
-
-// زر اللغة: ظاهر دائمًا — للضيف قبل صاحب الحساب.
-function langPill(){
-  return el("button.langpill", {
-    onclick: () => setLang(isEN ? "ar" : "en"),
-    title: isEN ? "العربية" : "English",
-    "aria-label": isEN ? "العربية" : "English",
-  }, isEN ? "ع" : "EN");
 }
 
 // زرا مزوّدي الدخول — بناء واحد لبوابة الحساب ولوحة الإعدادات. عقد الفعل
@@ -216,9 +208,10 @@ function openSettings(){
         else if (e?.code !== "auth/popup-closed-by-user")
           alert(t("تعذر الربط — أعد المحاولة."));
       } } }, t`اربط حساب ${label}`);
+    const photo = cloud.accountPhoto();
     return el("div", {},
       el("div.account", {},
-        cloud.user.photoURL ? el("img", { src: cloud.user.photoURL, alt: "",
+        photo ? el("img", { src: photo, alt: "",
           referrerpolicy: "no-referrer" })
           : el("span.letter", {}, (cloud.user.displayName || cloud.user.email || "•").trim()[0]),
         el("div.who", {},
