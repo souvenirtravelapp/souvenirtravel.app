@@ -1,7 +1,7 @@
 // Souvenir's screens, translated for the web. Each view mirrors its iOS
 // sibling and speaks only to the ported logic modules; where the two
 // platforms must differ, the reason is written at the spot.
-import { el, flag, cityName, countryName, kiwiLink, gate,
+import { el, flag, cityName, countryName, kiwiLink, gate, assetURL,
          MONTHS_AR, WARMTH_AR, RAIN_WORD, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
 import { FREE_REQUIREMENTS, VISA_GROUPS } from "./store.js";
 import { RAIN_WANTED, DESTINATION_TAGS } from "./filter.js";
@@ -496,7 +496,7 @@ const COVER_PALETTES = {
 function coverStyle(city, band){
   if (city && COVERS.has(city.id))
     return `background:linear-gradient(rgba(20,30,28,.18),rgba(20,30,28,.30)),`
-         + `url(covers/${city.id}.jpg) center/cover no-repeat`;
+         + `url(${assetURL(`covers/${city.id}.jpg`)}) center/cover no-repeat`;
   const [a, b] = COVER_PALETTES[band] ?? COVER_PALETTES.mild;
   const seed = city ? [...city.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) : 0;
   return `background:linear-gradient(${100 + seed % 60}deg,${a},${b})`;
@@ -793,8 +793,8 @@ export function destination(ctx, cityId){
       spots.map(a => el("div.attr-card", {},
         (a.source && a.source !== "wikidata")
           ? el("div.aramp", {}, (aName(a) || "؟").trim()[0])
-          : el("img", { src: "attractions/" + a.qid + ".jpg", alt: aName(a),
-                    loading: "lazy" }),
+          : el("img", { src: assetURL("attractions/" + a.qid + ".jpg"),
+                    alt: aName(a), loading: "lazy" }),
         el("div.b", {},
           el("div.n", {}, aName(a)),
           aBlurb(a) ? el("div.d", {}, aBlurb(a)) : null,

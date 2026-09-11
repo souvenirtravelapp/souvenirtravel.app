@@ -2,7 +2,7 @@
 // سلة تجمع قبل التوزيع، رابط خرائط واحد لليوم، والفراغ محترم.
 // «أضف مكانًا» يقتل حلقة الاسم←الخرائط←الجدول: Nominatim يحدد ونحن نرتب.
 import { t, t as tt, isEN } from "/app/js/i18n.js";
-import { el, flag, cityName, countryName, gate, askConfirm,
+import { el, flag, cityName, countryName, gate, askConfirm, assetURL,
          MONTHS_AR, RAIN_WORD } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
 import { visaLine, tripCountries } from "/app/js/views.js";
@@ -1491,7 +1491,7 @@ export function planner(ctx, tripId, render){
             city ? el("div.detcity", {}, "◉ " + city) : null,
             nameEn && nameEn !== label ? el("div.den", {}, nameEn) : null),
           el("button.x", { onclick: close, "aria-label": t("إغلاق") }, "✕")),
-        a.has_image ? el("img.detimg", { src: "attractions/" + a.qid + ".jpg",
+        a.has_image ? el("img.detimg", { src: assetURL("attractions/" + a.qid + ".jpg"),
           alt: label, loading: "lazy", onerror: (e) => e.target.remove() }) : null,
         el("div.detmeta", {},
           clean(a.kind) ? el("span.kind", {}, clean(a.kind)) : null,
