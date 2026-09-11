@@ -49,7 +49,10 @@ export function rainAdmits(wanted, level) {
 export const DESTINATION_TAGS = ['nature', 'history', 'sea', 'mountain'];
 
 const FACES = ['search', 'favourites'];
-const PRESENTATIONS = ['map', 'list'];
+// الويب يعرض المفضلة عدسةً ثالثة بين عدسات النتائج (بخلاف Swift حيث هي
+// «وجه» مستقل) — فلا بد أن يعرفها التحقق، وإلا ارتد من تركها مفتوحةً إلى
+// الخريطة عند كل تحديث وهو لم يغيّر شيئًا.
+const PRESENTATIONS = ['map', 'list', 'fav'];
 
 export class NextTripFilter {
   /// `store` validates the stored passport against the shipped visa files —
