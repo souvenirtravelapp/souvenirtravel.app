@@ -1277,8 +1277,34 @@ export function memTripDetail(ctx, id){
   inner.append(el("div.det", { style: "color:var(--muted);margin-top:6px" },
     trip.source === "manual" ? tt("أضفتها بنفسك") : tt("اكتشفها سوفينير من صورك")));
 
-  if (typeof window !== "undefined" && window.__souvenirWrapper) applyTripCovers(inner, [trip]);
+  if (typeof window !== "undefined" && window.__souvenirWrapper){
+    applyTripCovers(inner, [trip]);
+    loadTripGallery(inner, trip);
+  }
   return root;
+}
+
+/* معرض صور الرحلة (iOS): يطلب صور مداها الزمني من الملحق الأصيل ويرسمها شبكةً.
+   تحسينيّ — غيابه أو فشله لا يعطّل التفصيل. */
+async function loadTripGallery(container, trip){
+  try {
+    const plugin = window.Capacitor && window.Capacitor.Plugins
+      && window.Capacitor.Plugins.SouvenirPhotos;
+    if (!plugin || !plugin.photos || !trip.start) return;
+    const grid = el("div", { style: "display:grid;grid-template-columns:repeat(3,1fr);gap:6px" });
+    const sec = el("div.section", {}, el("h2", {}, tt("الصور")), grid);
+    container.append(sec);
+    const { photos } = (await plugin.photos({
+      trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 })) || {};
+    if (!photos || !photos.length){
+      grid.replaceWith(el("div.card", { style: "color:var(--muted)" },
+        tt("لا صور لهذه الرحلة على هذا الجهاز.")));
+      return;
+    }
+    for (const src of photos)
+      grid.append(el("div", { style: "aspect-ratio:1;border-radius:10px;"
+        + `background:center/cover no-repeat url("${src}")` }));
+  } catch (e){ /* الصور تحسينيّة */ }
 }
 
 function countryNameAr(store, iso){

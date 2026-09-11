@@ -9,7 +9,8 @@ public class SouvenirPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "SouvenirPhotosPlugin"
     public let jsName = "SouvenirPhotos"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "covers", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "covers", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "photos", returnType: CAPPluginReturnPromise)
     ]
 
     public override func load() {
@@ -22,6 +23,15 @@ public class SouvenirPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
         let trips = raw.compactMap { $0 as? [String: Any] }
         SouvenirPhotosCore.covers(for: trips) { map in
             call.resolve(["covers": map])
+        }
+    }
+
+    /// معرض رحلة واحدة { trip:{id,start,end?}, limit? }: [مصغّرات base64].
+    @objc func photos(_ call: CAPPluginCall) {
+        let trip = (call.getObject("trip") ?? [:]).mapValues { $0 as Any }
+        let limit = call.getInt("limit") ?? 40
+        SouvenirPhotosCore.photos(for: trip, limit: limit) { arr in
+            call.resolve(["photos": arr])
         }
     }
 }
