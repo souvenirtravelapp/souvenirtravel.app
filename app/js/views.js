@@ -1241,10 +1241,10 @@ function memTripCard(ctx, t){
 export function memTripDetail(ctx, id){
   const { store } = ctx;
   const trip = Memory.trips.find(x => x.id === id);
-  // رجوع كبير واضح على يسار الرأس (كما طلب المالك في مرفقه).
+  // رجوع كبير واضح على يسار الرأس، سهمه «›» (كما طلب المالك).
   const back = el("a", { href: "#/trips", "aria-label": tt("رجوع"),
-    style: "font-size:36px;font-weight:900;line-height:1;color:var(--deep);"
-      + "text-decoration:none;padding:2px 12px;flex:0 0 auto" }, "‹");
+    style: "font-size:46px;font-weight:900;line-height:1;color:var(--deep);"
+      + "text-decoration:none;padding:0 12px;flex:0 0 auto" }, "›");
   const headRow = h1 => el("div",
     { style: "display:flex;align-items:center;justify-content:space-between;gap:12px" },
     el("h1", { style: "margin:0" }, h1), back);
@@ -1357,11 +1357,12 @@ async function loadTripGallery(container, trip){
 /* عارض الصورة: متصفّح كامل الشاشة (سهما تنقّل + عدّاد). الحذف يُزيلها من
    الرحلة فقط (تبقى بالمكتبة) بعد تأكيد ثم ينتقل للتالية؛ ✕ يغلق ويعود للمعرض. */
 function openPhotoViewer(container, trip, items, startP){
-  const overlay = el("div", { style: "position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);"
-    + "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px" });
+  const overlay = el("div", { style: "position:fixed;inset:0;z-index:1000;background:#000;"
+    + "display:flex;flex-direction:column" });
   const close = () => overlay.remove();
-  const img = el("div", { style: "flex:1;height:100%;border-radius:12px" });
-  const counter = el("div", { style: "color:#fff;opacity:.85;font-size:13px" });
+  const img = el("div", { style: "position:absolute;inset:0;background:center/contain no-repeat" });
+  const counter = el("div", { style: "position:absolute;inset-inline:0;text-align:center;color:#fff;"
+    + "opacity:.85;font-size:13px;z-index:2;top:calc(env(safe-area-inset-top,0px) + 16px)" });
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SouvenirPhotos;
   const full = {};
   let cur = startP;
@@ -1378,7 +1379,7 @@ function openPhotoViewer(container, trip, items, startP){
   }
   const step = d => { const n = items[(items.indexOf(cur) + d + items.length) % items.length]; if (n) show(n); };
 
-  const btn = "padding:12px 18px;border-radius:12px;font-weight:700;border:none;font-size:15px;cursor:pointer";
+  const btn = "flex:1;padding:14px;border-radius:14px;font-weight:800;border:none;font-size:15px;cursor:pointer";
   const cover = el("button", { style: btn + ";background:#fff;color:var(--deep)", onclick: () => {
     Memory.setCover(trip.id, cur.id); trip.coverId = cur.id;
     const top = container.querySelector(`.cover[data-tid="${trip.id}"]`);
@@ -1395,18 +1396,18 @@ function openPhotoViewer(container, trip, items, startP){
     show(items[i % items.length]);   // التالية في مكان المحذوفة (أو تلتفّ)
   } }, tt("حذف"));
 
-  const nav = "width:44px;height:44px;border-radius:50%;border:none;flex:0 0 auto;"
-    + "background:rgba(255,255,255,.18);color:#fff;font-size:24px;cursor:pointer";
-  const prev = el("button", { style: nav, onclick: () => step(-1) }, "‹");
-  const next = el("button", { style: nav, onclick: () => step(1) }, "›");
-  const x = el("button", { style: "position:absolute;top:14px;inset-inline-end:18px;width:44px;height:44px;"
-    + "border-radius:50%;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:22px;cursor:pointer;z-index:1",
-    onclick: close }, "✕");
+  const navSt = "position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;"
+    + "border:none;background:rgba(0,0,0,.5);color:#fff;font-size:26px;cursor:pointer;z-index:2";
+  const prev = el("button", { style: navSt + ";inset-inline-start:12px", onclick: () => step(-1) }, "‹");
+  const next = el("button", { style: navSt + ";inset-inline-end:12px", onclick: () => step(1) }, "›");
+  const x = el("button", { style: "position:absolute;inset-inline-end:14px;width:46px;height:46px;border-radius:50%;"
+    + "border:none;background:rgba(0,0,0,.55);color:#fff;font-size:22px;cursor:pointer;z-index:3;"
+    + "top:calc(env(safe-area-inset-top,0px) + 12px)", onclick: close }, "✕");
+  const stage = el("div", { style: "position:relative;flex:1;min-height:0" }, img, prev, next, counter, x);
+  const bar = el("div", { style: "display:flex;gap:12px;padding:12px 16px "
+    + "calc(env(safe-area-inset-bottom,0px) + 14px)" }, cover, del);
 
-  overlay.append(x, counter,
-    el("div", { style: "display:flex;align-items:center;gap:10px;width:100%;flex:1;min-height:0" }, prev, img, next),
-    el("div", { style: "display:flex;gap:12px" }, cover, del));
-  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  overlay.append(stage, bar);
   show(startP);
   document.body.append(overlay);
 }
