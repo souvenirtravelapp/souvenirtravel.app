@@ -1308,43 +1308,68 @@ async function loadTripGallery(container, trip){
       return;
     }
     for (const p of photos){
-      const cell = el("div", { style: "aspect-ratio:1;border-radius:10px;cursor:pointer;"
+      p.cell = el("div", { style: "aspect-ratio:1;border-radius:10px;cursor:pointer;"
           + `background:center/cover no-repeat url("${p.thumb}")`,
-        onclick: () => openPhotoViewer(container, trip, p, cell) });
-      grid.append(cell);
+        onclick: () => openPhotoViewer(container, trip, photos, p) });
+      grid.append(p.cell);
     }
   } catch (e){ /* الصور تحسينيّة */ }
 }
 
-/* عارض الصورة: يفتح الصورة كبيرةً (جودة عالية عند توفّرها) وفيها الغلاف
-   والحذف — والحذف يُزيلها من الرحلة فقط (تبقى في مكتبة الجهاز) بعد تأكيد. */
-function openPhotoViewer(container, trip, p, cell){
+/* عارض الصورة: متصفّح كامل الشاشة (سهما تنقّل + عدّاد). الحذف يُزيلها من
+   الرحلة فقط (تبقى بالمكتبة) بعد تأكيد ثم ينتقل للتالية؛ ✕ يغلق ويعود للمعرض. */
+function openPhotoViewer(container, trip, items, startP){
   const overlay = el("div", { style: "position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);"
-    + "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px" });
+    + "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px" });
   const close = () => overlay.remove();
-  const img = el("div", { style: "flex:1;align-self:stretch;max-height:72vh;border-radius:12px;"
-    + `background:center/contain no-repeat url("${p.thumb}")` });
+  const img = el("div", { style: "flex:1;height:100%;border-radius:12px" });
+  const counter = el("div", { style: "color:#fff;opacity:.85;font-size:13px" });
   const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SouvenirPhotos;
-  if (plugin && plugin.fullImage)
-    plugin.fullImage({ id: p.id })
-      .then(r => { if (r && r.image) img.style.backgroundImage = `url("${r.image}")`; })
-      .catch(() => {});
+  const full = {};
+  let cur = startP;
+
+  function show(p){
+    cur = p;
+    img.style.background = `center/contain no-repeat url("${p.thumb}")`;
+    counter.textContent = (items.indexOf(p) + 1) + " / " + items.length;
+    if (full[p.id]) img.style.backgroundImage = `url("${full[p.id]}")`;
+    else if (plugin && plugin.fullImage)
+      plugin.fullImage({ id: p.id }).then(r => {
+        if (r && r.image){ full[p.id] = r.image; if (cur === p) img.style.backgroundImage = `url("${r.image}")`; }
+      }).catch(() => {});
+  }
+  const step = d => { const n = items[(items.indexOf(cur) + d + items.length) % items.length]; if (n) show(n); };
+
   const btn = "padding:12px 18px;border-radius:12px;font-weight:700;border:none;font-size:15px;cursor:pointer";
   const cover = el("button", { style: btn + ";background:#fff;color:var(--deep)", onclick: () => {
-    Memory.setCover(trip.id, p.id); trip.coverId = p.id;
+    Memory.setCover(trip.id, cur.id); trip.coverId = cur.id;
     const top = container.querySelector(`.cover[data-tid="${trip.id}"]`);
-    if (top){ top.style.background = `center/cover no-repeat url("${p.thumb}")`; top.replaceChildren(); }
+    if (top){ top.style.background = `center/cover no-repeat url("${cur.thumb}")`; top.replaceChildren(); }
     close();
   } }, "★ " + tt("اجعلها الغلاف"));
   const del = el("button", { style: btn + ";background:var(--hot);color:#fff", onclick: () => {
     if (!confirm(tt("إزالة هذه الصورة من الرحلة؟ تبقى في مكتبة صورك."))) return;
-    Memory.hidePhoto(trip.id, p.id); cell.remove(); close();
+    const p = cur, i = items.indexOf(p);
+    Memory.hidePhoto(trip.id, p.id);
+    if (p.cell) p.cell.remove();
+    items.splice(i, 1);
+    if (!items.length){ close(); return; }
+    show(items[i % items.length]);   // التالية في مكان المحذوفة (أو تلتفّ)
   } }, tt("حذف"));
-  const x = el("button", { style: "position:absolute;top:14px;inset-inline-end:18px;width:40px;height:40px;"
-    + "border-radius:50%;border:none;background:rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer",
+
+  const nav = "width:44px;height:44px;border-radius:50%;border:none;flex:0 0 auto;"
+    + "background:rgba(255,255,255,.18);color:#fff;font-size:24px;cursor:pointer";
+  const prev = el("button", { style: nav, onclick: () => step(-1) }, "‹");
+  const next = el("button", { style: nav, onclick: () => step(1) }, "›");
+  const x = el("button", { style: "position:absolute;top:14px;inset-inline-end:18px;width:44px;height:44px;"
+    + "border-radius:50%;border:none;background:rgba(255,255,255,.22);color:#fff;font-size:22px;cursor:pointer;z-index:1",
     onclick: close }, "✕");
-  overlay.append(x, img, el("div", { style: "display:flex;gap:12px" }, cover, del));
+
+  overlay.append(x, counter,
+    el("div", { style: "display:flex;align-items:center;gap:10px;width:100%;flex:1;min-height:0" }, prev, img, next),
+    el("div", { style: "display:flex;gap:12px" }, cover, del));
   overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  show(startP);
   document.body.append(overlay);
 }
 
