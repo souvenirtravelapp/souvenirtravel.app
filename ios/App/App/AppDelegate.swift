@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import CapApp_SPM
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // يمنع مُحسِّن الرابط من إسقاط صنف الملحق المحلي (SPM static lib) قبل
+        // مسح Capacitor لأصناف CAPBridgedPlugin — بلا هذه الإشارة لا يُكتشف.
+        _ = SouvenirAuthPlugin.self
         return true
     }
 
