@@ -606,6 +606,30 @@ async function searchPlaces(q, near, bounded){
   return r.ok ? r.json() : [];
 }
 
+/// أوقات رحلة برقمها من الموصل — الرد عند النجاح وnull لكل ما سواه.
+/// تُسأل من ثلاثة مواضع (المعالج، بطاقة الطيران، استكمال مطارٍ قديم)
+/// وكان لكل موضعٍ نداؤه.
+async function fetchFlight(no, date){
+  try {
+    const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
+      + encodeURIComponent(no) + (date ? "&date=" + date : ""));
+    const j = await r.json();
+    return j.ok ? j : null;
+  } catch { return null; }
+}
+/// ما يكتبه الرد في بيانات الرحلة — سطرٌ واحد للحقيقة الواحدة.
+const applyFlight = (f, j) => {
+  f.dep = j.dep; f.arr = j.arr;
+  if (j.from) f.from = j.from;
+  if (j.to) f.to = j.to;
+};
+/// صفّ نتيجة سكن من الخريطة: الاسم ثم أول سطرين من عنوانه.
+const stayHit = (h, onPick) => el("button.srow",
+  { style: "width:100%;text-align:start", onclick: onPick },
+  el("div", {},
+    el("div.t", {}, h.display_name.split(",")[0]),
+    el("div.s", {}, h.display_name.split(",").slice(1, 3).join("،"))));
+
 /// معالج بدء الرحلة — أربع خطوات تُسأل مرة، ثم لا تعود.
 ///
 /// من فتح رحلةً جديدة كان يجد صفحةً كاملة بأقسامها ولا يعرف من أين يبدأ:
@@ -728,18 +752,11 @@ function setupWizard({ trip, store, save, render, city, addCityLeg, removeCities
       const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
       if (!v) return;
       trip.flights.out.no = v; st.textContent = "…";
-      try {
-        const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
-          + encodeURIComponent(v) + (trip.start ? "&date=" + trip.start : ""));
-        const j = await r.json();
-        if (j.ok){
-          const f = trip.flights.out;
-          f.dep = j.dep; f.arr = j.arr;
-          if (j.from) f.from = j.from;
-          if (j.to) f.to = j.to;
-          save(); st.textContent = ""; draw(3); return;
-        }
-      } catch {}
+      const j = await fetchFlight(v, trip.start);
+      if (j){
+        applyFlight(trip.flights.out, j);
+        save(); st.textContent = ""; draw(3); return;
+      }
       st.textContent = t("لم نجد هذه الرحلة — أدخلها لاحقًا من «بيانات رحلتك».");
       save();
     };
@@ -770,16 +787,13 @@ function setupWizard({ trip, store, save, render, city, addCityLeg, removeCities
           return;
         }
         for (const h of hits.slice(0, 5))
-          res.append(el("button.srow", { style: "width:100%;text-align:start",
-            onclick: () => {
-              trip.stays.push({ id: "s" + Date.now(),
-                name: h.display_name.split(",")[0], lat: +h.lat, lon: +h.lon,
-                from: first?.from || trip.start || "",
-                to: first?.to || trip.end || "" });
-              finish();
-            } },
-            el("div", {}, el("div.t", {}, h.display_name.split(",")[0]),
-              el("div.s", {}, h.display_name.split(",").slice(1, 3).join("،")))));
+          res.append(stayHit(h, () => {
+            trip.stays.push({ id: "s" + Date.now(),
+              name: h.display_name.split(",")[0], lat: +h.lat, lon: +h.lon,
+              from: first?.from || trip.start || "",
+              to: first?.to || trip.end || "" });
+            finish();
+          }));
       }, 400);
     };
     box.append(...head(3, t("أين ستقيم؟"),
@@ -1223,21 +1237,14 @@ export function planner(ctx, tripId, render){
         const v = no.value.trim().toUpperCase().replace(/\s+/g, "");
         if (!v) return;
         f.no = v; st.textContent = "…";
-        try {
-          const date = dir === "out" ? trip.start : trip.end;
-          const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
-            + encodeURIComponent(v) + (date ? "&date=" + date : ""));
-          const j = await r.json();
-          if (j.ok){
-            f.dep = j.dep; f.arr = j.arr;
-            if (j.from) f.from = j.from;   // مطار الإقلاع كان يُهمَل
-            if (j.to) f.to = j.to;
-            f.editing = false; f.manual = false;
-            // مطار جديد ⇐ زمن الطريق يُعاد حسابه
-            for (const st of trip.stays || []) delete st.driveMin;
-            save(); render(); return;
-          }
-        } catch {}
+        const j = await fetchFlight(v, dir === "out" ? trip.start : trip.end);
+        if (j){
+          applyFlight(f, j);
+          f.editing = false; f.manual = false;
+          // مطار جديد ⇐ زمن الطريق يُعاد حسابه
+          for (const st of trip.stays || []) delete st.driveMin;
+          save(); render(); return;
+        }
         f.manual = true; save(); render();
       };
       no.onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); fetchTimes(); } };
@@ -1291,17 +1298,13 @@ export function planner(ctx, tripId, render){
           return;
         }
         for (const h of hits.slice(0, 5)){
-          stayRes.append(el("button.srow", { style: "width:100%;text-align:start",
-            onclick: () => {
-              trip.stays.push({ id: "s" + Date.now(), name: h.display_name.split(",")[0],
-                lat: +h.lat, lon: +h.lon,
-                from: leg?.from || trip.start || "",
-                to: leg?.to || trip.end || "" });
-              save(); render();
-            } },
-            el("div", {},
-              el("div.t", {}, h.display_name.split(",")[0]),
-              el("div.s", {}, h.display_name.split(",").slice(1, 3).join("،")))));
+          stayRes.append(stayHit(h, () => {
+            trip.stays.push({ id: "s" + Date.now(), name: h.display_name.split(",")[0],
+              lat: +h.lat, lon: +h.lon,
+              from: leg?.from || trip.start || "",
+              to: leg?.to || trip.end || "" });
+            save(); render();
+          }));
         }
       }, 400);
     };
@@ -2101,19 +2104,15 @@ export function planner(ctx, tripId, render){
       const f = trip.flights[dir];
       if (!f.no || f.to || f.toTried) continue;
       f.toTried = true;
-      try {
-        const r = await fetch("https://mcp.souvenirtravel.app/flight?no="
-          + encodeURIComponent(f.no));
-        const j = await r.json();
-        if (j.ok && j.to){
-          f.to = j.to;
-          if (!f.dep) f.dep = j.dep;
-          if (!f.arr) f.arr = j.arr;
-          for (const st of trip.stays || []) delete st.driveMin;
-          save(); render();
-          return;
-        }
-      } catch {}
+      const j = await fetchFlight(f.no);
+      if (j?.to){
+        f.to = j.to;
+        if (!f.dep) f.dep = j.dep;
+        if (!f.arr) f.arr = j.arr;
+        for (const st of trip.stays || []) delete st.driveMin;
+        save(); render();
+        return;
+      }
       save();
     }
   })();
