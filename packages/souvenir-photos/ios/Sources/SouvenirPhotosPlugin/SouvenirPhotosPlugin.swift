@@ -10,7 +10,8 @@ public class SouvenirPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "SouvenirPhotos"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "covers", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "photos", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "photos", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "fullImage", returnType: CAPPluginReturnPromise)
     ]
 
     public override func load() {
@@ -26,12 +27,20 @@ public class SouvenirPhotosPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    /// معرض رحلة واحدة { trip:{id,start,end?}, limit? }: [مصغّرات base64].
+    /// معرض رحلة واحدة { trip:{id,start,end?}, limit? }: [{id, thumb}].
     @objc func photos(_ call: CAPPluginCall) {
         let trip = (call.getObject("trip") ?? [:]).mapValues { $0 as Any }
         let limit = call.getInt("limit") ?? 40
         SouvenirPhotosCore.photos(for: trip, limit: limit) { arr in
             call.resolve(["photos": arr])
+        }
+    }
+
+    /// صورة واحدة بجودة عالية { id }: { image: base64 | null }.
+    @objc func fullImage(_ call: CAPPluginCall) {
+        guard let id = call.getString("id") else { call.resolve(["image": NSNull()]); return }
+        SouvenirPhotosCore.fullImage(id: id) { img in
+            call.resolve(["image": img ?? NSNull()])
         }
     }
 }

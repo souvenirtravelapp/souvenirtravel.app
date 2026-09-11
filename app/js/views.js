@@ -1295,40 +1295,57 @@ async function loadTripGallery(container, trip){
     const status = el("div.det", { style: "color:var(--muted)" }, tt("جارٍ تحميل الصور…"));
     container.append(el("div.section", {},
       el("h2", {}, tt("الصور")),
-      el("div.det", { style: "color:var(--muted);margin-bottom:6px" }, tt("اضغط صورة لجعلها الغلاف.")),
+      el("div.det", { style: "color:var(--muted);margin-bottom:6px" }, tt("اضغط صورة لعرضها.")),
       grid, status));
-    const { photos } = (await plugin.photos({
+    const res = (await plugin.photos({
       trip: { id: trip.id, start: trip.start, end: trip.end || "" }, limit: 40 })) || {};
     status.remove();
-    if (!photos || !photos.length){
+    const hidden = new Set(trip.hiddenPhotoIds ?? []);
+    const photos = (res.photos ?? []).filter(p => p && !hidden.has(p.id));
+    if (!photos.length){
       grid.replaceWith(el("div.card", { style: "color:var(--muted)" },
         tt("لا صور لهذه الرحلة على هذا الجهاز.")));
       return;
     }
-    const cellStyle = (thumb, on) => "aspect-ratio:1;border-radius:10px;cursor:pointer;position:relative;"
-      + `background:center/cover no-repeat url("${thumb}");`
-      + (on ? "outline:3px solid var(--deep);outline-offset:-3px;" : "");
-    const badge = () => el("div", { style: "position:absolute;top:4px;inset-inline-start:4px;"
-      + "background:var(--deep);color:#fff;font-size:11px;padding:2px 6px;border-radius:8px" }, "★ " + tt("الغلاف"));
-    const cells = [];
-    const paint = () => cells.forEach(c => {
-      const on = trip.coverId === c.p.id;
-      c.el.style.cssText = cellStyle(c.p.thumb, on);
-      c.el.replaceChildren(on ? badge() : null);
-    });
     for (const p of photos){
-      const cell = el("div", { onclick: () => {
-        Memory.setCover(trip.id, p.id);
-        trip.coverId = p.id;
-        const top = container.querySelector(`.cover[data-tid="${trip.id}"]`);
-        if (top){ top.style.background = `center/cover no-repeat url("${p.thumb}")`; top.replaceChildren(); }
-        paint();
-      } });
-      cells.push({ el: cell, p });
+      const cell = el("div", { style: "aspect-ratio:1;border-radius:10px;cursor:pointer;"
+          + `background:center/cover no-repeat url("${p.thumb}")`,
+        onclick: () => openPhotoViewer(container, trip, p, cell) });
       grid.append(cell);
     }
-    paint();
   } catch (e){ /* الصور تحسينيّة */ }
+}
+
+/* عارض الصورة: يفتح الصورة كبيرةً (جودة عالية عند توفّرها) وفيها الغلاف
+   والحذف — والحذف يُزيلها من الرحلة فقط (تبقى في مكتبة الجهاز) بعد تأكيد. */
+function openPhotoViewer(container, trip, p, cell){
+  const overlay = el("div", { style: "position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.92);"
+    + "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px" });
+  const close = () => overlay.remove();
+  const img = el("div", { style: "flex:1;align-self:stretch;max-height:72vh;border-radius:12px;"
+    + `background:center/contain no-repeat url("${p.thumb}")` });
+  const plugin = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.SouvenirPhotos;
+  if (plugin && plugin.fullImage)
+    plugin.fullImage({ id: p.id })
+      .then(r => { if (r && r.image) img.style.backgroundImage = `url("${r.image}")`; })
+      .catch(() => {});
+  const btn = "padding:12px 18px;border-radius:12px;font-weight:700;border:none;font-size:15px;cursor:pointer";
+  const cover = el("button", { style: btn + ";background:#fff;color:var(--deep)", onclick: () => {
+    Memory.setCover(trip.id, p.id); trip.coverId = p.id;
+    const top = container.querySelector(`.cover[data-tid="${trip.id}"]`);
+    if (top){ top.style.background = `center/cover no-repeat url("${p.thumb}")`; top.replaceChildren(); }
+    close();
+  } }, "★ " + tt("اجعلها الغلاف"));
+  const del = el("button", { style: btn + ";background:var(--hot);color:#fff", onclick: () => {
+    if (!confirm(tt("إزالة هذه الصورة من الرحلة؟ تبقى في مكتبة صورك."))) return;
+    Memory.hidePhoto(trip.id, p.id); cell.remove(); close();
+  } }, tt("حذف"));
+  const x = el("button", { style: "position:absolute;top:14px;inset-inline-end:18px;width:40px;height:40px;"
+    + "border-radius:50%;border:none;background:rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer",
+    onclick: close }, "✕");
+  overlay.append(x, img, el("div", { style: "display:flex;gap:12px" }, cover, del));
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  document.body.append(overlay);
 }
 
 function countryNameAr(store, iso){

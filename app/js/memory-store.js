@@ -61,6 +61,15 @@ export const Memory = {
     write(data);
   },
 
+  /// إخفاء صورة من الرحلة (لا من الجهاز) — تُحفظ قائمة المخفيّ وتُزامَن.
+  hidePhoto(tripId, photoId){
+    const data = read();
+    const t = data.trips.find(x => x.id === tripId);
+    if (!t) return;
+    t.hiddenPhotoIds = [...new Set([...(t.hiddenPhotoIds ?? []), photoId])];
+    write(data);
+  },
+
   addCompanion(name, relation = ""){
     const data = read();
     const made = { id: uuid(), name, relation };

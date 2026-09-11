@@ -67,6 +67,17 @@ public enum SouvenirPhotosCore {
         PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
     }
 
+    // صورة واحدة بجودة عالية للعرض المكبّر (عند فتح صورة المعرض).
+    public static func fullImage(id: String, completion: @escaping (String?) -> Void) {
+        withReadAccess { ok in
+            guard ok, let asset = assetById(id) else {
+                DispatchQueue.main.async { completion(nil) }; return
+            }
+            let b64 = thumbnail(asset, PHImageManager.default(), 1400)
+            DispatchQueue.main.async { completion(b64) }
+        }
+    }
+
     private static func fetch(in range: (Date, Date)) -> PHFetchResult<PHAsset> {
         let opts = PHFetchOptions()
         opts.predicate = NSPredicate(
