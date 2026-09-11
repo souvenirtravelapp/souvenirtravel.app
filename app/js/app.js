@@ -7,7 +7,7 @@ import { TravelPreferences } from "./prefs.js";
 import { Shortlist } from "./shortlist.js";
 import { TravelDocuments } from "./papers.js";
 import { NextTripFilter } from "./filter.js";
-import { el } from "./ui.js";
+import { el, gate } from "./ui.js";
 import * as views from "./views.js";
 import { planner } from "/app/js/planner.js";
 import * as cloud from "./cloud.js";
@@ -104,35 +104,38 @@ function langPill(){
   }, isEN ? "ع" : "EN");
 }
 
+// زرا مزوّدي الدخول — بناء واحد لبوابة الحساب ولوحة الإعدادات. عقد الفعل
+// المعلّق هنا وحده: يُحفظ قبل فتح النافذة، ويُمحى عند الفشل (ومعه أي معلّق
+// قديم — فشلُ دخولٍ لا يترك فعلًا ينتظر تنفيذًا صامتًا)، وإغلاق المستخدم
+// للنافذة بنفسه ليس خطأً يُصاح به.
+function signButtons(pending = null, googleLabel = t("الدخول بحساب جوجل")){
+  const attempt = fn => async () => {
+    if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
+    try { await fn(); }
+    catch (e){
+      localStorage.removeItem("sv.pending");
+      if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة."));
+    }
+  };
+  return [
+    el("button.gsign", { onclick: attempt(cloud.signIn) },
+      el("span.g", {}, "G"), googleLabel),
+    el("button.gsign.apple", { onclick: attempt(cloud.signInApple) },
+      el("span.g", {}, "\uF8FF"), t("الدخول بحساب أبل")),
+  ];
+}
+
 // الإعدادات تنبثق كما في التطبيق: لوحة من جهة الصورة، تحمل التفضيلات
 // ومداخل رحلاتك وأوراقي، وتغلق بلمسة الخلفية.
 // بوابة الحساب: تُستدعى عند فعلٍ قرّر طارق أنه يحتاج حسابًا (القلب، الأوراق)
 // أو اقتراحًا (الرحلة). الفعل المُعلق يُحفظ ويكتمل وحده بعد الدخول.
 export function askSignIn(message, pending = null){
-  if (document.querySelector(".sheetback")) return;
-  const back = el("div.sheetback", { onclick: close });
-  const card = el("div.gate", {},
+  gate(close => [
     el("h3", {}, t("بحساب واحد — على كل أجهزتك")),
     el("p", {}, message),
-    el("button.gsign", { onclick: async () => {
-      if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
-      try { await cloud.signIn(); }
-      catch (e){
-        localStorage.removeItem("sv.pending");
-        if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة."));
-      }
-    } }, el("span.g", {}, "G"), t("الدخول بحساب جوجل")),
-    el("button.gsign.apple", { onclick: async () => {
-      if (pending) localStorage.setItem("sv.pending", JSON.stringify(pending));
-      try { await cloud.signInApple(); }
-      catch (e){
-        localStorage.removeItem("sv.pending");
-        if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة."));
-      }
-    } }, el("span.g", {}, "\uF8FF"), t("الدخول بحساب أبل")),
-    el("button.later", { onclick: close }, t("ليس الآن")));
-  function close(){ back.remove(); card.remove(); }
-  document.body.append(back, card);
+    ...signButtons(pending),
+    el("button.later", { onclick: close }, t("ليس الآن")),
+  ]);
 }
 
 function openSettings(){
@@ -201,16 +204,8 @@ function openSettings(){
   // حسابه: دخول جوجل للضيف، وبطاقته مع «خروج» لمن دخل.
   function account(){
     if (!cloud.user){
-      const attempt = fn => async () => {
-        try { await fn(); }
-        catch (e){ if (e?.code !== "auth/popup-closed-by-user") alert(t("تعذر الدخول — أعد المحاولة.")); }
-      };
       return el("div", {},
-        el("button.gsign", { onclick: attempt(cloud.signIn) },
-          el("span.g", {}, "G"),
-          t("الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك")),
-        el("button.gsign.apple", { onclick: attempt(cloud.signInApple) },
-          el("span.g", {}, "\uF8FF"), t("الدخول بحساب أبل")));
+        ...signButtons(null, t("الدخول بحساب جوجل — لتُحفظ مفضلتك ورحلاتك في حسابك")));
     }
     const provs = cloud.providers();
     const linkBtn = (name, label) => el("button.linkacct", { onclick: async () => {

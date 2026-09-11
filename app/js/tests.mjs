@@ -431,6 +431,13 @@ assert(!store.hasRoutes('ZZZ'), 'routes: unknown airport is silent');
   assertEq(reloaded.passport, 'SA', 'filter: passport persists when a file ships for it');
   assertEq(reloaded.tags.size, 0, 'filter: stored tags never load (row is hidden)');
 
+  // The favourites lens is a standing choice, not a glance — it must
+  // still be the open lens after a reload.
+  filter.presentation = 'fav';
+  const reloadedFav = new NextTripFilter(store, { storage: stg });
+  assertEq(reloadedFav.presentation, 'fav', 'filter: favourites lens survives a reload');
+  filter.presentation = 'map';
+
   // nonstop cannot outlive its airport
   filter.origin = '';
   filter.nonstopOnly = true;

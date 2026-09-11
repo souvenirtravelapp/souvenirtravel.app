@@ -2,9 +2,9 @@
 // sibling and speaks only to the ported logic modules; where the two
 // platforms must differ, the reason is written at the spot.
 import { el, flag, cityName, countryName, kiwiLink, gate,
-         MONTHS_AR, WARMTH_AR, RAIN_AR, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
+         MONTHS_AR, WARMTH_AR, RAIN_WORD, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
 import { FREE_REQUIREMENTS, VISA_GROUPS } from "./store.js";
-import { RAIN_WANTED, nextRainWanted, DESTINATION_TAGS } from "./filter.js";
+import { RAIN_WANTED, DESTINATION_TAGS } from "./filter.js";
 import { plan } from "./ideas.js";
 import { hasExpired } from "./papers.js";
 import { Trips } from "./trips-store.js";
@@ -16,7 +16,6 @@ import { t, t as tt } from "/app/js/i18n.js";
 import { isEN } from "/app/js/i18n.js";
 const aName = (a) => isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en);
 const aBlurb = (a) => isEN ? (a.blurb_en || "") : (a.blurb || "");
-const cName = (c) => isEN ? (c.country_name_en || c.country_name_ar) : (c.country_name_ar || c.country_name_en);
 
 const goto = h => { location.hash = h; };
 
@@ -25,9 +24,7 @@ const RAIN_WANTED_AR = { any: t("لا يهم"), some: t("مطر خفيف+"), mod
 const GROUP_AR = { no_visa: t("بلا تأشيرة"), permit: t("تصريح/عند الوصول"), embassy: t("تأشيرة سفارة") };
 
 function warmthWord(store, t){ return WARMTH_AR[store.warmthBand(t)]; }
-function rainWordOf(store, mm){
-  return { none: RAIN_AR.r0, light: RAIN_AR.r1, moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[store.rainLevel(mm)];
-}
+function rainWordOf(store, mm){ return RAIN_WORD[store.rainLevel(mm)]; }
 
 function paperLabel(store, doc){
   const kind = doc.kind === "residency" ? t("إقامة") : t("تأشيرة");
@@ -174,6 +171,15 @@ function shelf(title, inner){
   return el("div.section", {}, el("h2.shelfhead", {}, title), inner);
 }
 
+// بطاقة «يحتاج حسابًا» الواحدة: أيقونة إن وُجدت، وسطر يشرح لماذا، وزر يفتح
+// البوابة. كانت تُبنى يدًا في ست شاشات بفروق لا يقصدها أحد.
+function signinCard(icon, body, gateMsg, label = t("الدخول بحساب جوجل"), pad = "26px 18px"){
+  return el("div.card", { style: "text-align:center;padding:" + pad },
+    icon ? el("div", { style: "font-size:34px" }, icon) : null,
+    el("p", {}, body),
+    el("button.btn", { onclick: () => askSignIn(gateMsg) }, label));
+}
+
 // شريط البطل: سؤالا الجميع — الوجهة والشهر — لا غير؛ زره يغوص في
 // «وجهاتك القادمة» حيث الفلتر الكامل. النسخة المدمجة (داخل صفحة الفلتر)
 // بلا شهر، فالشهر هناك في صندوقه.
@@ -257,7 +263,7 @@ export function filterSection(ctx, opts = {}){
   // The passports' name table lacks one's own country (it is nobody's
   // destination), so country names come from the cities the reader sees.
   const countryAr = cc =>
-    (x => x && cName(x))(store.cities.find(c => c.country_code === cc))
+    (x => x && countryName(x))(store.cities.find(c => c.country_code === cc))
       || store.passportCountryName(cc) || cc;
   const countrySel = menu(
     [["", t("اختر الدولة")]].concat(store.originCountries().map(cc =>
@@ -351,11 +357,9 @@ export function filterSection(ctx, opts = {}){
     results.replaceChildren();
     if (filter.presentation === "fav"){
       if (!cloud.user){
-        results.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-          el("div", { style: "font-size:34px" }, "♡"),
-          el("p", {}, t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر.")),
-          el("button.btn", { onclick: () =>
-            askSignIn(t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")) }, t("تسجيل الدخول"))));
+        results.append(signinCard("♡",
+          t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها من جهاز آخر."),
+          t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك."), t("تسجيل الدخول")));
         return;
       }
       const kept = [...shortlist.cityIDs]
@@ -409,10 +413,11 @@ function lensBtn(label, on, onclick){
 
 // The finder's opening lens, like the app's: every result a pin. Leaflet
 // over OpenStreetMap tiles, vendored — the page owes nothing to a CDN.
-function drawMap(holder, list, open){
+// خريطة الذاكرة تمر من هنا أيضًا: نفس الدبابيس، باسمها هي وبلا نقرة.
+function drawMap(holder, list, open, label = c => c.name_ar){
   queueMicrotask(() => {
     const L = window.L;
-    if (!L){ holder.textContent = t("الخريطة تُحمّل…"); setTimeout(() => drawMap(holder, list, open), 300); return; }
+    if (!L){ holder.textContent = t("الخريطة تُحمّل…"); setTimeout(() => drawMap(holder, list, open, label), 300); return; }
     const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
@@ -420,12 +425,12 @@ function drawMap(holder, list, open){
     for (const c of list){
       if (c.lat == null) continue;
       points.push([c.lat, c.lon]);
-      L.circleMarker([c.lat, c.lon], {
+      const mk = L.circleMarker([c.lat, c.lon], {
         radius: 6, weight: 2, color: "#B4622E",
         fillColor: "#E0A458", fillOpacity: .92 })
         .addTo(map)
-        .bindTooltip(c.name_ar, { direction: "top" })
-        .on("click", () => open(c));
+        .bindTooltip(label(c), { direction: "top" });
+      if (open) mk.on("click", () => open(c));
     }
     if (points.length) map.fitBounds(points, { padding: [24, 24], maxZoom: 6 });
     else map.setView([24, 45], 3);
@@ -864,8 +869,7 @@ export function prefs(ctx, redraw = render){
       () => { prefs.toggleBand(k); redraw(); }));
   }
   const secRain = el("div.chips");
-  const RAIN_KEYS = { none: RAIN_AR.r0, light: RAIN_AR.r1, moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 };
-  for (const [k, ar] of Object.entries(RAIN_KEYS)){
+  for (const [k, ar] of Object.entries(RAIN_WORD)){
     secRain.append(chip(ar, prefs.rain.has(k),
       () => { prefs.toggleRain(k); redraw(); }));
   }
@@ -898,11 +902,9 @@ export function favorites(ctx){
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
-    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("div", { style: "font-size:34px" }, "♡"),
-      el("p", {}, t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")) }, t("الدخول بحساب جوجل"))));
+    inner.append(signinCard("♡",
+      t("المفضلة تحتاج حسابًا — ادخل لتبدأها، أو لتسترجعها إن كنت دخلت من قبل على جهاز آخر."),
+      t("ادخل بحسابك لتكون مفضلتك معك على كل أجهزتك.")));
     return root;
   }
   const kept = [...shortlist.cityIDs]
@@ -928,10 +930,9 @@ export function mydata(ctx){
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
-    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("p", {}, t("ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لترى بياناتك وتتحكم بها.")) }, t("الدخول"))));
+    inner.append(signinCard(null,
+      t("ادخل بحسابك لترى كل ما هو محفوظ فيه — وتمحوه متى شئت."),
+      t("ادخل بحسابك لترى بياناتك وتتحكم بها."), t("الدخول")));
     return root;
   }
 
@@ -1023,16 +1024,16 @@ export function papers(ctx){
   const countryOptions = [el("option", { value: "" }, t("الدولة / المنطقة")),
     el("option", { value: "bloc:schengen" }, t("شنغن (المنطقة)"))];
   for (const c of [...ctx.store.cities].sort((a, b) =>
-        cName(a).localeCompare(cName(b), isEN ? "en" : "ar"))){
+        countryName(a).localeCompare(countryName(b), isEN ? "en" : "ar"))){
     if (seen.has(c.country_code)) continue;
     seen.add(c.country_code);
-    countryOptions.push(el("option", { value: c.country_code }, cName(c)));
+    countryOptions.push(el("option", { value: c.country_code }, countryName(c)));
   }
   if (!cloud.user){
-    append(el("div.card", { style: "text-align:center;padding:22px 18px" },
-      el("p", {}, t("أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت.")) }, t("الدخول بحساب جوجل"))));
+    append(signinCard(null,
+      t("أوراق السفر تحتاج حسابًا — حتى تتبعك بتواريخ انتهائها على كل أجهزتك."),
+      t("ادخل بحسابك لتضيف أوراقك وتتبعك أينما دخلت."),
+      t("الدخول بحساب جوجل"), "22px 18px"));
     return root;
   }
   const country = el("select", {}, countryOptions);
@@ -1112,11 +1113,9 @@ export function trips(ctx){
   const body = wrap => { root.append(el("div.section", {}, wrap)); return root; };
 
   if (!cloud.user){
-    return body(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("div", { style: "font-size:34px" }, "✈︎"),
-      el("p", {}, t("الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.")) }, t("الدخول بحساب جوجل"))));
+    return body(signinCard("✈︎",
+      t("الرحلات تحتاج حسابًا — ادخل لتخطط رحلتك، أو لتسترجع رحلاتك من جهاز آخر."),
+      t("ادخل بحسابك لتكون رحلاتك معك على كل أجهزتك.")));
   }
 
   const inner = el("div.section");
@@ -1193,7 +1192,7 @@ function memTripCard(ctx, t){
 
 function countryNameAr(store, iso){
   if (!iso) return null;
-  return (x => x && cName(x))(store.cities.find(c => c.country_code === iso))
+  return (x => x && countryName(x))(store.cities.find(c => c.country_code === iso))
     || store.passportCountryName?.(iso) || iso;
 }
 
@@ -1217,7 +1216,7 @@ function memCountries(ctx){
   return wrap;
 }
 
-/* الخريطة: كل مكان زرته دبوس. */
+/* الخريطة: كل مكان زرته دبوس — يرسمها راسم الخريطة الواحد نفسه. */
 function memMap(ctx){
   const holder = el("div.findmap");
   const points = [];
@@ -1225,18 +1224,7 @@ function memMap(ctx){
     for (const p of t.places ?? [])
       if (p.lat != null) points.push(p);
   if (!points.length) return el("div.empty", {}, t("لا أماكن بإحداثيات بعد"));
-  queueMicrotask(() => {
-    const L = window.L;
-    if (!L) return;
-    const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
-    for (const p of points)
-      L.circleMarker([p.lat, p.lon], { radius: 6, weight: 2, color: "#B4622E",
-        fillColor: "#E0A458", fillOpacity: .92 })
-        .addTo(map).bindTooltip(p.name, { direction: "top" });
-    map.fitBounds(points.map(p => [p.lat, p.lon]), { padding: [24, 24], maxZoom: 6 });
-  });
+  drawMap(holder, points, null, p => p.name);
   return holder;
 }
 
@@ -1279,9 +1267,9 @@ function addTripForm(ctx){
   const countrySel = el("select.menu", {},
     el("option", { value: "" }, t("الدولة")),
     [...store.cities].sort((a, b) =>
-      cName(a).localeCompare(cName(b), isEN ? "en" : "ar"))
+      countryName(a).localeCompare(countryName(b), isEN ? "en" : "ar"))
       .filter(c => !seen.has(c.country_code) && seen.add(c.country_code))
-      .map(c => el("option", { value: c.country_code }, cName(c))));
+      .map(c => el("option", { value: c.country_code }, countryName(c))));
   const start = el("input", { type: "date" });
   const end = el("input", { type: "date" });
   const notes = el("input", { placeholder: t("ملاحظات (اختياري)") });
@@ -1332,11 +1320,9 @@ export function upcoming(ctx){
   const inner = el("div.section");
   root.append(inner);
   if (!cloud.user){
-    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
-      el("div", { style: "font-size:34px" }, "🧭"),
-      el("p", {}, t("رحلاتك القادمة تحتاج حسابًا — ادخل لتبدأ التخطيط، أو لتسترجع خططك من جهاز آخر.")),
-      el("button.btn", { onclick: () =>
-        askSignIn(t("ادخل بحسابك لتكون خططك معك على كل أجهزتك.")) }, t("الدخول"))));
+    inner.append(signinCard("🧭",
+      t("رحلاتك القادمة تحتاج حسابًا — ادخل لتبدأ التخطيط، أو لتسترجع خططك من جهاز آخر."),
+      t("ادخل بحسابك لتكون خططك معك على كل أجهزتك."), t("الدخول")));
     return root;
   }
   // بابٌ للتخطيط من هنا: كان الطريق الوحيد أن يفتح وجهةً ثم يضغط «لدي رحلة

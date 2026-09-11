@@ -12,7 +12,7 @@
 //    closest analogue of localizedStandardCompare;
 //  - summary() is not ported — it is localized UI text, not planning logic.
 
-import { fold, matches as textMatches, matchesLoosely, nameKey } from './searchtext.js';
+import { matches as textMatches, matchesLoosely, nameKey } from './searchtext.js';
 import { rainLevel, warmthBand, visaGroupOf } from './store.js';
 import { Shortlist } from './shortlist.js';
 
@@ -48,24 +48,11 @@ export function rainAdmits(wanted, level) {
 /// The preferences vocabulary — four, each provable by a photograph.
 export const DESTINATION_TAGS = ['nature', 'history', 'sea', 'mountain'];
 
-/// Only tags that actually exist in the data are offered as filters,
-/// in the order the data first shows them.
-export function tagsPresent(store) {
-  const seen = new Set();
-  const ordered = [];
-  for (const city of store.cities) {
-    for (const tag of city.tags) {
-      if (DESTINATION_TAGS.includes(tag) && !seen.has(tag)) {
-        seen.add(tag);
-        ordered.push(tag);
-      }
-    }
-  }
-  return ordered;
-}
-
 const FACES = ['search', 'favourites'];
-const PRESENTATIONS = ['map', 'list'];
+// الويب يعرض المفضلة عدسةً ثالثة بين عدسات النتائج (بخلاف Swift حيث هي
+// «وجه» مستقل) — فلا بد أن يعرفها التحقق، وإلا ارتد من تركها مفتوحةً إلى
+// الخريطة عند كل تحديث وهو لم يغيّر شيئًا.
+const PRESENTATIONS = ['map', 'list', 'fav'];
 
 export class NextTripFilter {
   /// `store` validates the stored passport against the shipped visa files —
@@ -277,17 +264,6 @@ export class NextTripFilter {
 
   toggleFavourite(city) {
     this.shortlist.toggle(city.id, this._month);
-  }
-
-  /// The shortlist face shows every kept city and no filter reaches it — a
-  /// heart is a decision already made.
-  shortlistCities(store = this.store) {
-    const kept = this.shortlist.cityIDs;
-    const collator = new Intl.Collator(this.lang, { numeric: true });
-    const name = (c) => (this.lang === 'ar' ? c.name_ar : c.name_en);
-    return store.cities
-      .filter((c) => kept.has(c.id))
-      .sort((a, b) => collator.compare(name(a), name(b)));
   }
 
   // ---- the question ----

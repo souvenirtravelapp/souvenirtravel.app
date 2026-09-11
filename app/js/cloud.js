@@ -25,11 +25,13 @@ const STATETOMBS = "sv.cloud.statetombs"; // شواهد حذف القلوب وا
 
 const paperKey = d => d.bloc ? "bloc:" + d.bloc : (d.countryCode + ":" + (d.kind ?? ""));
 
+/* قراءة متسامحة: نصٌّ معطوب في التخزين يعود null لا استثناءً يوقف المصالحة. */
+const parse = s => { try { return JSON.parse(s); } catch { return null; } };
+
 /* هويات ما يقبل الحذف في وثيقة التخطيط: قلب = h:معرف المدينة، ورقة = p:هويتها.
    الهوية هنا ثابتة (بخلاف رحلات الذاكرة ذات UUID)، فمن أعاد قلبًا محذوفًا
    أعاده بنفس الهوية — لذا الحضور المحلي لحظة الدفع يُسقط الشاهد: عودة مقصودة. */
 function stateIdents(){
-  const parse = s => { try { return JSON.parse(s); } catch { return null; } };
   const ids = new Set();
   for (const id of parse(localStorage.getItem("sv.shortlist"))?.ids ?? []) ids.add("h:" + id);
   for (const d of parse(localStorage.getItem("sv.papers")) ?? []) ids.add("p:" + paperKey(d));
@@ -53,7 +55,6 @@ function harvestState(){
 /* يدفن محليًا كل قلب أو ورقة موسومة — الشواهد تنفذ مهما قالت الطوابع. */
 function buryState(tombs){
   if (!Object.keys(tombs).length) return;
-  const parse = s => { try { return JSON.parse(s); } catch { return null; } };
   const sl = parse(localStorage.getItem("sv.shortlist"));
   if (sl){
     sl.ids = (sl.ids ?? []).filter(id => !tombs["h:" + id]);
@@ -96,7 +97,6 @@ function writeLocal(data){
 /* أول دخول: اتحادٌ لا استبدال — ما على الجهاز ينضم لما في السحابة. */
 function union(cloudData, localData){
   const merged = { ...cloudData };
-  const parse = s => { try { return JSON.parse(s); } catch { return null; } };
 
   const sl = parse(cloudData["sv.shortlist"]), ll = parse(localData["sv.shortlist"]);
   if (sl || ll){

@@ -84,7 +84,6 @@ input,select{font:inherit;color:var(--text)}
 .idea .head .c{font-size:12px;opacity:.9}
 .idea .body{padding:8px 12px 10px;font-size:12.5px;color:var(--muted)}
 .idea .body div{display:flex;gap:6px;align-items:baseline}
-.month-title{font-size:15px;font-weight:700;color:var(--deep);margin:12px 0 6px}
 
 /* ── Destination page ───────────────────────────────────────────────── */
 .band{background:linear-gradient(120deg,var(--band1),var(--band2));color:#fff;
@@ -256,7 +255,7 @@ html{overflow-x:clip}
 
 
 /* ── Aurora dressing ───────────────────────────────────────────────── */
-h1,h2,h3,.top h1,.topbar .brand,.strip .go,a.book,.btn,nav.tabs a,.month-title{
+h1,h2,h3,.top h1,.topbar .brand,.strip .go,a.book,.btn,nav.tabs a{
   font-family:"Tajawal","Almarai",Tahoma,sans-serif}
 .hero2{background:var(--night);position:relative;overflow:hidden}
 .hero2::before{content:"";position:absolute;inset:0;pointer-events:none;background:
@@ -296,10 +295,6 @@ select.menu{color:var(--accent-ink)}
 .sheethead h2{margin:0}
 .sheethead .x{background:var(--card);border:1px solid var(--line);width:32px;height:32px;
   border-radius:50%;cursor:pointer;font-size:14px;color:var(--text)}
-.sheetlinks{display:flex;gap:8px;margin:12px 0}
-.sheetlinks a{flex:1;text-align:center;padding:10px;border-radius:12px;background:var(--card);
-  border:1px solid var(--line);text-decoration:none;color:var(--deep);font-weight:800}
-
 .chip .x{font-size:10px;margin-inline-start:5px;opacity:.8}
 .dest-row .keptpill{position:absolute;top:10px;right:38px;background:rgba(255,255,255,.92);
   color:var(--accent-ink);font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 9px}
@@ -327,13 +322,6 @@ select.menu{color:var(--accent-ink)}
 .planrow input[type=date]{border:1px solid var(--line);border-radius:10px;padding:8px 10px;
   font:inherit;background:var(--card);color:var(--text)}
 
-.sheettrips{margin:4px 0 12px}
-.sheettrips h3{font-size:14px;color:var(--brand);margin:0 0 6px}
-.sheettrips .trow{display:flex;align-items:center;gap:6px;padding:9px 12px;margin-bottom:6px;
-  background:var(--card);border:1px solid var(--line);border-radius:12px;
-  text-decoration:none;color:var(--text);font-weight:700}
-.sheettrips .trow .d{margin-inline-start:auto;font-size:12px;color:var(--muted);font-weight:400}
-
 /* ── بوابة الحساب واقتراحاته ── */
 .gate{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:41;
   width:min(400px,92vw);background:var(--bg);border-radius:18px;padding:22px 20px;
@@ -343,11 +331,6 @@ select.menu{color:var(--accent-ink)}
 .gate .gsign{justify-content:center}
 .later{background:none;border:0;cursor:pointer;font:inherit;color:var(--muted);
   padding:8px;font-size:13.5px}
-.nudgecard{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;
-  padding:10px 12px;background:var(--bg);border:1px dashed var(--accent);border-radius:12px;
-  font-size:13.5px}
-.nudgecard .btn{padding:7px 14px;font-size:13.5px}
-
 .gsign.apple{margin-top:8px}
 .gsign.apple .g{background:#000;color:#fff;border-color:#000;font-size:14px}
 .gate .gsign{width:100%}
@@ -429,10 +412,6 @@ button.chip .ficon svg{width:14px;height:14px}
 .splash .w{font-family:"Tajawal",sans-serif;font-weight:500;font-size:30px;
   color:#28241E}
 
-/* علم الغلاف: ركن أعلى اليمين، لا وسط الصورة */
-.dest-row .cover .cflag{position:absolute;top:6px;right:8px;font-size:23px;
-  line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.35))}
-
 /* بقية القوائم — سهم العائلة نفسه بحبر النص بدل سهم النظام */
 select:not(.menu){appearance:none;-webkit-appearance:none;
   background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z" fill="%2328241E"/></svg>');
@@ -473,8 +452,8 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 
 /* ── الوجه الإنجليزي: مرآة المواضع الفيزيائية المتعمدة وخط اللاتينية ── */
 [dir="ltr"] body{font-family:"DM Sans","Almarai",-apple-system,Tahoma,sans-serif;line-height:1.55}
-[dir="ltr"] h1,[dir="ltr"] h2,[dir="ltr"] .brand b,[dir="ltr"] button,[dir="ltr"] .tabs,
-[dir="ltr"] .month-title{font-family:"DM Sans","Tajawal",Tahoma,sans-serif}
+[dir="ltr"] h1,[dir="ltr"] h2,[dir="ltr"] .brand b,[dir="ltr"] button,
+[dir="ltr"] .tabs{font-family:"DM Sans","Tajawal",Tahoma,sans-serif}
 [dir="ltr"] .hero{text-align:left}
 [dir="ltr"] .sheet{left:auto;right:0;border-inline-start:1px solid var(--line)}
 [dir="ltr"] .dest-row .heart{right:auto;left:8px}
@@ -529,12 +508,6 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .pick .pn { font-size: 15px; font-weight: 400; line-height: 1.3; }
 .pick .pc { font-size: 12px; color: var(--accent, #b8863b);
   font-weight: 700; }
-/* دائرةٌ تدور في البطاقة: العمل على جلب بياناتها جارٍ، لا عطلٌ ولا نسيان */
-.spin { width: 11px; height: 11px; border-radius: 50%; display: inline-block;
-  border: 2px solid var(--line, #e5ddcf); border-top-color: var(--accent, #b8863b);
-  animation: spin 900ms linear infinite; flex: 0 0 11px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
 .pick .pc.wait { display: flex; align-items: center; gap: 5px;
   color: var(--muted); }
 .detwait { margin-top: 12px; display: flex; align-items: center; gap: 8px;
@@ -558,8 +531,6 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
    «أين أنا اليوم؟» لا حاشية. */
 .dt-day .dcity { font-size: 12px; font-weight: 700; margin-top: 3px; }
 .dt-day a { display: inline-block; margin-top: 6px; }
-.dt-slot { width: 74px; text-align: center; font-size: 12.5px;
-  font-weight: 700; color: var(--accent, #b8863b); }
 .dt-acts { min-width: 0; }
 
 /* البطاقة المختارة: إطار سميك بأخضر الشفق وعلامة صح — ستُوزَّع عند الضغط */
@@ -608,7 +579,7 @@ select:not(.menu){appearance:none;-webkit-appearance:none;
 .daytbl .dt-day .dm { color: rgba(255,255,255,.85); }
 .daytbl .dt-day .dcity { color: rgba(255,255,255,.95); }
 .daytbl .dt-day a { color: #fff; text-decoration: underline; }
-.daytbl .dt-slot, .daytbl .dt-acts {
+.daytbl .dt-acts {
   background: color-mix(in srgb, var(--dc) 6%, transparent); }
 
 /* بطاقة مختارة لم تدخل الجدول بعد: إطار ذهبي — تنتظر ضمّها */
@@ -685,7 +656,6 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   .dt-day .dn { font-size: 11px; }
   .dt-day .dm { font-size: 9.5px; }
   .dt-day .dcity { font-size: 11px; }
-  .dt-slot { width: 46px; font-size: 11px; padding-inline: 2px; }
   .rowthumb { width: 34px; height: 34px; flex: 0 0 34px; }
   .dt-acts .t { font-size: 13px !important; }
   .pickwrap { flex: 1 1 100%; }
@@ -823,14 +793,6 @@ nav.tabs { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .shut { margin-top: 3px; font-size: 11px; font-weight: 700; color: #A6412C;
   background: #FBECE8; border: 1px solid #F0CFC6; border-radius: 8px;
   padding: 2px 8px; display: inline-block; }
-
-/* بيانات رحلتك — أقسام فرعية معنونة بدل قائمة صفوف واحدة */
-.factsecs { display: grid; gap: 12px; }
-.factsec { border-top: 1px solid var(--line, #e5ddcf); padding-top: 9px; }
-.factsec:first-child { border-top: 0; padding-top: 0; }
-.facth { margin: 0 0 5px; font-size: 12px; font-weight: 800; letter-spacing: .02em;
-  color: var(--deep, #B4622E); }
-.factdisc { margin-top: 10px; font-size: 10px; line-height: 1.6; opacity: .75; }
 
 /* «كامل الرحلة» عنوانٌ رئيسي والمدن تحته فروع — تقولها الإزاحة وحدها بلا
    كلمة. والخط الرأسي يربط الفروع بأصلها فتُقرأ مجموعةً لا سطورًا متجاورة. */

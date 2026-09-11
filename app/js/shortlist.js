@@ -60,12 +60,6 @@ export class Shortlist {
     if (changed) this.save();
   }
 
-  /// Used by the export/restore path, which hands over a whole set at once.
-  replace(ids) {
-    this.cityIDs = new Set(ids);
-    this.save();
-  }
-
   save() {
     this.storage.setItem(
       KEY,
