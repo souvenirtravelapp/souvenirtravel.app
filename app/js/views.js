@@ -2,7 +2,7 @@
 // sibling and speaks only to the ported logic modules; where the two
 // platforms must differ, the reason is written at the spot.
 import { el, flag, cityName, countryName, kiwiLink, gate,
-         MONTHS_AR, WARMTH_AR, RAIN_AR, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
+         MONTHS_AR, WARMTH_AR, RAIN_WORD, REQUIREMENT_AR, PASSPORT_AR } from "./ui.js";
 import { FREE_REQUIREMENTS, VISA_GROUPS } from "./store.js";
 import { RAIN_WANTED, DESTINATION_TAGS } from "./filter.js";
 import { plan } from "./ideas.js";
@@ -16,7 +16,6 @@ import { t, t as tt } from "/app/js/i18n.js";
 import { isEN } from "/app/js/i18n.js";
 const aName = (a) => isEN ? (a.name_en || a.name_ar) : (a.name_ar || a.name_en);
 const aBlurb = (a) => isEN ? (a.blurb_en || "") : (a.blurb || "");
-const cName = (c) => isEN ? (c.country_name_en || c.country_name_ar) : (c.country_name_ar || c.country_name_en);
 
 const goto = h => { location.hash = h; };
 
@@ -25,9 +24,7 @@ const RAIN_WANTED_AR = { any: t("لا يهم"), some: t("مطر خفيف+"), mod
 const GROUP_AR = { no_visa: t("بلا تأشيرة"), permit: t("تصريح/عند الوصول"), embassy: t("تأشيرة سفارة") };
 
 function warmthWord(store, t){ return WARMTH_AR[store.warmthBand(t)]; }
-function rainWordOf(store, mm){
-  return { none: RAIN_AR.r0, light: RAIN_AR.r1, moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[store.rainLevel(mm)];
-}
+function rainWordOf(store, mm){ return RAIN_WORD[store.rainLevel(mm)]; }
 
 function paperLabel(store, doc){
   const kind = doc.kind === "residency" ? t("إقامة") : t("تأشيرة");
@@ -257,7 +254,7 @@ export function filterSection(ctx, opts = {}){
   // The passports' name table lacks one's own country (it is nobody's
   // destination), so country names come from the cities the reader sees.
   const countryAr = cc =>
-    (x => x && cName(x))(store.cities.find(c => c.country_code === cc))
+    (x => x && countryName(x))(store.cities.find(c => c.country_code === cc))
       || store.passportCountryName(cc) || cc;
   const countrySel = menu(
     [["", t("اختر الدولة")]].concat(store.originCountries().map(cc =>
@@ -864,8 +861,7 @@ export function prefs(ctx, redraw = render){
       () => { prefs.toggleBand(k); redraw(); }));
   }
   const secRain = el("div.chips");
-  const RAIN_KEYS = { none: RAIN_AR.r0, light: RAIN_AR.r1, moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 };
-  for (const [k, ar] of Object.entries(RAIN_KEYS)){
+  for (const [k, ar] of Object.entries(RAIN_WORD)){
     secRain.append(chip(ar, prefs.rain.has(k),
       () => { prefs.toggleRain(k); redraw(); }));
   }
@@ -1023,10 +1019,10 @@ export function papers(ctx){
   const countryOptions = [el("option", { value: "" }, t("الدولة / المنطقة")),
     el("option", { value: "bloc:schengen" }, t("شنغن (المنطقة)"))];
   for (const c of [...ctx.store.cities].sort((a, b) =>
-        cName(a).localeCompare(cName(b), isEN ? "en" : "ar"))){
+        countryName(a).localeCompare(countryName(b), isEN ? "en" : "ar"))){
     if (seen.has(c.country_code)) continue;
     seen.add(c.country_code);
-    countryOptions.push(el("option", { value: c.country_code }, cName(c)));
+    countryOptions.push(el("option", { value: c.country_code }, countryName(c)));
   }
   if (!cloud.user){
     append(el("div.card", { style: "text-align:center;padding:22px 18px" },
@@ -1193,7 +1189,7 @@ function memTripCard(ctx, t){
 
 function countryNameAr(store, iso){
   if (!iso) return null;
-  return (x => x && cName(x))(store.cities.find(c => c.country_code === iso))
+  return (x => x && countryName(x))(store.cities.find(c => c.country_code === iso))
     || store.passportCountryName?.(iso) || iso;
 }
 
@@ -1279,9 +1275,9 @@ function addTripForm(ctx){
   const countrySel = el("select.menu", {},
     el("option", { value: "" }, t("الدولة")),
     [...store.cities].sort((a, b) =>
-      cName(a).localeCompare(cName(b), isEN ? "en" : "ar"))
+      countryName(a).localeCompare(countryName(b), isEN ? "en" : "ar"))
       .filter(c => !seen.has(c.country_code) && seen.add(c.country_code))
-      .map(c => el("option", { value: c.country_code }, cName(c))));
+      .map(c => el("option", { value: c.country_code }, countryName(c))));
   const start = el("input", { type: "date" });
   const end = el("input", { type: "date" });
   const notes = el("input", { placeholder: t("ملاحظات (اختياري)") });

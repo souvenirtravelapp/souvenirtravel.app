@@ -6,6 +6,9 @@ export const MONTHS_AR = [t("يناير"),t("فبراير"),t("مارس"),t("أ�
 
 export const WARMTH_AR = {cold:t("باردة"), mild:t("معتدلة"), warm:t("دافئة"), hot:t("حارة")};
 export const RAIN_AR   = {r0:t("بلا مطر"), r1:t("مطر خفيف"), r2:t("مطر متوسط"), r3:t("مطر غزير")};
+// كلمة كل درجة مطر بمفتاح البيانات نفسه — كانت الخريطة تُكتب في ثلاثة مواضع.
+export const RAIN_WORD = {none: RAIN_AR.r0, light: RAIN_AR.r1,
+                          moderate: RAIN_AR.r2, heavy: RAIN_AR.r3};
 
 export const REQUIREMENT_AR = {
   visa_free: t("لا تتطلب تأشيرة"),

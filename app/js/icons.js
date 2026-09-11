@@ -105,13 +105,8 @@ const BY_KIND = {
   "نشاط": "place", "تجربة": "place", "ترفيه": "place",
 };
 
-/// أيقونة الفعالية: من اسمها إن دلّ، وإلا من نوعها، وإلا دبوس مكان.
-export function activityIcon(name = "", kind = "", id = ""){
-  // أيقونةٌ اختارها وكيل الأيقونات للمكان بعينه تسبق كل مطابقة بالاسم —
-  // القرار المنصوص عليه أصدق من القاعدة العامة، وهو موحّد بين اللغتين.
-  let key = (id && P[id]) ? id : null;
-  if (!key) for (const [re, k] of RULES) if (re.test(name)) { key = k; break; }
-  if (!key) key = BY_KIND[kind] || "place";
+/// جسد الأيقونة الواحد: شبكة 24×24 بحجم 22، خط 1.6، أطراف مستديرة، currentColor.
+function makeSvg(d){
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -123,9 +118,19 @@ export function activityIcon(name = "", kind = "", id = ""){
   svg.setAttribute("stroke-linecap", "round");
   svg.setAttribute("stroke-linejoin", "round");
   const path = document.createElementNS(ns, "path");
-  path.setAttribute("d", P[key]);
+  path.setAttribute("d", d);
   svg.append(path);
   return svg;
+}
+
+/// أيقونة الفعالية: من اسمها إن دلّ، وإلا من نوعها، وإلا دبوس مكان.
+export function activityIcon(name = "", kind = "", id = ""){
+  // أيقونةٌ اختارها وكيل الأيقونات للمكان بعينه تسبق كل مطابقة بالاسم —
+  // القرار المنصوص عليه أصدق من القاعدة العامة، وهو موحّد بين اللغتين.
+  let key = (id && P[id]) ? id : null;
+  if (!key) for (const [re, k] of RULES) if (re.test(name)) { key = k; break; }
+  if (!key) key = BY_KIND[kind] || "place";
+  return makeSvg(P[key]);
 }
 
 /// أيقونات أحداث اليوم بنفس اليد: الفندق، الطائرة، السيارة.
@@ -142,16 +147,5 @@ const EVENT_P = {
 export function eventIcon(kind){
   const key = kind === "in" || kind === "out" ? "hotel"
     : kind === "land" ? "land" : kind === "fly" ? "fly" : "car";
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("width", "22"); svg.setAttribute("height", "22");
-  svg.setAttribute("fill", "none"); svg.setAttribute("stroke", "currentColor");
-  svg.setAttribute("stroke-width", "1.6");
-  svg.setAttribute("stroke-linecap", "round");
-  svg.setAttribute("stroke-linejoin", "round");
-  const path = document.createElementNS(ns, "path");
-  path.setAttribute("d", EVENT_P[key]);
-  svg.append(path);
-  return svg;
+  return makeSvg(EVENT_P[key]);
 }

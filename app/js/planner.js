@@ -3,7 +3,7 @@
 // «أضف مكانًا» يقتل حلقة الاسم←الخرائط←الجدول: Nominatim يحدد ونحن نرتب.
 import { t, t as tt, isEN } from "/app/js/i18n.js";
 import { el, flag, cityName, countryName, gate, askConfirm,
-         MONTHS_AR, RAIN_AR } from "/app/js/ui.js";
+         MONTHS_AR, RAIN_WORD } from "/app/js/ui.js";
 import { Trips } from "/app/js/trips-store.js";
 import { visaLine, tripCountries } from "/app/js/views.js";
 import { activityIcon, eventIcon } from "/app/js/icons.js";
@@ -154,11 +154,8 @@ function hotelEvents(trip, dstr, city, store){
         const ap = arrivalAirport(trip, city, store);
         let driveMin = 30;
         if (typeof st.driveMin === "number") driveMin = st.driveMin;   // زمن قيادة حقيقي
-        else if (ap && (st.lat || st.lon)){
-          const km = 111 * Math.hypot(st.lat - ap.lat,
-            (st.lon - ap.lon) * Math.cos(st.lat * Math.PI / 180));
-          driveMin = Math.round(km / 60 * 60);
-        }
+        // كم ÷ ٦٠ كم/س × ٦٠ دقيقة: الدقائق تساوي الكيلومترات عددًا.
+        else if (ap && (st.lat || st.lon)) driveMin = Math.round(kmAB(st, ap));
         time = arr + 3 + driveMin / 60;
         parts = { arr: trip.flights.out.arr, driveMin,
                   ap: ap ? (ap.iata || "") : "", real: typeof st.driveMin === "number" };
@@ -1355,8 +1352,7 @@ export function planner(ctx, tripId, render){
       const w = store.temps ? store.temps(c, m) : null;
       if (!w) continue;
       wxRows++;
-      const rw = { none: RAIN_AR.r0, light: RAIN_AR.r1,
-                   moderate: RAIN_AR.r2, heavy: RAIN_AR.r3 }[store.rainLevel(w.p_mm_avg)];
+      const rw = RAIN_WORD[store.rainLevel(w.p_mm_avg)];
       secWx.append(el("div.row", {}, el("span.who", {},
         "🌤 " + (legCityList.length > 1 ? cityName(c) + " · " : "")
         + tt`${MONTHS_AR[m - 1]}: ${Math.round(w.t_max_avg_c)}° نهارًا، ${Math.round(w.t_min_avg_c)}° ليلًا — ${rw}`)));
@@ -2131,7 +2127,8 @@ export function planner(ctx, tripId, render){
       + q + "?overview=false");
     const j = await r.json();
     const rt = j?.routes?.[0];
-    return rt ? { km: rt.distance / 1000, min: Math.round(rt.duration / 60) } : null;
+    return rt ? { km: rt.distance / 1000, min: Math.round(rt.duration / 60),
+                  sec: rt.duration } : null;
   };
   (async () => {
     // زمن القيادة يُقاس من فندق **مرحلة المكان**، لا من فندق أول يوم: مكانٌ
@@ -2210,13 +2207,8 @@ export function planner(ctx, tripId, render){
     let changed = false;
     for (const st of trip.stays || []){
       if ("driveMin" in st || !(st.lat || st.lon)) continue;
-      try {
-        const r = await fetch("https://router.project-osrm.org/route/v1/driving/"
-          + ap.lon + "," + ap.lat + ";" + st.lon + "," + st.lat + "?overview=false");
-        const j = await r.json();
-        const sec = j?.routes?.[0]?.duration;
-        st.driveMin = sec ? Math.round(sec / 60) : null;
-      } catch { st.driveMin = null; }
+      const r = await osrm([[ap.lat, ap.lon], [st.lat, st.lon]]).catch(() => null);
+      st.driveMin = r?.sec ? r.min : null;
       changed = true;
     }
     if (changed){ save(); render(); }
