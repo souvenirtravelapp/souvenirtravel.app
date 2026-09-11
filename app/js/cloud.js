@@ -231,6 +231,7 @@ async function signInNative(a){
     await bounded(markSignup(true), 10000, "markSignup");
     await bounded(reconcile(true), 25000, "reconcile");
     await bounded(reconcileMemory(true), 25000, "reconcileMemory");
+    await pullProfile();
   } catch (e){
     // مزامنة أولى لم تكتمل: نتراجع ضيوفًا هذه الجلسة — لا كتابة على
     // السحابة بلا مصالحة أولى. الدخول يبقى محفوظًا للأصيل.
@@ -300,7 +301,8 @@ export async function restore(){
       user = u;
       if (u){
         enterAccount(u.uid);
-        try { await markSignup(false); await reconcile(false); await reconcileMemory(false); }
+        try { await markSignup(false); await reconcile(false); await reconcileMemory(false);
+              await pullProfile(); }
         catch (e) { console.warn("sync:", e); }
       }
       resolve();
@@ -315,6 +317,7 @@ async function signInWith(provider){
   await markSignup(true);
   await reconcile(true);
   await reconcileMemory(true);
+  await pullProfile();
   location.reload();     // المخازن تُبنى من جديد على المحلي المتصالح
 }
 
@@ -454,6 +457,37 @@ async function pushMemory(){
   localStorage.setItem(MEMSTAMP, String(now));
 }
 
+/* ── وثيقة الصورة (اعتماد طارق 2026-09-11): الصورة المختارة في التطبيق
+   تُرفع من iOS إلى `users/{uid}/sync/profile` ({photo, updatedAt} —
+   ‏JPEG ‏~256px بسقف ~100KB يفرضه الرافع)، وتسبق صورة مزوّد الدخول في كل
+   الطبقات؛ صورة Google احتياطٌ عند غيابها فقط. مرآتها المحلية sv.profile
+   كي يرسم الوجه فورًا عند الإقلاع لا بعد جولة شبكة. */
+const PROFILEKEY = "sv.profile";
+function profileDoc(uid){ return doc(db, "users", uid, "sync", "profile"); }
+
+/// صورة الحساب كما تُعرض: المختارة إن وُجدت، وإلا صورة مزوّد الدخول.
+export function accountPhoto(){
+  const p = parse(localStorage.getItem(PROFILEKEY));
+  return p?.photo || user?.photoURL || null;
+}
+
+/// يجلب وثيقة الصورة ويحدّث المرآة — يعيد true إن تغيّرت.
+async function pullProfile(){
+  if (!user) return false;
+  try {
+    const snap = await bounded(getDoc(profileDoc(user.uid)), 10000, "profile");
+    const data = snap.exists() ? snap.data() : null;
+    const now = data?.photo
+      ? JSON.stringify({ photo: data.photo, updatedAt: data.updatedAt ?? 0 })
+      : null;
+    const was = localStorage.getItem(PROFILEKEY);
+    if (now === was) return false;
+    if (now) localStorage.setItem(PROFILEKEY, now);
+    else localStorage.removeItem(PROFILEKEY);
+    return true;
+  } catch (e){ console.warn("profile:", e); return false; }
+}
+
 /* سحبٌ عند العودة (اعتماد طارق 2026-09-11): المصالحة تجري عند الإقلاع
    وحده، فمن عاد للتبويب أو أعاد التطبيق للمقدمة كان يحتاج رفرشًا ليرى ما
    استجد من أجهزته الأخرى. تنادى من مستمع visibilitychange في app.js،
@@ -468,7 +502,9 @@ export async function pullOnReturn(){
     const memBefore = localStorage.getItem(MEMKEY) ?? "";
     const changed = await bounded(reconcile(false), 25000, "pull reconcile");
     await bounded(reconcileMemory(false), 25000, "pull memory");
-    return changed || (localStorage.getItem(MEMKEY) ?? "") !== memBefore;
+    const photoChanged = await pullProfile();
+    return changed || photoChanged
+      || (localStorage.getItem(MEMKEY) ?? "") !== memBefore;
   } catch (e){
     console.warn("pull-on-return:", e);
     return false;
@@ -523,6 +559,7 @@ export async function eraseMyData(){
   if (!user) return;
   // سطر السجل يُمحى مع البيانات: من محا حسابه لا يبقى له أثر في لوحة الإدارة.
   try { await deleteDoc(signupDoc(user.uid)); } catch (e) { console.warn("signup:", e); }
+  try { await deleteDoc(profileDoc(user.uid)); } catch (e) { console.warn("profile:", e); }
   await deleteDoc(stateDoc(user.uid));
   await deleteDoc(memoryDoc(user.uid));
   for (const k of KEYS) localStorage.removeItem(k);
@@ -531,6 +568,7 @@ export async function eraseMyData(){
   localStorage.removeItem(STATETOMBS);
   localStorage.removeItem(MEMKEY);
   localStorage.removeItem(MEMSTAMP);
+  localStorage.removeItem(PROFILEKEY);
   const f = JSON.parse(localStorage.getItem("sv.filter") ?? "{}");
   delete f.passport;
   localStorage.setItem("sv.filter", JSON.stringify(f));
@@ -600,6 +638,7 @@ export async function signOutNow(){
   localStorage.removeItem(MEMSTAMP);
   localStorage.removeItem(STATEIDS);
   localStorage.removeItem(STATETOMBS);
+  localStorage.removeItem(PROFILEKEY);   // الصورة للحساب لا للجهاز
   location.reload();
 }
 
