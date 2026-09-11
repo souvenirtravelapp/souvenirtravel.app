@@ -49,6 +49,14 @@ export function el(spec, attrs = {}, ...children){
 export function cityName(c){ return isEN ? (c.name_en || c.name_ar) : (c.name_ar || c.name_en); }
 export function countryName(c){ return isEN ? (c.country_name_en || c.country_name_ar) : (c.country_name_ar || c.country_name_en); }
 
+// الصور الثقيلة (covers/attractions) لا تُرحَّل مع الغلافين — «تُجلب من
+// الموقع الحي». في iOS وسيطٌ أصيل يعترض المسار النسبي ويجلبه، وAndroid
+// بلا وسيط، فيُكتب له المسار مطلقًا إلى الموقع الحي من هنا.
+export function assetURL(rel){
+  return (globalThis.__souvenirWrapper?.platform === "android")
+    ? "https://souvenirtravel.app/app/" + rel : rel;
+}
+
 // The affiliate handoff — website channel, disclosed. Mirrors the pages.
 const MARKER = "768560";
 export function kiwiLink(fromIata, toIata, sub){
