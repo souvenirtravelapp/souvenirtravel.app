@@ -413,10 +413,11 @@ function lensBtn(label, on, onclick){
 
 // The finder's opening lens, like the app's: every result a pin. Leaflet
 // over OpenStreetMap tiles, vendored — the page owes nothing to a CDN.
-function drawMap(holder, list, open){
+// خريطة الذاكرة تمر من هنا أيضًا: نفس الدبابيس، باسمها هي وبلا نقرة.
+function drawMap(holder, list, open, label = c => c.name_ar){
   queueMicrotask(() => {
     const L = window.L;
-    if (!L){ holder.textContent = t("الخريطة تُحمّل…"); setTimeout(() => drawMap(holder, list, open), 300); return; }
+    if (!L){ holder.textContent = t("الخريطة تُحمّل…"); setTimeout(() => drawMap(holder, list, open, label), 300); return; }
     const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
@@ -424,12 +425,12 @@ function drawMap(holder, list, open){
     for (const c of list){
       if (c.lat == null) continue;
       points.push([c.lat, c.lon]);
-      L.circleMarker([c.lat, c.lon], {
+      const mk = L.circleMarker([c.lat, c.lon], {
         radius: 6, weight: 2, color: "#B4622E",
         fillColor: "#E0A458", fillOpacity: .92 })
         .addTo(map)
-        .bindTooltip(c.name_ar, { direction: "top" })
-        .on("click", () => open(c));
+        .bindTooltip(label(c), { direction: "top" });
+      if (open) mk.on("click", () => open(c));
     }
     if (points.length) map.fitBounds(points, { padding: [24, 24], maxZoom: 6 });
     else map.setView([24, 45], 3);
@@ -1215,7 +1216,7 @@ function memCountries(ctx){
   return wrap;
 }
 
-/* الخريطة: كل مكان زرته دبوس. */
+/* الخريطة: كل مكان زرته دبوس — يرسمها راسم الخريطة الواحد نفسه. */
 function memMap(ctx){
   const holder = el("div.findmap");
   const points = [];
@@ -1223,18 +1224,7 @@ function memMap(ctx){
     for (const p of t.places ?? [])
       if (p.lat != null) points.push(p);
   if (!points.length) return el("div.empty", {}, t("لا أماكن بإحداثيات بعد"));
-  queueMicrotask(() => {
-    const L = window.L;
-    if (!L) return;
-    const map = L.map(holder, { zoomControl: false, worldCopyJump: true });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      { maxZoom: 12, attribution: "© OpenStreetMap" }).addTo(map);
-    for (const p of points)
-      L.circleMarker([p.lat, p.lon], { radius: 6, weight: 2, color: "#B4622E",
-        fillColor: "#E0A458", fillOpacity: .92 })
-        .addTo(map).bindTooltip(p.name, { direction: "top" });
-    map.fitBounds(points.map(p => [p.lat, p.lon]), { padding: [24, 24], maxZoom: 6 });
-  });
+  drawMap(holder, points, null, p => p.name);
   return holder;
 }
 
