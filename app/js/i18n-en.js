@@ -359,6 +359,7 @@ export const EN = {
  "اكتشف": "Discover",
  "خطط": "Plan",
  "وثّق": "Keep",
+ "وثق": "Keep",
  "اكتشف وجهتك": "Discover your destination",
  "تاريخ رحلاتك": "Your travel history",
  "إرجاع الخريطة لوضعها الأصلي": "Reset the map view",
