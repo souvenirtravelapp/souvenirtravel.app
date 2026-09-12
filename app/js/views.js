@@ -1719,9 +1719,13 @@ export function admin(ctx){
   let on = (() => { try { return localStorage.getItem("sv.adminTab"); } catch { return null; } })();
   if (!TABS.some(x => x.id === on)) on = "agents";
   const bar = el("div.admintabs");
+  const hasKey = () => { try { return !!localStorage.getItem(TEAMS_KEY); } catch { return false; } };
   function show(id){
     on = id;
     try { localStorage.setItem("sv.adminTab", id); } catch {}
+    // مفتاح القراءة يحرس اللوحة كلها لا تبويب الوكلاء وحده: بلا مفتاح لا تبان التبويبات.
+    if (!hasKey()){ bar.style.display = "none"; body.replaceChildren(keyCard()); return; }
+    bar.style.display = "";
     bar.replaceChildren(...TABS.map(x =>
       el("button" + (x.id === on ? ".on" : ""), { onclick: () => show(x.id) }, x.label)));
     body.replaceChildren(TABS.find(x => x.id === on).draw());
