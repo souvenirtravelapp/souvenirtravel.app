@@ -1688,6 +1688,57 @@ export function feedbackSheet(){
    مرة واحدة، فلا يسكن مفتاحٌ في شيفرة موقع عام. */
 const TEAMS_API = "https://mcp.souvenirtravel.app/teams/data";
 
+/* ── صفحة الفريق: هل يعمل الآن، ونتائج اليوم، وكل يوم عمل فيه — بما قاله
+   المنفِّذ عند تسجيل تشغيله (team_clock.py ran --note --link). */
+export function teamRuns(ctx, id){
+  const root = el("div.wide");
+  const title = el("h1", {}, t("نتائج الفريق"));
+  root.append(el("div.hero3", {}, el("div.herorow", {}, title, el("a.circle", { href: "#/admin" }, "‹"))));
+  const inner = el("div.section");
+  root.append(inner);
+  if (!cloud.isAdmin()){
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" },
+      el("p", {}, t("هذه الصفحة لصاحب الموقع."))));
+    return root;
+  }
+  const card = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+  inner.append(card);
+  (async () => {
+    const token = await cloud.authToken();
+    if (!token){ card.replaceChildren(el("div.muted", {}, t("سجّل الدخول بحسابك لعرض النتائج."))); return; }
+    const get = async path => {
+      const r = await fetch("https://mcp.souvenirtravel.app" + path, { headers: { authorization: "Bearer " + token } });
+      if (!r.ok) throw new Error(String(r.status));
+      return r.json();
+    };
+    try {
+      const [reg, st, rr] = await Promise.all([get("/teams/data"), get("/teams/lastrun"),
+                                               get("/teams/runs?team=" + encodeURIComponent(id))]);
+      title.textContent = (reg.teams ?? []).find(x => x.id === id)?.name || id;
+      const fmt = (d, o) => new Date(d).toLocaleString(isEN ? "en-GB" : "ar", o);
+      const dayOf = d => new Date(d).toDateString();
+      const today = new Date().toDateString();
+      const runs = rr.runs ?? [];
+      const row = r => el("div.adminrow", {}, el("div", {},
+        el("div.t", {}, fmt(r.at, { timeStyle: "short" })),
+        el("div.fbbody", {}, r.note || t("سُجّل التشغيل بلا ملاحظة.")),
+        r.link ? el("a", { href: r.link, target: "_blank", rel: "noopener", style: "font-size:12px" }, t("افتح المخرَج ›")) : null));
+      const busy = st.running?.[id];
+      const todays = runs.filter(r => dayOf(r.at) === today);
+      const days = [...new Set(runs.map(r => dayOf(r.at)))].filter(d => d !== today);
+      card.replaceChildren(
+        busy ? el("div.admincount", { style: "color:var(--deep)" }, t("يعمل الآن — بدأ ") + fmt(busy, { timeStyle: "short" })) : null,
+        el("div.admincount", {}, t("اليوم")),
+        ...todays.map(row),
+        todays.length ? null : el("div.muted", {}, t("لم يعمل اليوم بعد.")),
+        ...days.flatMap(d => [el("div.admincount", { style: "margin-top:14px" }, fmt(d, { dateStyle: "full" })),
+                              ...runs.filter(r => dayOf(r.at) === d).map(row)]),
+        runs.length ? null : el("div.muted", { style: "margin-top:10px" }, t("لا تشغيل مسجَّل لهذا الفريق بعد.")));
+    } catch (e){ card.replaceChildren(el("div.muted", {}, t("تعذر القراءة. ") + String(e?.message || e))); }
+  })();
+  return root;
+}
+
 export function admin(ctx){
   const root = el("div.wide");
   root.append(el("div.hero3", {},
@@ -1841,6 +1892,8 @@ export function admin(ctx){
                 tbody.style.display = open ? "block" : "none"; arrow.textContent = open ? "▾" : "▸"; } },
               arrow, el("div.t", { style: "flex:1;margin:0" }, tm.name || tm.id),
               el("span.muted", { style: "font-size:12px" }, "(" + String(tm.agents?.length ?? 0) + ")"),
+              el("a", { href: "#/team/" + encodeURIComponent(tm.id), onclick: e => e.stopPropagation(),
+                        style: "font-size:12px;font-weight:800;color:var(--deep)" }, t("النتائج ›")),
               el("button", { style: mbtn, title: t("أعلى"), onclick: move(-1) }, "↑"),
               el("button", { style: mbtn, title: t("أسفل"), onclick: move(1) }, "↓"));
             return el("div.agteam", {}, head, tbody);
