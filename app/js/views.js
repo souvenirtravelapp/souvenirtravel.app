@@ -1753,7 +1753,8 @@ export function admin(ctx){
                 el("div.agmission", {}, a.mission || ""))));
             const arrow = el("span", { style: "font-size:15px;color:var(--muted);width:16px" }, "▸");
             const head = el("div", {
-              style: "display:flex;align-items:center;gap:8px;cursor:pointer",
+              style: "display:flex;align-items:center;gap:8px;cursor:pointer;"
+                + "background:var(--bg);padding:9px 12px;border-radius:10px",
               onclick: () => { const open = body.style.display === "none";
                 body.style.display = open ? "block" : "none"; arrow.textContent = open ? "▾" : "▸"; } },
               arrow, el("div.t", { style: "flex:1;margin:0" }, tm.name || tm.id),
