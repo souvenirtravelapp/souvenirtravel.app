@@ -1741,33 +1741,59 @@ export function admin(ctx){
     fetch(TEAMS_API + "?key=" + encodeURIComponent(key))
       .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
       .then(d => {
-        const teams = d?.teams ?? [];
-        const n = teams.reduce((a, x) => a + (x.agents?.length ?? 0), 0);
-        card.replaceChildren(
-          el("div.admincount", {}, t`${String(teams.length)} فرق · ${String(n)} وكيلًا`),
-          ...teams.map(tm => {
-            const body = el("div", { style: "display:none;margin-top:8px" },
-              tm.goal ? el("div.s", {}, tm.goal) : null,
-              ...(tm.agents ?? []).map(a => el("div.agrow", {},
-                el("div.t", {}, a.name || a.id),
-                el("div.agmission", {}, a.mission || ""))));
-            const arrow = el("span", { style: "font-size:15px;color:var(--muted);width:16px" }, "▸");
-            const head = el("div", {
-              style: "display:flex;align-items:center;gap:8px;cursor:pointer;"
-                + "background:var(--bg);padding:9px 12px;border-radius:10px",
-              onclick: () => { const open = body.style.display === "none";
-                body.style.display = open ? "block" : "none"; arrow.textContent = open ? "▾" : "▸"; } },
-              arrow, el("div.t", { style: "flex:1;margin:0" }, tm.name || tm.id),
-              el("span.muted", { style: "font-size:12px" }, "(" + String(tm.agents?.length ?? 0) + ")"));
-            return el("div.agteam", {}, head, body);
-          }),
-          el("div", { style: "margin-top:14px;display:flex;gap:10px;flex-wrap:wrap" },
-            el("a.btn", { href: "https://mcp.souvenirtravel.app/teams?key=" + encodeURIComponent(key),
-                          target: "_blank", rel: "noopener" }, t("تعديل الوكلاء")),
-            el("button.later", { onclick: () => {
-              try { localStorage.removeItem(TEAMS_KEY); } catch {}
-              show("agents");
-            } }, t("انسَ المفتاح على هذا الجهاز"))));
+        let teams = d?.teams ?? [];
+        const saveOrder = async () => {
+          const ak = prompt(t("مفتاح الموافقة لحفظ الترتيب:")); if (!ak) return;
+          const m = document.getElementById("ordermsg"); if (m) m.textContent = t("جارٍ الحفظ…");
+          try {
+            const r = await fetch("https://mcp.souvenirtravel.app/teams/reorder?key=" + encodeURIComponent(ak),
+              { method: "POST", headers: { "content-type": "application/json" },
+                body: JSON.stringify({ order: teams.map(x => x.id) }) });
+            const j = await r.json().catch(() => null);
+            if (!r.ok) throw new Error(j?.error
+              || (r.status === 403 ? t("مفتاح الموافقة غير صالح.") : t("تعذّر الحفظ.")));
+            const mm = document.getElementById("ordermsg");
+            if (mm) mm.textContent = t("حُفظ الترتيب — انعكس في صفحة الوكلاء ✓");
+          } catch (e){ const mm = document.getElementById("ordermsg"); if (mm) mm.textContent = String(e?.message || e); }
+        };
+        const paint = () => {
+          const n = teams.reduce((a, x) => a + (x.agents?.length ?? 0), 0);
+          const mbtn = "border:1px solid var(--line);background:var(--card);border-radius:8px;"
+            + "padding:2px 9px;cursor:pointer;font-size:14px;flex:0 0 auto";
+          card.replaceChildren(
+            el("div.admincount", {}, t`${String(teams.length)} فرق · ${String(n)} وكيلًا`),
+            ...teams.map((tm, i) => {
+              const body = el("div", { style: "display:none;margin-top:8px" },
+                tm.goal ? el("div.s", {}, tm.goal) : null,
+                ...(tm.agents ?? []).map(a => el("div.agrow", {},
+                  el("div.t", {}, a.name || a.id),
+                  el("div.agmission", {}, a.mission || ""))));
+              const arrow = el("span", { style: "font-size:15px;color:var(--muted);width:16px" }, "▸");
+              const move = dir => e => { e.stopPropagation();
+                const j = i + dir; if (j < 0 || j >= teams.length) return;
+                [teams[i], teams[j]] = [teams[j], teams[i]]; paint(); };
+              const head = el("div", {
+                style: "display:flex;align-items:center;gap:8px;cursor:pointer;"
+                  + "background:var(--bg);padding:9px 12px;border-radius:10px",
+                onclick: () => { const open = body.style.display === "none";
+                  body.style.display = open ? "block" : "none"; arrow.textContent = open ? "▾" : "▸"; } },
+                arrow, el("div.t", { style: "flex:1;margin:0" }, tm.name || tm.id),
+                el("span.muted", { style: "font-size:12px" }, "(" + String(tm.agents?.length ?? 0) + ")"),
+                el("button", { style: mbtn, title: t("أعلى"), onclick: move(-1) }, "↑"),
+                el("button", { style: mbtn, title: t("أسفل"), onclick: move(1) }, "↓"));
+              return el("div.agteam", {}, head, body);
+            }),
+            el("div", { style: "margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center" },
+              el("button.btn", { onclick: saveOrder }, t("احفظ الترتيب")),
+              el("span.muted", { id: "ordermsg", style: "font-size:12px;color:var(--deep)" }, ""),
+              el("a.btn", { href: "https://mcp.souvenirtravel.app/teams?key=" + encodeURIComponent(key),
+                            target: "_blank", rel: "noopener" }, t("صفحة الوكلاء")),
+              el("button.later", { onclick: () => {
+                try { localStorage.removeItem(TEAMS_KEY); } catch {}
+                show("agents");
+              } }, t("انسَ المفتاح على هذا الجهاز"))));
+        };
+        paint();
       })
       .catch(e => card.replaceChildren(
         el("div.muted", {}, t("تعذر قراءة سجل الوكلاء. ") + String(e?.message || e)),
