@@ -1745,12 +1745,21 @@ export function admin(ctx){
         const n = teams.reduce((a, x) => a + (x.agents?.length ?? 0), 0);
         card.replaceChildren(
           el("div.admincount", {}, t`${String(teams.length)} فرق · ${String(n)} وكيلًا`),
-          ...teams.map(tm => el("div.agteam", {},
-            el("div.t", {}, tm.name || tm.id),
-            tm.goal ? el("div.s", {}, tm.goal) : null,
-            ...(tm.agents ?? []).map(a => el("div.agrow", {},
-              el("div.t", {}, a.name || a.id),
-              el("div.agmission", {}, a.mission || ""))))),
+          ...teams.map(tm => {
+            const body = el("div", { style: "display:none;margin-top:8px" },
+              tm.goal ? el("div.s", {}, tm.goal) : null,
+              ...(tm.agents ?? []).map(a => el("div.agrow", {},
+                el("div.t", {}, a.name || a.id),
+                el("div.agmission", {}, a.mission || ""))));
+            const arrow = el("span", { style: "font-size:15px;color:var(--muted);width:16px" }, "▸");
+            const head = el("div", {
+              style: "display:flex;align-items:center;gap:8px;cursor:pointer",
+              onclick: () => { const open = body.style.display === "none";
+                body.style.display = open ? "block" : "none"; arrow.textContent = open ? "▾" : "▸"; } },
+              arrow, el("div.t", { style: "flex:1;margin:0" }, tm.name || tm.id),
+              el("span.muted", { style: "font-size:12px" }, "(" + String(tm.agents?.length ?? 0) + ")"));
+            return el("div.agteam", {}, head, body);
+          }),
           el("div", { style: "margin-top:14px;display:flex;gap:10px;flex-wrap:wrap" },
             el("a.btn", { href: "https://mcp.souvenirtravel.app/teams?key=" + encodeURIComponent(key),
                           target: "_blank", rel: "noopener" }, t("تعديل الوكلاء")),
