@@ -1815,7 +1815,9 @@ export function admin(ctx){
           return el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px" },
             el("span.muted", { style: "font-size:12px" }, t("متى يعمل:")), cad, day,
             el("button.btn", { style: "padding:4px 12px", onclick: save }, t("احفظ")), msg,
-            el("button.later", { style: "padding:4px 12px", onclick: runNow }, t("شغّل الآن")), runmsg,
+            el("button", { style: "padding:4px 14px;border:1.5px solid var(--deep);color:var(--deep);"
+              + "background:transparent;border-radius:10px;font-weight:800;cursor:pointer;font:inherit",
+              onclick: runNow }, "▶ " + t("شغّل الآن")), runmsg,
             lr ? el("span.muted", { style: "font-size:11px" }, t("آخر تشغيل: ")
               + new Date(lr).toLocaleString(isEN ? "en-GB" : "ar", { dateStyle: "medium", timeStyle: "short" })) : null);
         };
