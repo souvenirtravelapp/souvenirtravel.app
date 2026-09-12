@@ -1748,6 +1748,12 @@ export function admin(ctx){
         card.replaceChildren(el("div.muted", {}, t("تعذر قراءة سجل الوكلاء. ") + String(e?.message || e)));
         return;
       }
+      // آخر تشغيل لكل فريق — يُعرض بجانب جدولته (اختياري؛ غيابه لا يعطّل شيئًا).
+      let lastrun = {};
+      try {
+        const rl = await fetch("https://mcp.souvenirtravel.app/teams/lastrun", { headers: auth });
+        if (rl.ok) lastrun = (await rl.json())?.lastrun ?? {};
+      } catch {}
       const saveOrder = async () => {
         const m = document.getElementById("ordermsg"); if (m) m.textContent = t("جارٍ الحفظ…");
         try {
@@ -1763,11 +1769,46 @@ export function admin(ctx){
         const n = teams.reduce((a, x) => a + (x.agents?.length ?? 0), 0);
         const mbtn = "border:1px solid var(--line);background:var(--card);border-radius:8px;"
           + "padding:2px 9px;cursor:pointer;font-size:14px;flex:0 0 auto";
+        // جدولة الفريق: «متى يعمل» تُضبط هنا وتُنفَّذ قسرًا (team_clock.py يسألها قبل كل تشغيل).
+        const schedRow = tm => {
+          const CAD = { manual: t("يدويّ — لا تشغيل تلقائي"), "2h": t("كل ساعتين"), daily: t("يوميًّا"),
+                        weekly: t("أسبوعيًّا"), monthly: t("شهريًّا"), event: t("بحدث") };
+          const DAY = { sun: t("الأحد"), mon: t("الإثنين"), tue: t("الثلاثاء"), wed: t("الأربعاء"),
+                        thu: t("الخميس"), fri: t("الجمعة"), sat: t("السبت") };
+          const sel = opts => el("select", { style: "padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--card)" },
+            ...Object.entries(opts).map(([v, l]) => el("option", { value: v }, l)));
+          const s = tm.schedule || {};
+          const cad = sel(CAD); cad.value = s.cadence || "manual";
+          const day = sel(DAY); day.value = s.day || "mon";
+          const msg = el("span.muted", { style: "font-size:12px;color:var(--deep)" },
+            tm.schedule ? "" : t("(افتراضي — لم يُضبط بعد)"));
+          const syncDay = () => { day.style.display = cad.value === "weekly" ? "" : "none"; };
+          cad.onchange = syncDay; syncDay();
+          const save = async () => {
+            msg.textContent = "…";
+            const schedule = { cadence: cad.value, ...(cad.value === "weekly" ? { day: day.value } : {}) };
+            try {
+              const r = await fetch("https://mcp.souvenirtravel.app/teams/schedule?team=" + encodeURIComponent(tm.id),
+                { method: "POST", headers: { "content-type": "application/json", ...auth },
+                  body: JSON.stringify({ schedule }) });
+              const j = await r.json().catch(() => null);
+              if (!r.ok) throw new Error((j && j.error) || String(r.status));
+              tm.schedule = schedule; msg.textContent = t("حُفظت الجدولة ✓ — تُنفَّذ من التشغيل القادم");
+            } catch (e){ msg.textContent = String(e?.message || e); }
+          };
+          const lr = lastrun[tm.id];
+          return el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px" },
+            el("span.muted", { style: "font-size:12px" }, t("متى يعمل:")), cad, day,
+            el("button.btn", { style: "padding:4px 12px", onclick: save }, t("احفظ")), msg,
+            lr ? el("span.muted", { style: "font-size:11px" }, t("آخر تشغيل: ")
+              + new Date(lr).toLocaleString(isEN ? "en-GB" : "ar", { dateStyle: "medium", timeStyle: "short" })) : null);
+        };
         card.replaceChildren(
           el("div.admincount", {}, t`${String(teams.length)} فرق · ${String(n)} وكيلًا`),
           ...teams.map((tm, i) => {
             const tbody = el("div", { style: "display:none;margin-top:8px" },
               tm.goal ? el("div.s", {}, tm.goal) : null,
+              schedRow(tm),
               ...(tm.agents ?? []).map(a => el("div.agrow", {},
                 el("div.t", {}, a.name || a.id),
                 el("div.agmission", {}, a.mission || ""))));
