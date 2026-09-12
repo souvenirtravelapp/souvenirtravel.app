@@ -1796,10 +1796,26 @@ export function admin(ctx){
               tm.schedule = schedule; msg.textContent = t("حُفظت الجدولة ✓ — تُنفَّذ من التشغيل القادم");
             } catch (e){ msg.textContent = String(e?.message || e); }
           };
+          // «شغّل الآن»: يعلّم الفريق فيشغّله النبض القادم ولو لم يحن موعده — ويوقظ النبض
+          // السحابي لحظيًّا إن كان رمز الإطلاق مضبوطًا في الـWorker.
+          const runmsg = el("span.muted", { style: "font-size:12px;color:var(--deep)" }, "");
+          const runNow = async () => {
+            runmsg.textContent = "…";
+            try {
+              const r = await fetch("https://mcp.souvenirtravel.app/teams/force?team=" + encodeURIComponent(tm.id),
+                { method: "POST", headers: auth });
+              const j = await r.json().catch(() => null);
+              if (!r.ok) throw new Error((j && j.error) || String(r.status));
+              runmsg.replaceChildren(j.fired
+                ? el("a", { href: j.session || "#", target: "_blank", rel: "noopener" }, t("انطلق الآن ✓ — افتح الجلسة"))
+                : document.createTextNode(t("عُلّم ✓ — يعمل في النبضة القادمة")));
+            } catch (e){ runmsg.textContent = String(e?.message || e); }
+          };
           const lr = lastrun[tm.id];
           return el("div", { style: "display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px" },
             el("span.muted", { style: "font-size:12px" }, t("متى يعمل:")), cad, day,
             el("button.btn", { style: "padding:4px 12px", onclick: save }, t("احفظ")), msg,
+            el("button.later", { style: "padding:4px 12px", onclick: runNow }, t("شغّل الآن")), runmsg,
             lr ? el("span.muted", { style: "font-size:11px" }, t("آخر تشغيل: ")
               + new Date(lr).toLocaleString(isEN ? "en-GB" : "ar", { dateStyle: "medium", timeStyle: "short" })) : null);
         };
