@@ -398,6 +398,13 @@ export async function signInApple(){
 const ADMINS = ["tariqmalki@gmail.com", "souvenirtravelapp@gmail.com"];
 export function isAdmin(){ return !!user && ADMINS.includes(user.email || ""); }
 
+// رمز دخول المالك (Firebase ID token) — تستعمله لوحة الإدارة للتوثّق لدى عامل
+// الفرق بدل مفتاح ثابت. تسجيل الدخول يكفي، فلا كلمة سرّ في المتصفح.
+export async function authToken(){
+  try { return auth?.currentUser ? await auth.currentUser.getIdToken() : null; }
+  catch { return null; }
+}
+
 function signupDoc(uid){ return doc(db, "signups", uid); }
 
 async function markSignup(firstLogin){
