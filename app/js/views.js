@@ -1719,10 +1719,7 @@ export function teamRuns(ctx, id){
       const dayOf = d => new Date(d).toDateString();
       const today = new Date().toDateString();
       const runs = rr.runs ?? [];
-      const row = r => el("div.adminrow", {}, el("div", {},
-        el("div.t", {}, fmt(r.at, { timeStyle: "short" }) + (r.ok === false ? " — " + t("لم يكتمل ✗") : "")),
-        el("div.fbbody", {}, r.note || t("سُجّل التشغيل بلا ملاحظة.")),
-        r.link ? el("a", { href: r.link, target: "_blank", rel: "noopener", style: "font-size:12px" }, t("افتح المخرَج ›")) : null));
+      const row = r => runRow(r, fmt(r.at, { timeStyle: "short" }));
       const busy = st.running?.[id];
       const todays = runs.filter(r => dayOf(r.at) === today);
       const days = [...new Set(runs.map(r => dayOf(r.at)))].filter(d => d !== today);
@@ -1759,9 +1756,16 @@ async function workerGet(path){
   return r.json();
 }
 const fmtWhen = (d, o) => new Date(d).toLocaleString(isEN ? "en-GB" : "ar", o);
+// الملاحظة نقاطٌ لا فقرة: سطرٌ لكل نقطة إن كتبها المنفِّذ كذلك، وإلا تُقطَّع عند «؛» ونهاية الجملة.
+const noteBullets = note => {
+  const lines = note.split(/\n+/).map(s => s.replace(/^\s*[-•·]\s*/, "").trim()).filter(Boolean);
+  const parts = lines.length > 1 ? lines : note.split(/؛\s*|(?<=[.!؟])\s+/).map(s => s.trim()).filter(Boolean);
+  return el("ul.fbbody", { style: "margin:4px 0 0;padding-inline-start:18px;line-height:1.75" },
+    ...parts.map(p => el("li", {}, p)));
+};
 const runRow = (r, title) => el("div.adminrow", {}, el("div", {},
   el("div.t", {}, title + (r.ok === false ? " — " + t("لم يكتمل ✗") : "")),
-  el("div.fbbody", {}, r.note || t("سُجّل التشغيل بلا ملاحظة.")),
+  r.note ? noteBullets(r.note) : el("div.muted", {}, t("سُجّل التشغيل بلا ملاحظة.")),
   r.link ? el("a", { href: r.link, target: "_blank", rel: "noopener", style: "font-size:12px" }, t("افتح المخرَج ›")) : null));
 const tabBar = (bar, opts, on, show) =>
   bar.replaceChildren(...opts.map(([v, l]) => el("button" + (v === on ? ".on" : ""), { onclick: () => show(v) }, l)));
