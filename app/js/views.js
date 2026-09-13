@@ -1740,6 +1740,119 @@ export function teamRuns(ctx, id){
   return root;
 }
 
+/* ── الصفحات الإدارية تشترك في الرأس والحارس وجلب الـWorker برمز الدخول. */
+function adminPage(title, blurb){
+  const root = el("div.wide");
+  root.append(el("div.hero3", {}, el("div.herorow", {}, el("h1", {}, title), el("a.circle", { href: "#/admin" }, "‹")),
+    blurb ? el("p", {}, blurb) : null));
+  const inner = el("div.section");
+  root.append(inner);
+  if (!cloud.isAdmin())
+    inner.append(el("div.card", { style: "text-align:center;padding:26px 18px" }, el("p", {}, t("هذه الصفحة لصاحب الموقع."))));
+  return { root, inner, ok: cloud.isAdmin() };
+}
+async function workerGet(path){
+  const token = await cloud.authToken();
+  if (!token) throw new Error(t("سجّل الدخول بحسابك."));
+  const r = await fetch("https://mcp.souvenirtravel.app" + path, { headers: { authorization: "Bearer " + token } });
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+const fmtWhen = (d, o) => new Date(d).toLocaleString(isEN ? "en-GB" : "ar", o);
+const runRow = (r, title) => el("div.adminrow", {}, el("div", {},
+  el("div.t", {}, title + (r.ok === false ? " — " + t("لم يكتمل ✗") : "")),
+  el("div.fbbody", {}, r.note || t("سُجّل التشغيل بلا ملاحظة.")),
+  r.link ? el("a", { href: r.link, target: "_blank", rel: "noopener", style: "font-size:12px" }, t("افتح المخرَج ›")) : null));
+const tabBar = (bar, opts, on, show) =>
+  bar.replaceChildren(...opts.map(([v, l]) => el("button" + (v === on ? ".on" : ""), { onclick: () => show(v) }, l)));
+
+/* ── تقرير التشغيل: كل يوم وما جرى فيه، أو كل فريق وأيامه — من سجل النتائج نفسه. */
+export function report(ctx){
+  const { root, inner, ok } = adminPage(t("تقرير التشغيل"), t("ما فعلته الفرق كل يوم — باليوم أو بالفريق."));
+  if (!ok) return root;
+  const bar = el("div.admintabs"), body = el("div.card", {}, el("div.muted", {}, t("جارٍ التحميل…")));
+  inner.append(bar, body);
+  (async () => {
+    let runs, names;
+    try {
+      const [reg, rr] = await Promise.all([workerGet("/teams/data"), workerGet("/teams/runs")]);
+      names = Object.fromEntries((reg.teams ?? []).map(x => [x.id, x.name || x.id]));
+      runs = rr.runs ?? [];
+    } catch (e){ body.replaceChildren(el("div.muted", {}, t("تعذر القراءة. ") + String(e?.message || e))); return; }
+    const dayOf = d => new Date(d).toDateString();
+    const group = (keyOf, labelOf, rowTitle) => el("div", {},
+      ...[...new Set(runs.map(keyOf))].flatMap(k => [
+        el("div.admincount", { style: "margin-top:14px" }, labelOf(k)),
+        ...runs.filter(r => keyOf(r) === k).map(r => runRow(r, rowTitle(r)))]));
+    const VIEWS = {
+      day:  () => group(r => dayOf(r.at), k => fmtWhen(k, { dateStyle: "full" }),
+                        r => (names[r.team] || r.team) + " · " + fmtWhen(r.at, { timeStyle: "short" })),
+      team: () => group(r => r.team, k => names[k] || k,
+                        r => fmtWhen(r.at, { dateStyle: "medium", timeStyle: "short" })),
+    };
+    let on = "day";
+    const show = v => { on = v; tabBar(bar, [["day", t("باليوم")], ["team", t("بالفريق")]], on, show);
+      body.replaceChildren(runs.length ? VIEWS[on]() : el("div.muted", {}, t("لا تشغيل مسجَّل بعد."))); };
+    show(on);
+  })();
+  return root;
+}
+
+/* ── تقرير المحتوى: البلاطات من الحزمة التي نزّلها هذا المتصفّح الآن (= ما يراه المستخدم)،
+   والمنحنيات من اللقطة اليومية التي يأخذها الـWorker من الموقع الحيّ. */
+function lineChart(points, key, label){
+  const W = 640, H = 170, P = 30;
+  const ys = points.map(p => p[key] ?? 0), max = Math.max(1, ...ys);
+  const x = i => P + (points.length < 2 ? 0 : i * (W - 2 * P) / (points.length - 1));
+  const y = v => H - P - v * (H - 2 * P) / max;
+  const d = ys.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" direction="ltr">
+    <text x="${P}" y="${P - 10}" font-size="13" font-weight="800" fill="var(--deep)">${label}: ${ys.at(-1) ?? 0}</text>
+    <path d="${d}" fill="none" stroke="var(--deep)" stroke-width="2.5"/>
+    ${ys.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="var(--deep)"/>`).join("")}
+    <text x="${P}" y="${H - 8}" font-size="11" fill="var(--muted)">${points[0]?.d ?? ""}</text>
+    <text x="${W - P}" y="${H - 8}" font-size="11" fill="var(--muted)" text-anchor="end">${points.at(-1)?.d ?? ""}</text>
+  </svg>`;
+}
+export function content(ctx){
+  const { root, inner, ok } = adminPage(t("محتوى سوفينير"),
+    t("الأرقام من الحزمة التي نزّلها هذا المتصفّح الآن — أي ما يصل المستخدم فعلًا — والمنحنيات من لقطةٍ يومية تُؤخذ من الموقع الحيّ."));
+  if (!ok) return root;
+  const s = ctx.store;
+  const totals = [
+    [t("الوجهات"), s.cities.length],
+    [t("الدول"), new Set(s.cities.map(c => c.country_code)).size],
+    [t("الفعاليات"), Object.values(s.attractions).reduce((a, l) => a + l.length, 0)],
+    [t("المطارات"), Object.keys(s.airports).length],
+    [t("الرحلات المباشرة"), Object.values(s.routes).reduce((a, m) => a + Object.keys(m).length, 0)],
+    [t("مطارات الانطلاق"), s.origins.length],
+    [t("الجوازات"), Object.keys(s.visas).length]];
+  inner.append(el("div", { style: "display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px" },
+    ...totals.map(([l, n]) => el("div.card", { style: "text-align:center;padding:16px 10px" },
+      el("div", { style: "font-size:28px;font-weight:900;color:var(--deep)" }, String(n)),
+      el("div.muted", { style: "font-size:13px" }, l)))));
+  const bar = el("div.admintabs", { style: "margin-top:14px" }), charts = el("div");
+  inner.append(bar, charts);
+  (async () => {
+    let series;
+    try { series = (await workerGet("/stats")).series ?? []; }
+    catch (e){ charts.replaceChildren(el("div.muted", {}, t("تعذر قراءة اللقطات. ") + String(e?.message || e))); return; }
+    const KEYS = [["cities", t("الوجهات")], ["attractions", t("الفعاليات")], ["airports", t("المطارات")],
+                  ["routes", t("الرحلات المباشرة")], ["countries", t("الدول")]];
+    // أسبوعيًّا/شهريًّا: آخر لقطة في كل أسبوع أو شهر — فالمنحنى تراكمي لا مجموع.
+    const bucket = g => { if (g === "day") return series;
+      const key = g === "week" ? p => Math.floor(Date.parse(p.d) / 6048e5) : p => p.d.slice(0, 7);
+      const last = new Map(); for (const p of series) last.set(key(p), p); return [...last.values()]; };
+    let on = "day";
+    const show = v => { on = v; tabBar(bar, [["day", t("يوميًّا")], ["week", t("أسبوعيًّا")], ["month", t("شهريًّا")]], on, show);
+      const pts = bucket(on);
+      charts.replaceChildren(pts.length ? el("div", {}, ...KEYS.map(([k, l]) => el("div.card", { style: "margin-top:10px", html: lineChart(pts, k, l) })))
+                                        : el("div.muted", { style: "margin-top:10px" }, t("لا لقطات بعد — أول لقطة تُؤخذ فجر الغد."))); };
+    show(on);
+  })();
+  return root;
+}
+
 export function admin(ctx){
   const root = el("div.wide");
   root.append(el("div.hero3", {},
@@ -1874,6 +1987,9 @@ export function admin(ctx){
               + new Date(lr).toLocaleString(isEN ? "en-GB" : "ar", { dateStyle: "medium", timeStyle: "short" })) : null);
         };
         card.replaceChildren(
+          el("div", { style: "display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px" },
+            el("a.btn", { href: "#/report", style: "padding:6px 14px" }, t("التقرير اليومي ›")),
+            el("a.btn", { href: "#/content", style: "padding:6px 14px" }, t("تقرير المحتوى ›"))),
           el("div.admincount", {}, t`${String(teams.length)} فرق · ${String(n)} وكيلًا`),
           ...teams.map((tm, i) => {
             const tbody = el("div", { style: "display:none;margin-top:8px" },

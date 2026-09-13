@@ -42,7 +42,7 @@ function drawTabs(){
   const on = { d: "next", find: "next", map: "next", fav: "next",
                plan: "upcoming", trip: "trips",
                prefs: "home", papers: "home", mydata: "home",
-               admin: "home", team: "home" }[path] || path;
+               admin: "home", team: "home", report: "home", content: "home" }[path] || path;
   const tripsGuard = e => guardNav(e, "#/trips",
     t("رحلاتك تُحفظ في حسابك لتجدها على كل أجهزتك."));
   const upcomingGuard = e => guardNav(e, "#/upcoming",
@@ -266,6 +266,8 @@ export function render(){
     mydata: () => views.mydata(ctx),
     admin:  () => views.admin(ctx),
     team:   () => views.teamRuns(ctx, arg),
+    report: () => views.report(ctx),
+    content: () => views.content(ctx),
   }[path] || (() => views.home(ctx));
   view.append(draw());
   drawTabs();
