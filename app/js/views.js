@@ -1720,20 +1720,21 @@ export function teamRuns(ctx, id){
       const today = new Date().toDateString();
       const runs = rr.runs ?? [];
       const row = r => el("div.adminrow", {}, el("div", {},
-        el("div.t", {}, fmt(r.at, { timeStyle: "short" })),
+        el("div.t", {}, fmt(r.at, { timeStyle: "short" }) + (r.ok === false ? " — " + t("لم يكتمل ✗") : "")),
         el("div.fbbody", {}, r.note || t("سُجّل التشغيل بلا ملاحظة.")),
         r.link ? el("a", { href: r.link, target: "_blank", rel: "noopener", style: "font-size:12px" }, t("افتح المخرَج ›")) : null));
       const busy = st.running?.[id];
       const todays = runs.filter(r => dayOf(r.at) === today);
       const days = [...new Set(runs.map(r => dayOf(r.at)))].filter(d => d !== today);
-      card.replaceChildren(
+      // el() يُسقط null؛ replaceChildren لا يفعل (يكتب «null» نصًّا) — لذا نغلّف.
+      card.replaceChildren(el("div", {},
         busy ? el("div.admincount", { style: "color:var(--deep)" }, t("يعمل الآن — بدأ ") + fmt(busy, { timeStyle: "short" })) : null,
         el("div.admincount", {}, t("اليوم")),
         ...todays.map(row),
         todays.length ? null : el("div.muted", {}, t("لم يعمل اليوم بعد.")),
         ...days.flatMap(d => [el("div.admincount", { style: "margin-top:14px" }, fmt(d, { dateStyle: "full" })),
                               ...runs.filter(r => dayOf(r.at) === d).map(row)]),
-        runs.length ? null : el("div.muted", { style: "margin-top:10px" }, t("لا تشغيل مسجَّل لهذا الفريق بعد.")));
+        runs.length ? null : el("div.muted", { style: "margin-top:10px" }, t("لا تشغيل مسجَّل لهذا الفريق بعد."))));
     } catch (e){ card.replaceChildren(el("div.muted", {}, t("تعذر القراءة. ") + String(e?.message || e))); }
   })();
   return root;
