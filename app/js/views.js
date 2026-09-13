@@ -1788,9 +1788,16 @@ export function report(ctx){
       ...[...new Set(runs.map(keyOf))].flatMap(k => [
         el("div.admincount", { style: "margin-top:14px" }, labelOf(k)),
         ...runs.filter(r => keyOf(r) === k).map(r => runRow(r, rowTitle(r)))]));
+    // باليوم: اليوم ← الفريق ← تشغيلاته بوقتها (طلب طارق ٢٠٢٦-٠٩-١٣).
+    const byDay = () => el("div", {}, ...[...new Set(runs.map(r => dayOf(r.at)))].flatMap(d => {
+      const inDay = runs.filter(r => dayOf(r.at) === d);
+      return [el("div.admincount", { style: "margin-top:14px" }, fmtWhen(d, { dateStyle: "full" })),
+        ...[...new Set(inDay.map(r => r.team))].flatMap(tm => [
+          el("div.t", { style: "margin:12px 0 2px;font-weight:900;color:var(--deep)" }, names[tm] || tm),
+          ...inDay.filter(r => r.team === tm).map(r => runRow(r, fmtWhen(r.at, { timeStyle: "short" })))])];
+    }));
     const VIEWS = {
-      day:  () => group(r => dayOf(r.at), k => fmtWhen(k, { dateStyle: "full" }),
-                        r => (names[r.team] || r.team) + " · " + fmtWhen(r.at, { timeStyle: "short" })),
+      day:  byDay,
       team: () => group(r => r.team, k => names[k] || k,
                         r => fmtWhen(r.at, { dateStyle: "medium", timeStyle: "short" })),
     };
