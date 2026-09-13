@@ -14,6 +14,10 @@ const LETTER_MAP = {
   'ى': 'ي', // ى
   'ؤ': 'و', // ؤ
   'ئ': 'ي', // ئ
+  // The v of foreign names reaches Arabic as ڤ or ف — سفيتي and سڤيتي are
+  // one word. (Its third spelling, و, is a vowel to the skeleton and needs an
+  // editorial alias instead.)
+  'ڤ': 'ف',
 };
 
 /// Folding a typed word down to what the person meant by it.
