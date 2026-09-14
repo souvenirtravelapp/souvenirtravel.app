@@ -791,10 +791,12 @@ export function destination(ctx, cityId){
   if (spots?.length){
     const grid = el("div.attr-grid", {},
       spots.map(a => el("div.attr-card", {},
-        (a.source && a.source !== "wikidata")
-          ? el("div.aramp", {}, (aName(a) || "؟").trim()[0])
-          : el("img", { src: assetURL("attractions/" + a.qid + ".jpg"),
-                    alt: aName(a), loading: "lazy" }),
+        // الصورة تُقرَّر بوجودها (has_image من الدمج) لا بالمصدر — كانت الواجهة تحكم
+        // بالمصدر فبقيت مدخلات الوكلاء بلا صورها المجلوبة (١٢٢١ صورة، ٢٠٢٦-٠٩-١٤).
+        (a.has_image || !a.source || a.source === "wikidata")
+          ? el("img", { src: assetURL("attractions/" + a.qid + ".jpg"),
+                    alt: aName(a), loading: "lazy" })
+          : el("div.aramp", {}, (aName(a) || "؟").trim()[0]),
         el("div.b", {},
           el("div.n", {}, aName(a)),
           aBlurb(a) ? el("div.d", {}, aBlurb(a)) : null,
