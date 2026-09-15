@@ -1819,13 +1819,29 @@ function lineChart(points, key, label){
   const x = i => P + (points.length < 2 ? 0 : i * (W - 2 * P) / (points.length - 1));
   const y = v => H - P - v * (H - 2 * P) / max;
   const d = ys.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join(" ");
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" direction="ltr">
+  const card = el("div.card", { style: "margin-top:10px", html: `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;touch-action:none" direction="ltr">
     <text x="${P}" y="${P - 10}" font-size="13" font-weight="800" fill="var(--deep)">${label}: ${ys.at(-1) ?? 0}</text>
     <path d="${d}" fill="none" stroke="var(--deep)" stroke-width="2.5"/>
     ${ys.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="var(--deep)"/>`).join("")}
     <text x="${P}" y="${H - 8}" font-size="11" fill="var(--muted)">${points[0]?.d ?? ""}</text>
     <text x="${W - P}" y="${H - 8}" font-size="11" fill="var(--muted)" text-anchor="end">${points.at(-1)?.d ?? ""}</text>
-  </svg>`;
+    <g class="hov" style="display:none"><line y1="${P}" y2="${H - P}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle r="5.5" fill="var(--deep)"/><text font-size="12" font-weight="800" fill="var(--deep)" text-anchor="middle"></text></g>
+  </svg>` });
+  // مرور المؤشّر (أو الإصبع) يُظهر أقرب نقطة: تاريخها وعددها — بلا مكتبة.
+  const svg = card.querySelector("svg"), hov = svg.querySelector(".hov"), [ln, dot, tx] = hov.children;
+  svg.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) * W / r.width;
+    let i = 0;
+    for (let j = 1; j < points.length; j++) if (Math.abs(x(j) - vx) < Math.abs(x(i) - vx)) i = j;
+    const px = x(i), py = y(ys[i]);
+    ln.setAttribute("x1", px); ln.setAttribute("x2", px);
+    dot.setAttribute("cx", px); dot.setAttribute("cy", py);
+    tx.setAttribute("x", Math.min(Math.max(px, P + 50), W - P - 50)); tx.setAttribute("y", Math.max(py - 12, P + 6));
+    tx.textContent = points[i].d + " · " + ys[i];
+    hov.style.display = "";
+  });
+  svg.addEventListener("pointerleave", () => { hov.style.display = "none"; });
+  return card;
 }
 export function content(ctx){
   const { root, inner, ok } = adminPage(t("محتوى سوفينير"),
@@ -1859,7 +1875,7 @@ export function content(ctx){
     let on = "day";
     const show = v => { on = v; tabBar(bar, [["day", t("يوميًّا")], ["week", t("أسبوعيًّا")], ["month", t("شهريًّا")]], on, show);
       const pts = bucket(on);
-      charts.replaceChildren(pts.length ? el("div", {}, ...KEYS.map(([k, l]) => el("div.card", { style: "margin-top:10px", html: lineChart(pts, k, l) })))
+      charts.replaceChildren(pts.length ? el("div", {}, ...KEYS.map(([k, l]) => lineChart(pts, k, l)))
                                         : el("div.muted", { style: "margin-top:10px" }, t("لا لقطات بعد — أول لقطة تُؤخذ فجر الغد."))); };
     show(on);
   })();
