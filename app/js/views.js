@@ -1825,10 +1825,10 @@ function lineChart(points, key, label){
     ${ys.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="var(--deep)"/>`).join("")}
     <text x="${P}" y="${H - 8}" font-size="11" fill="var(--muted)">${points[0]?.d ?? ""}</text>
     <text x="${W - P}" y="${H - 8}" font-size="11" fill="var(--muted)" text-anchor="end">${points.at(-1)?.d ?? ""}</text>
-    <g class="hov" style="display:none"><line y1="${P}" y2="${H - P}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle r="5.5" fill="var(--deep)"/><text font-size="12" font-weight="800" fill="var(--deep)" text-anchor="middle"></text></g>
+    <g class="hov" style="display:none"><line y1="${P}" y2="${H - P}" stroke="var(--muted)" stroke-dasharray="3 3"/><circle r="5.5" fill="var(--deep)"/><rect rx="6" fill="var(--card)" stroke="var(--deep)" stroke-width="1"/><text font-size="12" font-weight="800" fill="var(--deep)" text-anchor="middle" dominant-baseline="middle"></text></g>
   </svg>` });
   // مرور المؤشّر (أو الإصبع) يُظهر أقرب نقطة: تاريخها وعددها — بلا مكتبة.
-  const svg = card.querySelector("svg"), hov = svg.querySelector(".hov"), [ln, dot, tx] = hov.children;
+  const svg = card.querySelector("svg"), hov = svg.querySelector(".hov"), [ln, dot, box, tx] = hov.children;
   svg.addEventListener("pointermove", e => {
     const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) * W / r.width;
     let i = 0;
@@ -1836,9 +1836,14 @@ function lineChart(points, key, label){
     const px = x(i), py = y(ys[i]);
     ln.setAttribute("x1", px); ln.setAttribute("x2", px);
     dot.setAttribute("cx", px); dot.setAttribute("cy", py);
-    tx.setAttribute("x", Math.min(Math.max(px, P + 50), W - P - 50)); tx.setAttribute("y", Math.max(py - 12, P + 6));
+    // البطاقة فوق النقطة وبعيدًا عن الخط — وتحتها إن كانت النقطة قرب السقف — في إطارٍ مصمت يُقرأ.
     tx.textContent = points[i].d + " · " + ys[i];
+    tx.setAttribute("x", Math.min(Math.max(px, P + 60), W - P - 60));
+    tx.setAttribute("y", py < P + 34 ? py + 24 : py - 22);
     hov.style.display = "";
+    const b = tx.getBBox();
+    box.setAttribute("x", b.x - 7); box.setAttribute("y", b.y - 4);
+    box.setAttribute("width", b.width + 14); box.setAttribute("height", b.height + 8);
   });
   svg.addEventListener("pointerleave", () => { hov.style.display = "none"; });
   return card;
